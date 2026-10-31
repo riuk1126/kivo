@@ -787,6 +787,7 @@ select.fin{cursor:pointer}
 .ai-tw .ai-ta{padding-bottom:52px}
 .ai-mic{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:7px 14px 7px 11px;font-size:13.5px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px var(--line)}
 .ai-mic svg{width:17px;height:17px}
+.ai-mic.busy{opacity:.6}
 .ai-mic.on{background:var(--late);color:#fff;animation:pulse 1.4s infinite}
 .ai-ex{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .ai-ex button{background:var(--fill);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--muted);text-align:left;line-height:1.3}
@@ -2363,8 +2364,35 @@ async function deskDictate(el){
   toast(DICT_HELP());
 }
 let REC2=null;
+/* dictado en vivo dentro del programa (Vosk, sin internet) */
+let VOSKP=null,LIVE=null;
+const MODEL_URL='kivo-res://m/vosk-es.tar.gz';
+function voskLib(){return window.Vosk?Promise.resolve(window.Vosk):new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='vendor/vosk.js';sc.onload=()=>window.Vosk?res(window.Vosk):rej(new Error('nolib'));sc.onerror=()=>rej(new Error('nolib'));document.head.append(sc)})}
+function voskModel(){if(!VOSKP)VOSKP=voskLib().then(V=>V.createModel(window.KIVO_MODEL_URL||MODEL_URL)).catch(e=>{VOSKP=null;throw e});return VOSKP}
+function preloadVoice(){if(window.kivo&&!REC2)voskModel().catch(()=>{})}
+function setMicBtn(btn,label,on){if(!btn)return;btn.classList.toggle('on',!!on);btn.classList.toggle('busy',label==='Preparando…');const t=btn.querySelector('span');if(t)t.textContent=label}
+async function liveDictate(el,btn,idle){
+  if(LIVE){LIVE.stop();return true}
+  setMicBtn(btn,'Preparando…',false);let model;
+  try{model=await voskModel()}catch(e){setMicBtn(btn,idle||'Hablar',false);return false}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1},video:false})}
+  catch(e){setMicBtn(btn,idle||'Hablar',false);toast('Necesito permiso para usar el micrófono');return true}
+  const ac=new AudioContext();const rec=new model.KaldiRecognizer(ac.sampleRate);
+  const base=el.value.trim();let fin='';
+  const show=p=>{let t=[fin,p].filter(Boolean).join(' ');if(!base&&t)t=t[0].toUpperCase()+t.slice(1);el.value=[base,t].filter(Boolean).join(' ');el.dispatchEvent(new Event('input'));el.scrollTop=el.scrollHeight};
+  rec.on('result',m=>{const t=((m.result||{}).text||'').trim();if(t){fin+=(fin?' ':'')+t;show('')}});
+  rec.on('partialresult',m=>{const p=((m.result||{}).partial||'').trim();if(p)show(p)});
+  const node=ac.createScriptProcessor(4096,1,1);node.onaudioprocess=e=>{try{rec.acceptWaveform(e.inputBuffer)}catch(_){}};
+  const src=ac.createMediaStreamSource(stream);src.connect(node);node.connect(ac.destination);
+  const old=el.placeholder;el.placeholder='Te escucho… habla con calma';
+  LIVE={stop(){try{rec.retrieveFinalResult()}catch(e){}setTimeout(()=>{try{src.disconnect();node.disconnect();stream.getTracks().forEach(t=>t.stop());ac.close();rec.remove()}catch(e){}},400);
+    LIVE=null;el.placeholder=old;setMicBtn(btn,idle||'Hablar',false);if(btn&&btn.id==='mic')btn.classList.remove('on');el.focus()}};
+  setMicBtn(btn,'Detener',true);if(btn&&btn.id==='mic')btn.classList.add('on');el.focus();
+  return true;
+}
 function dictateInto(el,btn){
-  if(window.kivo){deskDictate(el);return}
+  if(window.kivo){if(LIVE){LIVE.stop();return}liveDictate(el,btn).then(ok=>{if(!ok)deskDictate(el)});return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){el.focus();toast('Este navegador no permite dictar. Usa Google Chrome o Edge, o '+DICT_HELP().toLowerCase());return}
   if(REC2){try{REC2.stop()}catch(e){}return}
@@ -2377,7 +2405,7 @@ function dictateInto(el,btn){
   REC2=r;try{r.start()}catch(e){REC2=null;toast('No pude usar el micrófono')}
 }
 function toggleMic(){
-  if(window.kivo){deskDictate($('#txt'));return}
+  if(window.kivo){if(LIVE){LIVE.stop();return}liveDictate($('#txt'),$('#mic')).then(ok=>{if(!ok)deskDictate($('#txt'))});return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){toast('Tu navegador no permite dictar. Ábrela con Google Chrome o Edge 🎤');return}
   if(REC){try{REC.stop()}catch(e){}return}
@@ -2862,7 +2890,7 @@ function aiPreview(plan,back){
 let AIW=null,AIASK='';
 function openAI(){
   const st={ask:AIASK,step:'ask',last:''};const box=h('div','mpad');
-  const stop=()=>{if(REC2)try{REC2.stop()}catch(e){};clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
+  const stop=()=>{if(REC2)try{REC2.stop()}catch(e){};if(LIVE)LIVE.stop();clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
   const tryText=t=>{if(!t||t===st.last||t===st.prompt)return false;const o=aiExtract(t);if(!o)return false;st.last=t;const plan=aiNormalize(o);stop();closeModal();aiPreview(plan,()=>openAI());return true};
   const peek=async()=>{if(!document.hasFocus())return;try{const t=await navigator.clipboard.readText();tryText(t)}catch(e){}};
   const draw=()=>{box.innerHTML='';
@@ -2894,7 +2922,7 @@ function openAI(){
       st.onf=()=>setTimeout(peek,250);window.addEventListener('focus',st.onf);clearInterval(st.iv);st.iv=setInterval(peek,1500);
     }
   };
-  draw();openModal(box,{onClose:stop});AIW=st;
+  draw();openModal(box,{onClose:stop});AIW=st;preloadVoice();
 }
 // si pegas una respuesta de la IA en la caja principal, también la detecta
 document.addEventListener('paste',e=>{

@@ -1,5 +1,15 @@
 // Kivo · programa de escritorio
-const { app, BrowserWindow, Tray, Menu, shell, nativeImage, ipcMain, session, Notification } = require('electron');
+const { app, BrowserWindow, Tray, Menu, shell, nativeImage, ipcMain, session, Notification, protocol } = require('electron');
+const fs = require('fs');
+
+// Archivos grandes de la app (modelo de voz) servidos por un protocolo propio
+protocol.registerSchemesAsPrivileged([{ scheme: 'kivo-res', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
+// Solo para pruebas automáticas: micrófono simulado con un audio
+if (process.env.KIVO_FAKE_AUDIO) {
+  app.commandLine.appendSwitch('use-fake-device-for-media-stream');
+  app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
+  app.commandLine.appendSwitch('use-file-for-fake-audio-capture', process.env.KIVO_FAKE_AUDIO);
+}
 const path = require('path');
 
 let win = null;
@@ -19,6 +29,13 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => {
       cb(['notifications', 'media', 'clipboard-read', 'clipboard-sanitized-write'].includes(permission));
+    });
+    protocol.handle('kivo-res', async (req) => {
+      const name = path.basename(new URL(req.url).pathname);
+      try {
+        const data = await fs.promises.readFile(path.join(__dirname, 'app', 'vendor', name));
+        return new Response(data, { headers: { 'content-type': 'application/octet-stream', 'access-control-allow-origin': '*' } });
+      } catch (e) { return new Response('', { status: 404 }); }
     });
     createWin();
     createTray();

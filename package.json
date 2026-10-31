@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "electron-updater": "6.3.9",
-    "@supabase/supabase-js": "2.45.4"
+    "@supabase/supabase-js": "2.45.4",
+    "vosk-browser": "0.0.8"
   },
   "devDependencies": {
     "electron": "33.2.1",
@@ -40,7 +41,8 @@
       "build/icon.png",
       "build/tray.png",
       "build/trayTemplate.png",
-      "build/trayTemplate@2x.png"
+      "build/trayTemplate@2x.png",
+      "!app/vendor/*.wav"
     ],
     "publish": {
       "provider": "github",
@@ -81,7 +83,10 @@
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.productivity",
-      "artifactName": "Kivo.${ext}"
+      "artifactName": "Kivo.${ext}",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Kivo usa el micrófono para que puedas dictar con tu voz."
+      }
     },
     "dmg": {
       "title": "Kivo",
