@@ -776,6 +776,39 @@ select.fin{cursor:pointer}
 .tsi.now{box-shadow:0 0 0 1.5px var(--accent)}
 .tsi.past{opacity:.5}
 @media (max-width:560px){.facts.four{grid-template-columns:1fr 1fr}.acc{grid-template-columns:1fr 1fr}.timer{font-size:64px}.call h1{font-size:28px}.hero .big{font-size:30px}.stime{flex-wrap:wrap}}
+
+/* ---- crear con IA ---- */
+.ai-ta{font-size:15.5px;line-height:1.45;resize:vertical}
+.ai-fx{margin-top:10px;font-size:13.5px;color:var(--muted)}
+.ai-fx summary{cursor:pointer;padding:4px 2px}
+.ai-fx summary b{color:var(--text);font-weight:500}
+.ai-fx .field{margin-top:6px;font-size:14px}
+.ai-ex{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ai-ex button{background:var(--fill);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--muted);text-align:left;line-height:1.3}
+.ai-ex button:hover{background:var(--fill2);color:var(--text)}
+.ai-go{flex-direction:column;align-items:stretch;gap:8px}
+.ai-go .btn{justify-content:center;border-radius:12px;padding:12px}
+.ai-go .btn.ghost{padding:6px}
+.ai-steps{margin:4px 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.4}
+.ai-wait{display:flex;align-items:center;gap:10px;background:var(--fill);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:14px;color:var(--muted)}
+.ai-wait .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite}
+.ai-sum{font-size:15px;line-height:1.45;margin:0 0 12px}
+.ai-sp{padding:14px}
+.ai-h{display:flex;align-items:center;gap:10px}
+.ai-h>div{display:flex;flex-direction:column}
+.ai-h b{font-size:15px;font-weight:650}
+.ai-h small{font-size:12.5px;color:var(--muted)}
+.ai-l{margin-top:10px;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--muted)}
+.ai-l b{color:var(--text);font-weight:600}
+.ai-l .ico{width:13px;height:13px;vertical-align:-2px}
+.ai-t{margin-top:10px;border-top:.5px solid var(--line)}
+.ai-t>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:.5px solid var(--line);font-size:13.5px}
+.ai-t>div:last-child{border-bottom:0}
+.ai-t small{color:var(--muted);white-space:nowrap}
+.tpl-ai{grid-column:1/-1;display:flex;align-items:center;gap:12px;background:var(--accent);color:var(--on-accent);border-radius:14px;padding:13px 16px;text-align:left}
+.tpl-ai b{font-size:15px;font-weight:650;display:block}
+.tpl-ai small{font-size:12.5px;opacity:.75}
+.tpl-ai .ico{width:22px;height:22px}
 </style>
 </head>
 <body>
@@ -791,7 +824,7 @@ select.fin{cursor:pointer}
       <svg class="ring" viewBox="0 0 58 58"><circle class="bgc" cx="29" cy="29" r="24"/><circle class="fg" id="ringFg" cx="29" cy="29" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8" transform="rotate(-90 29 29)"/><text x="29" y="33.5" text-anchor="middle" id="ringTxt">0/0</text></svg>
       <div class="streak" id="streak"></div>
     </div>
-    <div class="hbtns"><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
+    <div class="hbtns"><button class="iconb" id="aiBtn" title="Crear con IA (Claude o ChatGPT)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
   </header>
 
   <div class="add">
@@ -1073,7 +1106,8 @@ music:'<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="
 code:'<path d="m8 7-5 5 5 5M16 7l5 5-5 5"/>',
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
-smile:'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5v.01M15 9.5v.01"/>'
+smile:'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5v.01M15 9.5v.01"/>',
+spark:'<path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>'
 };
 const EMO2I={'🏠':'home','🏡':'home','🏛️':'building','🏛':'building','🏢':'building','🎓':'grad','🎨':'palette','📁':'folder','💼':'briefcase','🧹':'home','📚':'book','📖':'book','📝':'list','💡':'bulb','👆':'check','☀️':'sun','🎉':'check','✅':'check','📅':'cal','🗓️':'cal','✨':'star','⭐':'star','🏁':'flag','📞':'phone','📧':'mail','🛒':'cart','👕':'shirt','☕':'cup','🎬':'video','🎥':'video','📷':'camera','🎙️':'mic','📣':'megaphone','💰':'money','🧾':'money','📊':'chart','🎯':'target','🔥':'bolt','📌':'pin','📐':'ruler','📏':'ruler','🧱':'building','✏️':'pen','🖌️':'pen','📦':'box','🚚':'box','🚗':'car','💪':'dumbbell','❤️':'heart','🌱':'leaf','🎵':'music','💻':'code','🖥️':'code','⏰':'clock','💬':'chat','🤝':'users','🧑‍🏫':'grad','🛋️':'home','🪑':'home','🖨️':'box','🎁':'box','🙂':'smile','😀':'smile'};
 function icoKey(v){if(!v)return null;v=String(v);if(v.startsWith('i:'))return IC[v.slice(2)]?v.slice(2):null;return EMO2I[v]||null}
@@ -1668,6 +1702,7 @@ function openListEditor(l,onCreated){
       mhead(isNew?'Nueva lista':'Tipo de espacio',box);
       box.append(h('p','small-note','¿Para qué es? Según lo que elijas, Kivo te arma las herramientas que necesitas.'));
       const g=h('div','tpl-grid');
+      if(isNew){const ai=h('button','tpl-ai',iconHTML('i:spark')+'<span><b>Que la IA lo arme por ti</b><small>Cuéntale qué estás haciendo y crea el espacio con todo.</small></span>');ai.onclick=()=>{closeModal();openAI()};g.append(ai)}
       Object.entries(TPL).forEach(([k,T])=>{
         const c=h('button','tpl-card'+(st.kind===k?' on':''),`<span class="tpl-ic">${iconHTML(T.icon)}</span><b>${esc(T.name)}</b><small>${esc(T.desc)}</small>${T.views?`<em>${T.views.map(v=>VNAMES[v]).join(' · ')}</em>`:''}`);
         c.onclick=()=>{const prevIcon=(TPL[st.kind]||{}).icon;st.kind=k;if(!st.emoji||st.emoji===prevIcon)st.emoji=T.icon;step='form';draw()};g.append(c)});
@@ -2666,6 +2701,181 @@ document.addEventListener('paste',e=>{
   if(!CURDETAIL)return;const fs=[...((e.clipboardData&&e.clipboardData.files)||[])];if(!fs.length)return;
   e.preventDefault();addFiles(CURDETAIL.x,fs,CURDETAIL.draw);
 });
+/* ================= CREAR CON IA (Claude o ChatGPT, copiando y pegando) ================= */
+const AI_EX=['Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas y empieza este lunes','Quiero terminar mi novela en marzo, puedo escribir 1 hora en las noches de lunes a viernes','Estudio Arquitectura, 5.º ciclo: Taller 5 lun y mié de 8 a 11, Estructuras 2 mar y jue de 11 a 1. Tengo jurado el 20 de noviembre','Voy a llevar un curso de redes sociales de 6 semanas, organízalo con mi trabajo'];
+function aiPrompt(ask){
+  const d=new Date(),dn=DAYL[d.getDay()];
+  const lists=S.lists.map(l=>{const T=TPL[l.kind]||TPL.general;return `- "${l.name}" (kind: ${l.kind||'general'} · ${T.name})`+(l.kind==='student'&&coursesOf(l).length?' · cursos: '+coursesOf(l).map(c=>c.n).join(', '):'')}).join('\n')||'- (ninguno)';
+  const fixed=[];schedLists().forEach(l=>slotsOf(l).forEach(s=>fixed.push(`- ${daysTxt(s.d)} ${s.s}–${s.e}: ${s.label} (${l.name})`)));
+  const kinds=Object.entries(TPL).map(([k,T])=>{let x=`- ${k}: ${T.name}. ${T.desc}`;if(T.stages)x+=` Etapas (stage): ${T.stages.join(' → ')}.`;
+    const fs=(T.fields||[]).map(f=>{let o=typeof f.o==='function'?(k==='student'?(f.k==='type'?'según la carrera: '+Object.values(STUDY_TYPES).flat().filter((v,i,a)=>a.indexOf(v)===i).join(' | '):'nombre exacto de un curso del espacio'):''):(f.o||[]).join(' | ');return f.k+(f.t==='money'?' (número, soles)':f.t==='number'?' (número)':'')+(o?' ['+o+']':'')});
+    if(fs.length)x+=` fields: ${fs.join('; ')}.`;return x}).join('\n');
+  return `Eres el planificador de Kivo, la app de tareas del usuario. Convierte lo que pide en un plan que Kivo pueda crear automáticamente.
+
+HOY: ${dn} ${d.getDate()} de ${d.toLocaleDateString('es',{month:'long'})} de ${d.getFullYear()} (${today()}), hora ${hmNow()}, zona horaria de Lima (Perú).
+${S.name?'USUARIO: '+S.name+'\n':''}
+ESPACIOS QUE YA TIENE:
+${lists}
+
+HORARIO FIJO QUE YA TIENE (no pongas nada encima):
+${fixed.join('\n')||(S.aiFixed?'':'- (nada registrado)')}${S.aiFixed?'\n- '+S.aiFixed.trim():''}
+
+TIPOS DE ESPACIO (kind):
+${kinds}
+
+DATOS EXTRA (meta) SEGÚN EL TIPO:
+- writer: goal (palabras totales), daily (palabras por día), deadline (AAAA-MM-DD), strict (true = modo exigente), slots (sesiones de escritura).
+- student: career (una de: ${Object.values(CAREERS).flat().join(', ')}), cycle, pass (nota para aprobar, normalmente 11), strict, courses: [{name, teacher, room, slots}]. Sus tareas son entregas y exámenes con fields {course, type, weight (% de la nota)}.
+- course: start, end (AAAA-MM-DD), where (lugar o plataforma), strict, slots (clases y horas de práctica, con label "Clase" o "Práctica"). Sus tareas son los módulos o temas, en orden.
+- slot = {days: [números, 0=domingo, 1=lunes … 6=sábado], start: "HH:MM", end: "HH:MM", label, room}.
+
+REGLAS:
+1. Responde SOLO con un bloque \`\`\`json, sin texto antes ni después.
+2. Fechas AAAA-MM-DD, horas HH:MM en formato 24 h.
+3. Si el usuario no dice algo, decide lo más razonable (número de módulos, horas de práctica, fechas). Reparte el trabajo en el tiempo con fechas realistas a partir de hoy y respeta su horario fijo.
+4. Si corresponde a un espacio que ya tiene, usa "existing": "nombre exacto" en vez de crear uno nuevo.
+5. Las tareas pueden tener "steps" (pasos cortos) y "date"/"time" si tienen fecha. No inventes datos personales.
+6. Si el usuario te pide cambios después, responde otra vez con el JSON COMPLETO actualizado.
+
+FORMATO EXACTO:
+\`\`\`json
+{"kivo":1,"summary":"Una frase con lo que armaste",
+ "spaces":[{"ref":"a","name":"Curso de SketchUp","kind":"course","meta":{"start":"2026-11-02","end":"2026-12-23","where":"Zoom","strict":false,"slots":[{"days":[1,3],"start":"19:00","end":"21:00","label":"Clase"},{"days":[6],"start":"10:00","end":"11:30","label":"Práctica"}]}},
+           {"ref":"b","existing":"Arquizo"}],
+ "tasks":[{"space":"a","text":"Módulo 1: interfaz y herramientas","date":"2026-11-02","time":"19:00","stage":"Por ver","steps":["Instalar SketchUp","Configurar plantilla"],"notes":""}]}
+\`\`\`
+
+LO QUE PIDE EL USUARIO:
+"""
+${ask.trim()}
+"""`;
+}
+function aiExtract(txt){
+  if(!txt||!/"kivo"\s*:/.test(txt))return null;
+  let s=txt;const m=s.match(/```(?:json)?\s*([\s\S]*?)```/);if(m&&/"kivo"/.test(m[1]))s=m[1];
+  const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<a)return null;s=s.slice(a,b+1);
+  const tries=[s,s.replace(/,\s*([}\]])/g,'$1'),s.replace(/[“”]/g,'"').replace(/,\s*([}\]])/g,'$1')];
+  for(const t of tries){try{const o=JSON.parse(t);if(o&&o.kivo)return o}catch(e){}}
+  return null;
+}
+const AI_DAY={dom:0,domingo:0,lun:1,lunes:1,mar:2,martes:2,mie:3,mié:3,miercoles:3,miércoles:3,jue:4,jueves:4,vie:5,viernes:5,sab:6,sáb:6,sabado:6,sábado:6};
+function aiDays(v){return [...new Set((Array.isArray(v)?v:String(v||'').split(/[,\s]+/)).map(x=>typeof x==='number'?x:/^\d$/.test(String(x))?Number(x):AI_DAY[norm(x)]??AI_DAY[String(x).toLowerCase()]).filter(x=>x>=0&&x<=6))]}
+const aiTime=v=>{const m=String(v||'').match(/(\d{1,2})(?::(\d{2}))?/);if(!m)return '';const hh=Math.min(23,Number(m[1])),mm=Math.min(59,Number(m[2]||0));return pad(hh)+':'+pad(mm)};
+const aiDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):'';
+function aiSlots(a){return (Array.isArray(a)?a:[]).map(s=>{const d=aiDays(s.days||s.dias),st=aiTime(s.start||s.inicio),en=aiTime(s.end||s.fin);if(!d.length||!st)return null;return {id:uid(),d,s:st,e:en&&en>st?en:fromMin(toMin(st)+60),label:s.label||s.nombre||'',room:s.room||s.lugar||''}}).filter(Boolean)}
+function aiNormalize(o){
+  const plan={summary:String(o.summary||o.resumen||''),spaces:[],tasks:[]},byRef={};
+  (o.spaces||o.espacios||[]).forEach((sp,i)=>{
+    const ex=sp.existing||sp.existente;let l=null;
+    if(ex)l=S.lists.find(x=>norm(x.name)===norm(ex));
+    if(!l&&sp.name)l=S.lists.find(x=>norm(x.name)===norm(sp.name));
+    const kind=TPL[sp.kind]?sp.kind:l?l.kind:'general';const m=sp.meta||{};
+    const meta={};
+    ['goal','daily','base','pass','free'].forEach(k=>{if(m[k]!=null&&m[k]!=='')meta[k]=Number(m[k])||0});
+    ['deadline','start','end'].forEach(k=>{if(aiDate(m[k]))meta[k]=aiDate(m[k])});
+    ['where','cycle','career'].forEach(k=>{if(m[k])meta[k]=String(m[k])});
+    if(m.strict!=null)meta.strict=!!m.strict;
+    const sl=aiSlots(m.slots||sp.slots);if(sl.length)meta.slots=sl;
+    const cs=(m.courses||sp.courses||[]).map((c,j)=>({id:uid(),n:String(c.name||c.nombre||'Curso').trim(),prof:c.teacher||c.profesor||'',room:c.room||c.aula||'',cred:c.credits||'',color:LIST_COLORS[(j*3+1)%LIST_COLORS.length],slots:aiSlots(c.slots)})).filter(c=>c.n);if(cs.length)meta.courses=cs;
+    const e={ref:String(sp.ref||i),l,isNew:!l,name:l?l.name:String(sp.name||'Nuevo espacio').slice(0,40),kind:l?l.kind:kind,meta};
+    plan.spaces.push(e);byRef[e.ref]=e;
+  });
+  (o.tasks||o.tareas||[]).forEach(t=>{
+    const text=String(t.text||t.texto||'').trim();if(!text)return;
+    let sp=byRef[String(t.space||t.espacio||'')];
+    if(!sp&&(t.space||t.espacio)){const l=S.lists.find(x=>norm(x.name)===norm(t.space||t.espacio));if(l){sp={ref:'x'+l.id,l,isNew:false,name:l.name,kind:l.kind,meta:{}};plan.spaces.push(sp);byRef[sp.ref]=sp}}
+    plan.tasks.push({sp,text:text.slice(0,200),date:aiDate(t.date||t.fecha),time:aiTime(t.time||t.hora),stage:t.stage||t.etapa||'',star:!!(t.star||t.importante),steps:(t.steps||t.pasos||[]).map(String).filter(Boolean).slice(0,15),notes:String(t.notes||t.notas||''),fields:t.fields&&typeof t.fields==='object'?t.fields:{}});
+  });
+  plan.spaces=plan.spaces.filter(s=>s.isNew||Object.keys(s.meta).length||plan.tasks.some(t=>t.sp===s));
+  return plan;
+}
+function aiApply(plan){
+  let nl=0,first=null;
+  plan.spaces.forEach(sp=>{
+    if(sp.isNew){const T=TPL[sp.kind]||TPL.general;
+      const base=sp.kind==='writer'?{goal:60000,daily:500,strict:true,slots:[]}:sp.kind==='student'?{pass:11,courses:[]}:sp.kind==='course'?{slots:[],strict:false}:{};
+      let name=sp.name,k=2;while(S.lists.some(x=>norm(x.name)===norm(name)))name=sp.name+' '+(k++);
+      sp.l={id:uid(),name,emoji:T.icon,color:LIST_COLORS[(S.lists.length*5)%LIST_COLORS.length],owner:ME,kind:sp.kind,meta:Object.assign(base,sp.meta)};S.lists.push(sp.l);nl++;first=first||sp.l;
+    }else{const m=metaOf(sp.l);Object.entries(sp.meta).forEach(([k,v])=>{if(k==='slots'||k==='courses'){m[k]=(m[k]||[]).concat(v)}else m[k]=v});first=first||sp.l}
+  });
+  plan.tasks.forEach(t=>{
+    const l=t.sp&&t.sp.l,T=l?tplOf(l):null;let stage=null,status='todo';
+    if(T){stage=T.stages.includes(t.stage)?t.stage:T.stages[0];const i=T.stages.indexOf(stage);status=i===0?'todo':i===T.stages.length-1?'done':'doing'}
+    const x=fixTask({text:t.text,list:l?l.id:'',date:t.date,time:t.time,star:t.star,notes:t.notes,stage,status,owner:ME,fields:T?t.fields:{},subtasks:t.steps.map(s=>({id:uid(),text:s,done:false}))});
+    if(status==='done'){x.doneAt=Date.now();x.doneOn=today();x.doneBy=ME;x.progress=100}
+    S.tasks.push(x);
+  });
+  if(first){S.filter=first.id}
+  save();while(MODALS.length)closeModal();renderAll();scrollTo({top:0,behavior:'smooth'});
+  sfx('done');burst(innerWidth/2,innerHeight/3,60,9);
+  toast('¡Listo! '+(nl?nl+' espacio'+(nl>1?'s':'')+' y ':'')+plan.tasks.length+' tarea'+(plan.tasks.length===1?'':'s')+' creadas');
+}
+function aiPreview(plan,back){
+  const box=h('div','mpad');mhead('Tu plan',box);
+  if(plan.summary)box.append(h('p','ai-sum',esc(plan.summary)));
+  if(!plan.spaces.length&&!plan.tasks.length){box.append(h('p','small-note','La respuesta no trae nada para crear. Pídele a la IA que lo vuelva a intentar.'));openModal(box);return}
+  plan.spaces.forEach(sp=>{
+    const T=TPL[sp.kind]||TPL.general,m=sp.meta,c=h('div','card ai-sp');const ts=plan.tasks.filter(t=>t.sp===sp);
+    const lines=[];
+    if(m.career)lines.push(esc(m.career)+(m.cycle?' · '+esc(m.cycle):''));
+    if(m.start||m.end)lines.push((m.start?'Del '+esc(pd(m.start).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})):'')+(m.end?' al '+esc(pd(m.end).toLocaleDateString('es',{day:'numeric',month:'long'})):''));
+    if(m.goal)lines.push('Meta: '+fmtN(m.goal)+' palabras'+(m.daily?' · '+fmtN(m.daily)+' por día':'')+(m.deadline?' · hasta el '+esc(pd(m.deadline).toLocaleDateString('es',{day:'numeric',month:'long'})):''));
+    (m.slots||[]).forEach(s=>lines.push(iconHTML('i:clock')+' '+esc(daysTxt(s.d))+' · '+esc(fmtTime(s.s))+' a '+esc(fmtTime(s.e))+(s.label?' · '+esc(s.label):'')+(s.room?' · '+esc(s.room):'')));
+    (m.courses||[]).forEach(co=>lines.push('<b>'+esc(co.n)+'</b>'+(co.slots.length?' · '+co.slots.map(s=>esc(daysTxt(s.d))+' '+esc(fmtTime(s.s))+'–'+esc(fmtTime(s.e))).join(', '):'')+(co.room?' · '+esc(co.room):'')));
+    if(m.strict)lines.push('<b>Modo exigente</b>');
+    c.innerHTML=`<div class="ai-h"><span class="tpl-ic">${iconHTML(sp.l?sp.l.emoji:T.icon)}</span><div><b>${esc(sp.name)}</b><small>${esc(T.name)} · ${sp.isNew?'nuevo':'ya lo tienes'}</small></div></div>${lines.length?'<div class="ai-l">'+lines.map(x=>'<div>'+x+'</div>').join('')+'</div>':''}`;
+    if(ts.length){const ul=h('div','ai-t');ts.slice(0,12).forEach(t=>ul.append(h('div','',`<span>${esc(t.text)}${t.steps.length?' <small>· '+t.steps.length+' pasos</small>':''}</span><small>${esc([t.date?fmtDate(t.date):'',t.time?fmtTime(t.time):''].filter(Boolean).join(' · '))}</small>`)));if(ts.length>12)ul.append(h('div','',`<small>…y ${ts.length-12} más</small>`));c.append(ul)}
+    box.append(c);
+  });
+  const loose=plan.tasks.filter(t=>!t.sp);
+  if(loose.length){const c=h('div','card ai-sp');c.append(h('div','ai-h',`<span class="tpl-ic">${iconHTML('i:list')}</span><div><b>Tareas sueltas</b><small>Sin espacio</small></div>`));const ul=h('div','ai-t');loose.forEach(t=>ul.append(h('div','',`<span>${esc(t.text)}</span><small>${esc(t.date?fmtDate(t.date):'')}</small>`)));c.append(ul);box.append(c)}
+  box.append(h('p','small-note','¿Quieres cambiar algo? Díselo a la IA en el mismo chat (ej. «mejor las prácticas en la noche») y copia su nueva respuesta: Kivo la detecta sola.'));
+  const f=h('div','foot');const bk=h('button','btn','Volver');bk.onclick=()=>{closeModal();back&&back()};
+  const ok=h('button','btn primary','Crear todo');ok.onclick=()=>aiApply(plan);f.append(bk,h('div','grow'),ok);box.append(f);
+  openModal(box);
+}
+let AIW=null,AIASK='';
+function openAI(){
+  const st={ask:AIASK,step:'ask',last:''};const box=h('div','mpad');
+  const stop=()=>{clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
+  const tryText=t=>{if(!t||t===st.last||t===st.prompt)return false;const o=aiExtract(t);if(!o)return false;st.last=t;const plan=aiNormalize(o);stop();closeModal();aiPreview(plan,()=>openAI());return true};
+  const peek=async()=>{if(!document.hasFocus())return;try{const t=await navigator.clipboard.readText();tryText(t)}catch(e){}};
+  const draw=()=>{box.innerHTML='';
+    mhead('Crear con IA',box);
+    if(st.step==='ask'){
+      box.append(h('p','small-note','Cuéntale a la IA qué necesitas, como se lo dirías a una persona. Con tu Claude (también el gratuito) o ChatGPT, sin pagar nada extra.'));
+      const ta=h('textarea','field ai-ta');ta.rows=5;ta.placeholder='Ej. Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas…';ta.value=st.ask;ta.oninput=()=>{st.ask=AIASK=ta.value};box.append(ta);
+      const fx=h('details','ai-fx');if(!S.aiFixed)fx.open=false;fx.innerHTML='<summary>Tu horario fijo'+(S.aiFixed?': <b>'+esc(S.aiFixed.slice(0,60))+(S.aiFixed.length>60?'…':'')+'</b>':' (para que la IA no te ponga cosas encima)')+'</summary>';
+      const fi=h('textarea','field');fi.rows=2;fi.placeholder='Ej. Dicto clases de lunes a viernes de 7 a 9 am. Live los domingos a las 7 pm. Trabajo en Arquizo de 10 am a 6 pm.';fi.value=S.aiFixed||'';fi.oninput=()=>{S.aiFixed=fi.value;save()};fx.append(fi);box.append(fx);
+      const ex=h('div','ai-ex');AI_EX.forEach(x=>{const b=h('button','',esc(x));b.onclick=()=>{st.ask=AIASK=x;ta.value=x;ta.focus()};ex.append(b)});box.append(ex);
+      const f=h('div','foot ai-go');
+      const go=(url,who)=>{if(st.ask.trim().length<6){ta.focus();toast('Escribe qué necesitas');return}
+        st.prompt=aiPrompt(st.ask);const done=()=>{st.step='wait';st.who=who;draw();window.open(url,'_blank')};
+        try{navigator.clipboard.writeText(st.prompt).then(done,()=>{prompt('Copia este texto:',st.prompt);done()})}catch(e){prompt('Copia este texto:',st.prompt);done()}};
+      const c=h('button','btn primary','Copiar y abrir Claude');c.onclick=()=>go('https://claude.ai/new','Claude');
+      const g=h('button','btn','Copiar y abrir ChatGPT');g.onclick=()=>go('https://chatgpt.com/','ChatGPT');
+      const pz=h('button','btn ghost','Ya tengo la respuesta');pz.onclick=()=>{st.step='wait';draw()};
+      f.append(c,g,pz);box.append(f);setTimeout(()=>ta.focus(),30);
+    }else{
+      box.append(h('ol','ai-steps',`<li><b>Pega</b> en ${esc(st.who||'Claude o ChatGPT')} (Ctrl + V) y envíalo.</li><li>Cuando responda, toca <b>Copiar</b> en el bloque de código.</li><li>Vuelve aquí: <b>Kivo lo detecta solo</b> y te muestra el plan.</li>`));
+      box.append(h('div','ai-wait','<span class="dot"></span> Esperando la respuesta…'));
+      const ta=h('textarea','field');ta.rows=3;ta.placeholder='¿No lo detecta? Pega aquí la respuesta (Ctrl + V)';
+      ta.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t){e.preventDefault();if(!tryText(t)){ta.value=t;toast('No encontré el plan en ese texto. Copia el bloque de código completo.')}}});
+      ta.oninput=()=>{if(ta.value.length>20)tryText(ta.value)};box.append(ta);
+      const f=h('div','foot');const bk=h('button','btn','Volver');bk.onclick=()=>{st.step='ask';draw()};const re=h('button','btn ghost','Copiar el pedido otra vez');
+      re.onclick=()=>{st.prompt=st.prompt||aiPrompt(st.ask);try{navigator.clipboard.writeText(st.prompt).then(()=>toast('Copiado. Pégalo en la IA'))}catch(e){prompt('Copia este texto:',st.prompt)}};
+      f.append(bk,h('div','grow'),re);box.append(f);
+      st.onf=()=>setTimeout(peek,250);window.addEventListener('focus',st.onf);clearInterval(st.iv);st.iv=setInterval(peek,1500);
+    }
+  };
+  draw();openModal(box,{onClose:stop});AIW=st;
+}
+// si pegas una respuesta de la IA en la caja principal, también la detecta
+document.addEventListener('paste',e=>{
+  if(MODALS.length)return;const t=e.clipboardData&&e.clipboardData.getData('text');if(!t||t.length<30)return;const o=aiExtract(t);if(!o)return;
+  e.preventDefault();aiPreview(aiNormalize(o));
+});
+
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'kivo',v:4,data:{tasks:S.tasks,lists:S.lists,contacts:S.contacts}})],{type:'application/json'}));
@@ -2832,6 +3042,7 @@ $('#go').onclick=addTask;
 $('#emoBtn').onclick=()=>emojiPicker(e=>{D.emoji=e;renderAdd();$('#txt').focus()},true);
 $('#gear').onclick=()=>openSettings();
 $('#searchBtn').onclick=openSearch;
+$('#aiBtn').onclick=openAI;
 $('#statsBtn').onclick=()=>{statsOff=0;openStats()};
 $('#mic').onclick=toggleMic;
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;save();renderList()});
