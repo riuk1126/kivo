@@ -251,4 +251,10 @@ create policy "adjuntos subir" on storage.objects for insert to authenticated
 create policy "adjuntos borrar" on storage.objects for delete to authenticated
   using (bucket_id = 'adjuntos' and public.can_access_task(((storage.foldername(name))[1])::uuid));
 
+-- Espacios por tipo de trabajo (1.0.5) y Escritor / Estudiante / Curso (1.0.6)
+alter table public.lists add column if not exists kind text default 'general';
+alter table public.lists add column if not exists meta jsonb default '{}'::jsonb;
+alter table public.tasks add column if not exists stage text;
+alter table public.tasks add column if not exists fields jsonb default '{}'::jsonb;
+
 -- ¡Listo! 🎉

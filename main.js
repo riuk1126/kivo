@@ -117,6 +117,20 @@ ipcMain.on('kivo:attention', (e, n) => {
   if (process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
 });
 ipcMain.handle('kivo:version', () => app.getVersion());
+// Modo exigente: poner Kivo delante de todo hasta que respondas
+ipcMain.on('kivo:force', (e, on) => {
+  if (!win || win.isDestroyed()) return;
+  if (on) {
+    showWin();
+    win.setAlwaysOnTop(true, 'screen-saver');
+    win.moveTop();
+    if (process.platform === 'darwin') { app.focus({ steal: true }); if (app.dock) app.dock.bounce('critical'); }
+    else win.flashFrame(true);
+  } else {
+    win.setAlwaysOnTop(false);
+    win.flashFrame(false);
+  }
+});
 
 // ---- actualizaciones automáticas (desde GitHub) ----
 let updater = null;
