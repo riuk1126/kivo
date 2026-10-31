@@ -1,0 +1,31 @@
+# Construye los instaladores de Kivo (Windows, Mac y Linux) y los publica.
+# Se ejecuta solo al crear una versión nueva (etiqueta v1.0.0, v1.0.1…)
+# o a mano desde la pestaña "Actions" → "Construir instaladores" → "Run workflow".
+name: Construir instaladores
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: node scripts/vendor.js
+      - run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'

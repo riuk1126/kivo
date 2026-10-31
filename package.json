@@ -1,0 +1,102 @@
+{
+  "name": "kivo",
+  "productName": "Kivo",
+  "version": "1.0.0",
+  "description": "Tus tareas y las de tu equipo, siempre al día.",
+  "main": "main.js",
+  "author": {
+    "name": "Arquizo",
+    "email": "hola@arquizo.com"
+  },
+  "homepage": "https://arquizo.com/kivo/",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "node scripts/vendor.js && electron-builder --publish never",
+    "release": "electron-builder --publish always",
+    "vendor": "node scripts/vendor.js"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9",
+    "@supabase/supabase-js": "2.45.4"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.arquizo.kivo",
+    "productName": "Kivo",
+    "copyright": "© Arquizo",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "build/icon.png",
+      "build/tray.png",
+      "build/trayTemplate.png",
+      "build/trayTemplate@2x.png"
+    ],
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kivo",
+      "installerLanguages": [
+        "es_ES"
+      ],
+      "language": "3082",
+      "artifactName": "Kivo-Setup.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.productivity",
+      "artifactName": "Kivo.${ext}"
+    },
+    "dmg": {
+      "title": "Kivo",
+      "artifactName": "Kivo.${ext}"
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "icon": "build/icons",
+      "category": "Office",
+      "synopsis": "Tareas para ti y tu equipo",
+      "maintainer": "Arquizo <hola@arquizo.com>",
+      "artifactName": "Kivo-linux.${ext}"
+    }
+  }
+}
