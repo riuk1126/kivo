@@ -852,7 +852,10 @@ select.fin{cursor:pointer}
 .pr-op{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
 .pr-op input{width:17px;height:17px;accent-color:var(--accent)}
 .pr-prev{background:var(--fill);border-radius:12px;padding:12px;overflow:hidden;height:360px;position:relative}
-.pr-scale{transform:scale(.6);transform-origin:top left;width:166.6%}
+.pr-scale{transform:scale(.85);transform-origin:top left}
+.pr-measure{position:absolute;left:-99999px;top:0;visibility:hidden}
+.pr-measure .pg,.pr-scale .pg,#printArea .pg{width:281mm;box-sizing:border-box}
+.pr-prev{overflow:auto!important}
 .pr-scale .pg{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:4px}
 #printArea{display:none}
 .pg{color:#111;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;padding:14px 16px;font-size:11px;line-height:1.3}
@@ -891,6 +894,27 @@ select.fin{cursor:pointer}
 .pg .li.more{color:#888;padding-left:15px}
 .pg .notes .lines{gap:16px}
 .pg footer{margin-top:6px;text-align:right;color:#999;font-size:8.5px}
+.pg .tgrid{display:grid;grid-template-columns:38px repeat(7,1fr);border:1px solid #bbb;border-radius:6px;overflow:hidden}
+.pg .gh{display:flex;align-items:baseline;justify-content:space-between;padding:4px 5px;border-bottom:1px solid #bbb;border-left:1px solid #ddd}
+.pg .gh b{font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.pg .gh span{font-size:14px;font-weight:700}
+.pg .gh.tod,.pg .gc.tod{background-color:#f6f6f6}
+.pg .hcol{border-left:0!important}
+.pg .gu{border-left:1px solid #ddd;border-bottom:1px solid #bbb;padding:3px 4px;min-height:18px;font-size:8.5px}
+.pg .gu.hcol{font-size:8px;color:#666;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px}
+.pg .gu .li{font-size:8.5px;padding:1px 0}
+.pg .gu .li .bx{width:8px;height:8px}
+.pg .hours{position:relative}
+.pg .hours span{position:absolute;right:4px;font-size:8.5px;color:#555;transform:translateY(-1px);font-weight:600}
+.pg .gc{position:relative;border-left:1px solid #ddd;background-image:linear-gradient(to bottom,#d4d4d8 1px,transparent 1px);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg .gb{position:absolute;border-radius:3px;padding:1px 3px;overflow:hidden;display:flex;gap:3px;font-size:8.5px;line-height:1.15;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg .gb b{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg .gb small{display:block;color:#555;font-size:7.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pg .gb>div{min-width:0}
+.pg .gb.slot{background:color-mix(in srgb,var(--c) 16%,#fff);border-left:3px solid var(--c)}
+.pg .gb.task{background:#fff;border:1px solid #999;border-left:3px solid var(--c)}
+.pg .gb.task .bx{width:8px;height:8px;margin-top:1px}
+.pg .gb.done b{text-decoration:line-through;color:#888}
 @page{size:A4 landscape;margin:8mm}
 @media print{
   body.printing>*:not(#printArea){display:none!important}
@@ -3426,6 +3450,30 @@ function weekData(off,opt){
   const nodate=opt.nodate?tasks.filter(x=>x.status!=='done'&&!x.date).sort(sortT):[];
   return {ws,days,late,nodate};
 }
+
+function gridWeek(W,opt){
+  let mn=24*60,mx=0;
+  W.days.forEach(d=>d.items.forEach(it=>{if(!it.t)return;const a=toMin(it.t),b=it.e?Math.max(toMin(it.e),a+30):a+60;mn=Math.min(mn,a);mx=Math.max(mx,b)}));
+  if(mx===0){mn=8*60;mx=18*60}
+  mn=Math.max(0,Math.min(Math.floor(mn/60)*60,7*60));mx=Math.min(24*60,Math.max(Math.ceil(mx/60)*60,20*60));
+  const extra=(W.late.length?1:0)+(W.nodate.length?1:0)+(opt.notes?1:0);
+  const PH=opt.ph||Math.max(15,Math.min(30,Math.floor((560-extra*62)/((mx-mn)/60))));
+  const H=(mx-mn)/60*PH,hl=m=>{const h=Math.floor(m/60)%24;return (h%12||12)+(h<12?' am':' pm')};
+  let hours='';for(let m=mn;m<mx;m+=60)hours+=`<span style="top:${(m-mn)/60*PH}px">${hl(m)}</span>`;
+  const head=W.days.map(d=>`<div class="gh${d.today?' tod':''}"><b>${DAYS[d.dow]}</b><span>${pd(d.ds).getDate()}</span></div>`).join('');
+  const untimed=W.days.map(d=>{const u=d.items.filter(it=>!it.t);return `<div class="gu">${u.map(it=>`<div class="li${it.done?' done':''}"><i class="bx"></i><span>${it.star?'★ ':''}${esc(it.txt)}</span></div>`).join('')}</div>`}).join('');
+  const anyU=W.days.some(d=>d.items.some(it=>!it.t));
+  const cols=W.days.map(d=>{
+    const ev=d.items.filter(it=>it.t).map(it=>{const a=toMin(it.t);return Object.assign({},it,{a,b:it.e?Math.max(toMin(it.e),a+30):a+60})}).sort((x,y)=>x.a-y.a||y.b-x.b);
+    // carriles para lo que se cruza
+    let cl=[],end=-1;const groups=[];ev.forEach(x=>{if(x.a>=end&&cl.length){groups.push(cl);cl=[]}cl.push(x);end=Math.max(end,x.b)});if(cl.length)groups.push(cl);
+    groups.forEach(g=>{const lanes=[];g.forEach(x=>{let i=lanes.findIndex(e=>e<=x.a);if(i<0){i=lanes.length;lanes.push(0)}lanes[i]=x.b;x.lane=i});g.forEach(x=>x.n=lanes.length)});
+    const blocks=ev.map(x=>{const top=(Math.max(x.a,mn)-mn)/60*PH,ht=Math.max(20,(Math.min(x.b,mx)-Math.max(x.a,mn))/60*PH-2),w=100/x.n;
+      const tm=fmtTime(x.t).replace(/\s?([ap])\.?\s?m\.?/i,'$1')+(x.e?'–'+fmtTime(x.e).replace(/\s?([ap])\.?\s?m\.?/i,'$1'):'');
+      return `<div class="gb ${x.k}${x.done?' done':''}" style="top:${top}px;height:${ht}px;left:calc(${x.lane*w}% + 1px);width:calc(${w}% - 2px);--c:${esc(x.c)}">${x.k==='task'?'<i class="bx"></i>':''}<div><b>${x.star?'★ ':''}${esc(x.txt)}</b><small>${esc(tm)}${x.sub?' · '+esc(x.sub):''}</small></div></div>`}).join('');
+    return `<div class="gc${d.today?' tod':''}" style="height:${H}px;background-size:100% ${PH}px">${blocks}</div>`}).join('');
+  return `<div class="tgrid"><div class="gh hcol"></div>${head}${anyU?`<div class="gu hcol">Sin hora</div>${untimed}`:''}<div class="hcol hours" style="height:${H}px">${hours}</div>${cols}</div>`;
+}
 function printHTML(off,opt){
   const W=weekData(off,opt),f=d=>pd(d).toLocaleDateString('es',{day:'numeric',month:'long'});
   const L=listOf(opt.list);
@@ -3436,20 +3484,28 @@ function printHTML(off,opt){
   const listBox=(title,a)=>{if(!a.length)return '';const g={};a.forEach(x=>{const n=(listOf(x.list)||{}).name||'Sin lista';(g[n]=g[n]||[]).push(x)});
     return `<div class="box"><h3>${esc(title)} · ${a.length}</h3><div class="cols">${Object.entries(g).map(([n,xs])=>`<div class="grp"><h4>${esc(n)}</h4>${xs.slice(0,14).map(x=>`<div class="li"><i class="bx"></i><span>${x.star?'★ ':''}${esc(x.text)}${x.date?` <small>(${esc(fmtDate(x.date))})</small>`:''}</span></div>`).join('')}${xs.length>14?`<div class="li more">…y ${xs.length-14} más</div>`:''}</div>`).join('')}</div></div>`};
   const foot=`<footer>Hecho con Kivo · ${esc(new Date().toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'}))}</footer>`;
-  return `<div class="pg">${head}<div class="week">${cols}</div>${listBox('Atrasadas',W.late)}${listBox('Pendientes sin fecha',W.nodate)}${opt.notes?'<div class="box notes"><h3>Notas</h3><div class="lines"><i></i><i></i><i></i></div></div>':''}${foot}</div>`;
+  return `<div class="pg">${head}${opt.mode==='list'?`<div class="week">${cols}</div>`:gridWeek(W,opt)}${listBox('Atrasadas',W.late)}${listBox('Pendientes sin fecha',W.nodate)}${opt.notes?'<div class="box notes"><h3>Notas</h3><div class="lines"><i></i><i></i><i></i></div></div>':''}${foot}</div>`;
+}
+// Ajusta el alto de las filas para que todo entre en una sola hoja A4 horizontal
+function fitPrint(off,opt){
+  if(opt.mode==='list')return printHTML(off,opt);
+  const m=h('div','pr-measure');document.body.append(m);const lim=194*96/25.4;let html='';
+  for(let ph=30;ph>=14;ph-=1){html=printHTML(off,Object.assign({},opt,{ph}));m.innerHTML=html;if(m.firstChild.offsetHeight<=lim)break}
+  m.remove();return html;
 }
 function openPrint(){
-  const st=Object.assign({list:'',late:true,nodate:true,done:false,lines:true,notes:true},S.printOpt||{},{off:[0,6].includes(new Date().getDay())?1:0});
+  const st=Object.assign({mode:'grid',list:'',late:true,nodate:true,done:false,lines:false,notes:true},S.printOpt||{},{off:[0,6].includes(new Date().getDay())?1:0});
   const box=h('div','mpad');mhead('Imprimir mi semana',box);
   box.append(h('p','small-note','Un PDF de lunes a domingo con tu horario, tus tareas y lo pendiente, para imprimir y pegar donde lo veas.'));
   const seg=h('div','seg');[['Esta semana',0],['Próxima semana',1]].forEach(([n,v])=>{const b=h('button',st.off===v?'on':'',n);b.onclick=()=>{st.off=v;seg.querySelectorAll('button').forEach(z=>z.classList.toggle('on',z===b));draw()};seg.append(b)});box.append(seg);
+  const sg2=h('div','seg');sg2.style.marginTop='10px';[['Horario por horas','grid'],['Lista por día','list']].forEach(([n,v])=>{const b=h('button',(st.mode||'grid')===v?'on':'',n);b.onclick=()=>{st.mode=v;sg2.querySelectorAll('button').forEach(z=>z.classList.toggle('on',z===b));draw()};sg2.append(b)});box.append(sg2);
   const sel=h('select','field');sel.style.marginTop='10px';sel.append(new Option('Todo lo mío',''));S.lists.forEach(l=>sel.append(new Option(l.name,l.id)));sel.value=st.list;sel.onchange=()=>{st.list=sel.value;draw()};box.append(sel);
   const ops=h('div','pr-ops');[['late','Incluir atrasadas'],['nodate','Incluir pendientes sin fecha'],['done','Mostrar lo ya hecho (tachado)'],['lines','Renglones para escribir a mano'],['notes','Recuadro de notas']].forEach(([k,n])=>{const r=h('label','pr-op');const c=h('input');c.type='checkbox';c.checked=!!st[k];c.onchange=()=>{st[k]=c.checked;draw()};r.append(c,h('span','',n));ops.append(r)});box.append(ops);
   const pv=h('div','pr-prev');box.append(pv);
-  const draw=()=>{pv.innerHTML='<div class="pr-scale">'+printHTML(st.off,st)+'</div>'};draw();
+  const draw=()=>{pv.innerHTML='<div class="pr-scale">'+fitPrint(st.off,st)+'</div>'};draw();
   const f=h('div','foot');f.append(h('div','grow'));
   const go=h('button','btn primary',window.kivo&&kivo.savePDF?'Guardar PDF':'Imprimir / guardar PDF');
-  go.onclick=async()=>{S.printOpt=st;save();const area=$('#printArea');area.innerHTML=printHTML(st.off,st);document.body.classList.add('printing');
+  go.onclick=async()=>{S.printOpt=st;save();const area=$('#printArea');area.innerHTML=fitPrint(st.off,st);document.body.classList.add('printing');
     const name='Kivo-semana-'+weekStart(st.off)+'.pdf';
     try{if(window.kivo&&kivo.savePDF){const r=await kivo.savePDF(name);if(r&&r.ok)toast('PDF guardado. Ya puedes imprimirlo');else if(r&&r.error)toast('No pude guardar el PDF: '+r.error)}else window.print()}
     finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML=''},300)}};
