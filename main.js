@@ -61,7 +61,10 @@ function createWin() {
       }).show();
     }
   });
-  win.on('focus', () => { win.flashFrame(false); if (app.setBadgeCount) app.setBadgeCount(0); });
+  win.on('focus', () => {
+    win.flashFrame(false); if (app.setBadgeCount) app.setBadgeCount(0);
+    if (updater && Date.now() - lastCheck > 30 * 60 * 1000) checkUpdates(false);
+  });
 
   // Enlaces externos (WhatsApp, archivos, correos) se abren en el navegador
   win.webContents.setWindowOpenHandler(({ url }) => { openExternal(url); return { action: 'deny' }; });
@@ -86,6 +89,8 @@ function createTray() {
   tray = new Tray(img.isEmpty() ? nativeImage.createFromPath(ICON).resize({ width: 16, height: 16 }) : img);
   tray.setToolTip('Kivo');
   const build = () => Menu.buildFromTemplate([
+    { label: 'Kivo ' + app.getVersion() + (upd.state === 'ready' ? ' · actualización lista' : ''), enabled: false },
+    ...(upd.state === 'ready' ? [{ label: '🔄 Reiniciar y actualizar', click: () => { quitting = true; updater.quitAndInstall(false, true); } }] : []),
     { label: 'Abrir Kivo', click: showWin },
     { type: 'separator' },
     {
@@ -115,22 +120,44 @@ ipcMain.handle('kivo:version', () => app.getVersion());
 
 // ---- actualizaciones automáticas (desde GitHub) ----
 let updater = null;
+let upd = { state: 'idle', version: null, percent: 0 };
+let lastCheck = 0;
+function sendUpd(patch) {
+  upd = Object.assign({}, upd, patch);
+  if (win && !win.isDestroyed()) win.webContents.send('kivo:update', upd);
+}
 function setupUpdates() {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged) { upd.state = 'dev'; return; }
   try {
     updater = require('electron-updater').autoUpdater;
     updater.autoDownload = true;
     updater.autoInstallOnAppQuit = true;
+    updater.on('checking-for-update', () => sendUpd({ state: 'checking' }));
+    updater.on('update-available', (i) => sendUpd({ state: 'downloading', version: i.version, percent: 0 }));
+    updater.on('update-not-available', () => sendUpd({ state: 'latest' }));
+    updater.on('download-progress', (p) => sendUpd({ state: 'downloading', percent: Math.round(p.percent || 0) }));
     updater.on('update-downloaded', (info) => {
+      sendUpd({ state: 'ready', version: info.version, percent: 100 });
       if (Notification.isSupported()) {
-        new Notification({ title: 'Kivo se actualizó ✨', body: 'La versión ' + info.version + ' se instalará la próxima vez que abras Kivo.', icon: ICON }).show();
+        const n = new Notification({ title: 'Kivo ' + info.version + ' está lista ✨', body: 'Abre Kivo y toca «Reiniciar y actualizar».', icon: ICON });
+        n.on('click', showWin); n.show();
       }
     });
+    updater.on('error', (e) => sendUpd({ state: 'error', error: String((e && e.message) || e).slice(0, 200) }));
     checkUpdates(false);
-    setInterval(() => checkUpdates(false), 6 * 60 * 60 * 1000);
-  } catch (e) { updater = null; }
+    setInterval(() => checkUpdates(false), 60 * 60 * 1000);
+  } catch (e) { updater = null; upd.state = 'error'; }
 }
+ipcMain.handle('kivo:update-state', () => upd);
+ipcMain.handle('kivo:check-update', () => { checkUpdates(false); return upd; });
+ipcMain.on('kivo:install-update', () => {
+  if (!updater || upd.state !== 'ready') return;
+  quitting = true;
+  setImmediate(() => updater.quitAndInstall(false, true));
+});
 function checkUpdates(manual) {
+  if (upd.state === 'downloading' || upd.state === 'ready') return;
+  lastCheck = Date.now();
   if (!updater) {
     if (manual && Notification.isSupported()) new Notification({ title: 'Kivo', body: 'Las actualizaciones funcionan en la versión instalada.', icon: ICON }).show();
     return;

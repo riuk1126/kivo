@@ -6,5 +6,9 @@ contextBridge.exposeInMainWorld('kivo', {
   platform: process.platform,
   show: () => ipcRenderer.send('kivo:show'),
   attention: (n) => ipcRenderer.send('kivo:attention', n),
-  version: () => ipcRenderer.invoke('kivo:version')
+  version: () => ipcRenderer.invoke('kivo:version'),
+  updateState: () => ipcRenderer.invoke('kivo:update-state'),
+  checkUpdate: () => ipcRenderer.invoke('kivo:check-update'),
+  installUpdate: () => ipcRenderer.send('kivo:install-update'),
+  onUpdate: (cb) => ipcRenderer.on('kivo:update', (e, s) => cb(s))
 });

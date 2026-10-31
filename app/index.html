@@ -572,6 +572,33 @@ function pickList(cur,cb){
   openModal(box,{cls:'small'});
 }
 
+/* ---------- versión y actualizaciones (programa de escritorio) ---------- */
+let UPD={state:'idle'},KVER='';
+function updText(u){
+  switch(u.state){
+    case 'checking':return 'Buscando actualizaciones…';
+    case 'downloading':return 'Descargando la versión '+(u.version||'nueva')+'… '+(u.percent||0)+'%';
+    case 'ready':return '¡La versión '+u.version+' está lista para instalarse!';
+    case 'latest':return 'Tienes la última versión ✓';
+    case 'error':return 'No se pudo buscar actualizaciones. Revisa tu internet.';
+    case 'dev':return 'Versión de prueba';
+    default:return 'Kivo se actualiza solo.';
+  }
+}
+function renderVersionBox(el){
+  const vb=el||$('#set-version');if(!vb)return;vb.innerHTML='';
+  const img=h('img');img.src='icons/kivo.svg';img.style.cssText='width:44px;height:44px;flex:none';
+  const t=h('div','',`<b>Kivo ${esc(KVER)}</b><small>${esc(updText(UPD))}</small>`);
+  vb.append(img,t);
+  if(UPD.state==='ready'){const b=h('button','btn primary','🔄 Reiniciar y actualizar');b.onclick=()=>kivo.installUpdate();vb.append(b)}
+  else if(UPD.state!=='downloading'&&UPD.state!=='checking'&&UPD.state!=='dev'){const b=h('button','btn','Buscar actualizaciones');b.onclick=()=>{UPD={state:'checking'};renderVersionBox();kivo.checkUpdate()};vb.append(b)}
+}
+function onUpdState(u){
+  const prev=UPD.state;UPD=u||{state:'idle'};renderVersionBox();renderBanner();
+  if(UPD.state==='ready'&&prev!=='ready')toast('✨ Kivo '+UPD.version+' está lista','Reiniciar y actualizar',()=>kivo.installUpdate());
+}
+if(window.kivo&&kivo.onUpdate){kivo.onUpdate(onUpdState);kivo.version().then(v=>{KVER=v;renderVersionBox()});kivo.updateState().then(onUpdState)}
+
 /* ---------- crear / editar listas ---------- */
 const LIST_COLORS=['#e8590c','#db2777','#be123c','#7c3aed','#4338ca','#2563eb','#0891b2','#0f766e','#16a34a','#ca8a04','#b45309','#475569'];
 function deleteListUI(l,after){
@@ -869,6 +896,7 @@ function askNotif(after){
 }
 function renderBanner(){
   const b=$('#banner');b.innerHTML='';
+  if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary','Reiniciar y actualizar');y.onclick=()=>kivo.installUpdate();d.append(y);b.append(d)}
   if(DEFERRED&&!S.installOff){const d=h('div','banner','<span style="font-size:22px">📲</span><b>Instala Kivo en este equipo para abrirla como un programa.</b>');const y=h('button','btn primary','Instalar');y.onclick=installApp;const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.installOff=true;save();renderBanner()};d.append(y,n);b.append(d)}
   if(!S.alerts||S.bannerOff||notifState()!=='default')return;
   const d=h('div','banner','<span style="font-size:22px">🔔</span><b>¿Quieres que te avise de tus pendientes aunque estés en otra ventana?</b>');
@@ -1032,6 +1060,10 @@ function openSettings(jump){
     const add=h('button','btn','＋ Nueva lista');add.onclick=()=>{S.lists.push({id:uid(),name:'Nueva lista',emoji:'📁',color:ACCENTS[S.lists.length%ACCENTS.length][0],owner:ME});save();draw();renderList();const ins=box.querySelectorAll('#set-listas input[type=text]');const last=ins[ins.length-1];last.focus();last.select()};
     ls.append(add);box.append(ls);
     // copias
+    if(window.kivo&&kivo.updateState){
+      box.append(h('div','lbl','✨ Versión de Kivo'));
+      const vb=h('div','acct');vb.id='set-version';box.append(vb);renderVersionBox(vb);
+    }
     box.append(h('div','lbl','💾 Copia de seguridad'));
     const cr=h('div','trow');
     const ex=h('button','btn','⬇ Guardar copia');ex.onclick=exportAll;
