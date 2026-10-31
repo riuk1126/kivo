@@ -829,6 +829,19 @@ select.fin{cursor:pointer}
 .ai-t>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:.5px solid var(--line);font-size:13.5px}
 .ai-t>div:last-child{border-bottom:0}
 .ai-t small{color:var(--muted);white-space:nowrap}
+.cl-steps{margin:6px 0 12px;padding-left:22px;display:flex;flex-direction:column;gap:14px}
+.cl-steps li{font-size:14.5px;line-height:1.4}
+.cl-steps li>b{display:block}
+.cl-steps li>small{display:block;color:var(--muted);font-size:13px;margin:2px 0 8px}
+.cl-steps code{background:var(--fill);padding:1px 6px;border-radius:5px;font-size:12.5px}
+.cl-url{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cl-url code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 10px!important}
+.cl-state{font-size:14px;line-height:1.45;border-radius:12px;margin-bottom:6px}
+.cl-state:not(:empty){padding:12px 14px;background:var(--fill)}
+.cl-state.ok{background:color-mix(in srgb,var(--ok) 14%,var(--card))}
+.cl-state.bad{background:color-mix(in srgb,var(--late) 12%,var(--card))}
+.cl-state .btn{margin-top:8px;display:flex}
+.ai-go .btn .ico{width:18px;height:18px;vertical-align:-3px}
 .tpl-ai{grid-column:1/-1;display:flex;align-items:center;gap:12px;background:var(--accent);color:var(--on-accent);border-radius:14px;padding:13px 16px;text-align:left}
 .tpl-ai b{font-size:15px;font-weight:650;display:block}
 .tpl-ai small{font-size:12.5px;opacity:.75}
@@ -848,7 +861,7 @@ select.fin{cursor:pointer}
       <svg class="ring" viewBox="0 0 58 58"><circle class="bgc" cx="29" cy="29" r="24"/><circle class="fg" id="ringFg" cx="29" cy="29" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8" transform="rotate(-90 29 29)"/><text x="29" y="33.5" text-anchor="middle" id="ringTxt">0/0</text></svg>
       <div class="streak" id="streak"></div>
     </div>
-    <div class="hbtns"><button class="iconb" id="aiBtn" title="Crear con IA (Claude o ChatGPT)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
+    <div class="hbtns"><button class="iconb" id="aiBtn" title="Pídeselo a Claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
   </header>
 
   <div class="add">
@@ -876,6 +889,474 @@ select.fin{cursor:pointer}
 </div>
 <datalist id="contactsDL"></datalist>
 <input type="file" id="file" accept=".json,application/json" hidden>
+<script type="text/plain" id="sql4">-- ============================================================
+--  KIVO · Conectar con Claude
+--  Permite que Claude (con tu clave de Kivo) vea y cree cosas en tu Kivo.
+--  Supabase → SQL Editor → pega todo → Run. Se puede correr varias veces.
+-- ============================================================
+
+-- Claves para conectar Kivo con Claude (se guarda solo su huella, nunca la clave)
+create table if not exists public.api_tokens (
+  token_hash text primary key,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  label      text default 'Claude',
+  created_at timestamptz default now(),
+  last_used  timestamptz
+);
+alter table public.api_tokens enable row level security;
+drop policy if exists "claves ver"    on public.api_tokens;
+drop policy if exists "claves crear"  on public.api_tokens;
+drop policy if exists "claves borrar" on public.api_tokens;
+create policy "claves ver"    on public.api_tokens for select to authenticated using (user_id = auth.uid());
+create policy "claves crear"  on public.api_tokens for insert to authenticated with check (user_id = auth.uid());
+create policy "claves borrar" on public.api_tokens for delete to authenticated using (user_id = auth.uid());
+grant select, insert, delete on public.api_tokens to authenticated;
+
+-- Por si aún no corriste las actualizaciones anteriores
+alter table public.lists add column if not exists kind text default 'general';
+alter table public.lists add column if not exists meta jsonb default '{}'::jsonb;
+alter table public.tasks add column if not exists stage text;
+alter table public.tasks add column if not exists fields jsonb default '{}'::jsonb;
+
+-- ¿De quién es esta clave?
+create or replace function public.kivo_api_user(p_key text) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v uuid; h text := encode(sha256(convert_to(coalesce(p_key, ''), 'UTF8')), 'hex');
+begin
+  select user_id into v from public.api_tokens where token_hash = h;
+  if v is null then raise exception 'KIVO_CLAVE: la clave de Kivo no es válida o fue borrada'; end if;
+  update public.api_tokens set last_used = now() where token_hash = h;
+  return v;
+end $$;
+
+-- Espacios a los que el usuario tiene acceso
+create or replace function public.kivo_api_lists(u uuid) returns setof uuid
+language sql security definer stable set search_path = public as $$
+  select list_id from public.list_members where user_id = u
+  union select id from public.lists where owner = u;
+$$;
+
+-- Ver espacios y pendientes
+create or replace function public.kivo_api_ver(p_key text, p_hechas boolean default false) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare u uuid := public.kivo_api_user(p_key);
+begin
+  return jsonb_build_object(
+    'usuario', (select name from public.profiles where id = u),
+    'espacios', (select coalesce(jsonb_agg(jsonb_build_object(
+        'id', l.id, 'nombre', l.name, 'tipo', coalesce(l.kind, 'general'),
+        'datos', coalesce(l.meta, '{}'::jsonb) - 'log' - 'cards',
+        'compartido', (select count(*) > 1 from public.list_members m where m.list_id = l.id)
+      ) order by l.created_at), '[]'::jsonb)
+      from public.lists l where l.id in (select public.kivo_api_lists(u))),
+    'tareas', (select coalesce(jsonb_agg(x order by x->>'fecha' nulls last, x->>'hora' nulls last), '[]'::jsonb) from (
+      select jsonb_strip_nulls(jsonb_build_object(
+        'id', t.id, 'texto', t.text, 'espacio_id', t.list_id, 'fecha', t.date, 'hora', nullif(t.time, ''),
+        'etapa', t.stage, 'estado', t.status, 'importante', nullif(t.star, false),
+        'pasos', nullif(jsonb_array_length(coalesce(t.subtasks, '[]'::jsonb)), 0),
+        'campos', nullif(coalesce(t.fields, '{}'::jsonb), '{}'::jsonb))) x
+      from public.tasks t
+      where (t.list_id in (select public.kivo_api_lists(u)) or (t.list_id is null and t.owner = u))
+        and (p_hechas or t.status <> 'done')
+      order by t.date nulls last limit 400) s)
+  );
+end $$;
+
+-- Crear un espacio
+create or replace function public.kivo_api_crear_espacio(p_key text, p_nombre text, p_tipo text, p_icono text, p_color text, p_datos jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public.kivo_api_user(p_key); v uuid := gen_random_uuid();
+begin
+  insert into public.lists (id, name, emoji, color, owner, kind, meta)
+  values (v, left(coalesce(nullif(trim(p_nombre), ''), 'Nuevo espacio'), 40), coalesce(p_icono, 'i:folder'),
+          coalesce(p_color, '#2563eb'), u, coalesce(p_tipo, 'general'), coalesce(p_datos, '{}'::jsonb));
+  return jsonb_build_object('id', v, 'nombre', left(coalesce(nullif(trim(p_nombre), ''), 'Nuevo espacio'), 40));
+end $$;
+
+-- Cambiar un espacio (nombre o datos: horario, cursos, metas…)
+create or replace function public.kivo_api_actualizar_espacio(p_key text, p_id uuid, p_nombre text, p_datos jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public.kivo_api_user(p_key);
+begin
+  if p_id not in (select public.kivo_api_lists(u)) then raise exception 'KIVO_ACCESO: ese espacio no existe o no es tuyo'; end if;
+  update public.lists set
+    name = coalesce(left(nullif(trim(p_nombre), ''), 40), name),
+    meta = coalesce(meta, '{}'::jsonb) || coalesce(p_datos, '{}'::jsonb)
+  where id = p_id;
+  return jsonb_build_object('id', p_id, 'ok', true);
+end $$;
+
+-- Agregar tareas (una o varias)
+create or replace function public.kivo_api_agregar_tareas(p_key text, p_tareas jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public.kivo_api_user(p_key); t jsonb; l uuid; v uuid; out jsonb := '[]'::jsonb; n int := 0;
+begin
+  for t in select * from jsonb_array_elements(coalesce(p_tareas, '[]'::jsonb)) loop
+    l := null;
+    if coalesce(t->>'espacio_id', '') <> '' then l := (t->>'espacio_id')::uuid;
+    elsif coalesce(t->>'espacio', '') <> '' then
+      select id into l from public.lists where id in (select public.kivo_api_lists(u)) and lower(name) = lower(trim(t->>'espacio')) limit 1;
+    end if;
+    if l is not null and l not in (select public.kivo_api_lists(u)) then raise exception 'KIVO_ACCESO: espacio % no es tuyo', l; end if;
+    v := gen_random_uuid(); n := n + 1;
+    insert into public.tasks (id, list_id, owner, text, date, time, star, status, progress, stage, subtasks, notes, fields,
+                              done_at, done_on, done_by, at, ord, updated_by, updated_dev)
+    values (v, l, u, left(coalesce(t->>'texto', ''), 300), nullif(t->>'fecha', '')::date, nullif(t->>'hora', ''),
+            coalesce((t->>'importante')::boolean, false), coalesce(t->>'estado', 'todo'),
+            case when t->>'estado' = 'done' then 100 else 0 end, nullif(t->>'etapa', ''),
+            coalesce(t->'pasos', '[]'::jsonb), coalesce(t->>'notas', ''), coalesce(t->'campos', '{}'::jsonb),
+            case when t->>'estado' = 'done' then (extract(epoch from now()) * 1000)::bigint end,
+            case when t->>'estado' = 'done' then current_date end, case when t->>'estado' = 'done' then u end,
+            (extract(epoch from now()) * 1000)::bigint + n, null, u, 'claude');
+    out := out || jsonb_build_object('id', v, 'texto', t->>'texto', 'espacio_id', l);
+  end loop;
+  return out;
+end $$;
+
+-- Cambiar una tarea (mover de día, marcar hecha, cambiar etapa…)
+create or replace function public.kivo_api_actualizar_tarea(p_key text, p_id uuid, p_cambios jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public.kivo_api_user(p_key); c jsonb := coalesce(p_cambios, '{}'::jsonb);
+begin
+  if not exists (select 1 from public.tasks t where t.id = p_id
+                 and (t.list_id in (select public.kivo_api_lists(u)) or (t.list_id is null and t.owner = u))) then
+    raise exception 'KIVO_ACCESO: esa tarea no existe o no es tuya';
+  end if;
+  update public.tasks set
+    text   = case when c ? 'texto' then left(c->>'texto', 300) else text end,
+    date   = case when c ? 'fecha' then nullif(c->>'fecha', '')::date else date end,
+    time   = case when c ? 'hora' then nullif(c->>'hora', '') else time end,
+    stage  = case when c ? 'etapa' then nullif(c->>'etapa', '') else stage end,
+    star   = case when c ? 'importante' then (c->>'importante')::boolean else star end,
+    notes  = case when c ? 'notas' then c->>'notas' else notes end,
+    status = case when c ? 'estado' then c->>'estado' else status end,
+    progress = case when c->>'estado' = 'done' then 100 when c ? 'estado' and progress = 100 then 0 else progress end,
+    done_at = case when c->>'estado' = 'done' then (extract(epoch from now()) * 1000)::bigint when c ? 'estado' then null else done_at end,
+    done_on = case when c->>'estado' = 'done' then coalesce(nullif(c->>'hoy', '')::date, current_date) when c ? 'estado' then null else done_on end,
+    done_by = case when c->>'estado' = 'done' then u when c ? 'estado' then null else done_by end,
+    updated_by = u,
+    updated_dev = 'claude'
+  where id = p_id;
+  return jsonb_build_object('id', p_id, 'ok', true);
+end $$;
+
+grant execute on function public.kivo_api_ver(text, boolean) to anon, authenticated;
+grant execute on function public.kivo_api_crear_espacio(text, text, text, text, text, jsonb) to anon, authenticated;
+grant execute on function public.kivo_api_actualizar_espacio(text, uuid, text, jsonb) to anon, authenticated;
+grant execute on function public.kivo_api_agregar_tareas(text, jsonb) to anon, authenticated;
+grant execute on function public.kivo_api_actualizar_tarea(text, uuid, jsonb) to anon, authenticated;
+revoke execute on function public.kivo_api_lists(uuid) from anon, authenticated, public;
+revoke execute on function public.kivo_api_user(text) from anon, authenticated, public;
+
+-- ¡Listo! Ahora Kivo puede conectarse con Claude.
+</script>
+<script type="text/plain" id="bridge">// =============================================================
+//  KIVO · Puente con Claude (conector MCP)
+//  Supabase → Edge Functions → Deploy a new function → Via Editor
+//  Nombre: kivo  ·  pega todo este archivo  ·  Deploy
+//  Luego, en los ajustes de la función, desactiva "Verify JWT".
+// =============================================================
+
+const SB_URL = Deno.env.get('SUPABASE_URL') || 'https://yaeqxcwvlsnzqcqldktu.supabase.co';
+const SB_KEY = Deno.env.get('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZXF4Y3d2bHNuenFjcWxka3R1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NjMwMDAsImV4cCI6MjEwOTAzOTAwMH0.5CeMhdJiZzIgogDlCiAec12uyep9YRsyRKB2JbV2Vb0';
+const TZ = 'America/Lima';
+const VERSION = '1.0';
+
+// Tipos de espacio de Kivo (iguales a la app)
+const TIPOS = {
+  general: { n: 'Lista simple', icono: 'i:list' },
+  personal: { n: 'Personal', icono: 'i:home' },
+  arch: { n: 'Estudio de arquitectura', icono: 'i:building', etapas: ['Prospecto', 'Levantamiento', 'Anteproyecto', 'Proyecto', 'Presupuesto', 'Ejecución', 'Entregado'], campos: 'client, place, service, area (m²), budget (S/), paid (S/)' },
+  community: { n: 'Community manager', icono: 'i:megaphone', etapas: ['Idea', 'Redacción', 'Diseño', 'Aprobación', 'Programado', 'Publicado'], campos: 'client, network (Instagram|Facebook|TikTok|LinkedIn|X|YouTube|WhatsApp|Pinterest), format (Post|Carrusel|Reel|Historia|Video|Anuncio|En vivo), copy, link' },
+  creator: { n: 'Creador de contenido', icono: 'i:play', etapas: ['Idea', 'Guion', 'Grabación', 'Edición', 'Miniatura', 'Publicado'], campos: 'platform (YouTube|TikTok|Instagram|Facebook|Twitch|Podcast), format, script, link' },
+  design: { n: 'Diseño gráfico', icono: 'i:pen', etapas: ['Brief', 'Bocetos', 'Revisión', 'Ajustes', 'Aprobado', 'Entregado'], campos: 'client, piece, rounds, budget (S/), paid (S/), link' },
+  shop: { n: 'Negocio / pedidos', icono: 'i:bag', etapas: ['Nuevo', 'Diseño', 'Producción', 'Listo', 'Entregado'], campos: 'client, product, qty, budget (S/), paid (S/), phone' },
+  teach: { n: 'Clases / academia', icono: 'i:grad', etapas: ['Planificar', 'Preparar material', 'Grabar', 'Editar', 'Publicada'], campos: 'course, module, link' },
+  writer: { n: 'Escritor (libro)', icono: 'i:book', etapas: ['Idea', 'Borrador', 'Revisión', 'Corrección', 'Final'], campos: 'words, pov, summary' },
+  student: { n: 'Estudiante (universidad)', icono: 'i:grad', etapas: ['Por hacer', 'Avanzando', 'Entregado', 'Calificado'], campos: 'course (nombre exacto de un curso del espacio), type (Entrega de taller|Esquicio|Lámina|Planos|Maqueta|Render / 3D|Crítica / jurado|Investigación|Práctica calificada|Laboratorio|Informe|Tarea / problemas|Proyecto|Exposición|Examen parcial|Examen final), weight (% de la nota), grade (0-20)' },
+  course: { n: 'Curso corto', icono: 'i:target', etapas: ['Por ver', 'Viendo', 'Practicando', 'Completado'], campos: 'link, hw (tarea o práctica)' },
+};
+const COLORES = ['#e8590c', '#db2777', '#be123c', '#7c3aed', '#4338ca', '#2563eb', '#0891b2', '#0f766e', '#16a34a', '#ca8a04', '#b45309', '#475569'];
+
+const hoy = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const ahora = () => new Intl.DateTimeFormat('es-PE', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date());
+const uid = () => crypto.randomUUID();
+const pad = (n) => String(n).padStart(2, '0');
+
+const INSTRUCCIONES = `Kivo es la app de tareas del usuario (en español, Perú). Con estas herramientas puedes ver y organizar su Kivo directamente.
+Reglas:
+- Antes de crear o cambiar algo, usa "ver_kivo" para conocer sus espacios, ids, pendientes y horarios fijos (no pongas cosas encima de su horario).
+- Si algo corresponde a un espacio que ya existe, úsalo; si no, crea uno con "crear_espacio" eligiendo el tipo adecuado.
+- Reparte el trabajo en el tiempo con fechas realistas desde hoy. Fechas AAAA-MM-DD, horas HH:MM (24 h), zona horaria de Lima.
+- Si el usuario no dice algo, decide lo más razonable y luego cuéntale brevemente qué armaste.
+- Después de crear o cambiar, dile que ya está en su Kivo (se actualiza solo).`;
+
+const DIAS = { dom: 0, domingo: 0, lun: 1, lunes: 1, mar: 2, martes: 2, mie: 3, miercoles: 3, jue: 4, jueves: 4, vie: 5, viernes: 5, sab: 6, sabado: 6 };
+const sinTilde = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+function dias(v) {
+  const a = Array.isArray(v) ? v : String(v || '').split(/[,\s]+/);
+  return [...new Set(a.map((x) => (typeof x === 'number' ? x : /^\d$/.test(String(x)) ? Number(x) : DIAS[sinTilde(x)])).filter((x) => x >= 0 && x <= 6))];
+}
+function hora(v) {
+  const m = String(v || '').toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?\s*m|p\.?\s*m)?/);
+  if (!m) return '';
+  let h = Math.min(23, +m[1]);
+  if (m[3] && m[3][0] === 'p' && h < 12) h += 12;
+  if (m[3] && m[3][0] === 'a' && h === 12) h = 0;
+  return pad(h) + ':' + pad(Math.min(59, +(m[2] || 0)));
+}
+const fecha = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
+const masHora = (t) => { const [a, b] = t.split(':').map(Number); const m = Math.min(a * 60 + b + 60, 23 * 60 + 59); return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+function horarios(a) {
+  return (Array.isArray(a) ? a : []).map((s) => {
+    const d = dias(s.dias ?? s.days), i = hora(s.inicio ?? s.start), f = hora(s.fin ?? s.end);
+    if (!d.length || !i) return null;
+    return { id: uid(), d, s: i, e: f && f > i ? f : masHora(i), label: s.nombre ?? s.label ?? '', room: s.lugar ?? s.room ?? '' };
+  }).filter(Boolean);
+}
+// Traduce los "datos" que manda Claude al formato interno de Kivo
+function datos(tipo, d) {
+  d = d && typeof d === 'object' ? d : {};
+  const m = {};
+  const num = { meta_palabras: 'goal', palabras_por_dia: 'daily', ya_escritas: 'base', nota_aprobatoria: 'pass', goal: 'goal', daily: 'daily', base: 'base', pass: 'pass' };
+  for (const [k, v] of Object.entries(num)) if (d[k] != null && d[k] !== '') m[v] = Number(d[k]) || 0;
+  const fch = { fecha_limite: 'deadline', inicio: 'start', fin: 'end', deadline: 'deadline', start: 'start', end: 'end' };
+  for (const [k, v] of Object.entries(fch)) if (fecha(d[k])) m[v] = fecha(d[k]);
+  const txt = { lugar: 'where', ciclo: 'cycle', carrera: 'career', where: 'where', cycle: 'cycle', career: 'career' };
+  for (const [k, v] of Object.entries(txt)) if (d[k]) m[v] = String(d[k]);
+  if (d.exigente != null || d.strict != null) m.strict = !!(d.exigente ?? d.strict);
+  const sl = horarios(d.horario ?? d.slots);
+  if (sl.length) m.slots = sl;
+  const cs = (d.cursos ?? d.courses ?? []).map((c, j) => ({
+    id: uid(), n: String(c.nombre ?? c.name ?? '').trim(), prof: c.profesor ?? c.teacher ?? '', room: c.aula ?? c.room ?? '',
+    cred: c.creditos ?? c.credits ?? '', color: COLORES[(j * 3 + 1) % COLORES.length], slots: horarios(c.horario ?? c.slots),
+  })).filter((c) => c.n);
+  if (cs.length) m.courses = cs;
+  if (tipo === 'writer' && m.goal == null && !d._editar) { m.goal = 60000; m.daily = m.daily ?? 500; }
+  if (tipo === 'student' && m.pass == null && !d._editar) m.pass = 11;
+  return m;
+}
+
+async function rpc(fn, args) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  const t = await r.text();
+  if (!r.ok) {
+    let m = t; try { m = JSON.parse(t).message || t; } catch (_) { /* */ }
+    throw new Error(String(m).replace(/^KIVO_\w+: /, ''));
+  }
+  return t ? JSON.parse(t) : null;
+}
+
+const HORARIO_DOC = 'horario: lista de {dias:[0-6, 0=domingo, 1=lunes…], inicio:"HH:MM", fin:"HH:MM", nombre?, lugar?}';
+const TOOLS = [
+  {
+    name: 'ver_kivo',
+    description: 'Muestra los espacios (proyectos, cursos, negocios, libro…) del usuario en Kivo con sus horarios, y sus tareas pendientes con fechas. Úsala antes de crear o cambiar algo para conocer los ids y su horario fijo.',
+    inputSchema: { type: 'object', properties: { incluir_hechas: { type: 'boolean', description: 'También las tareas ya hechas' } } },
+    annotations: { readOnlyHint: true, title: 'Ver mi Kivo' },
+  },
+  {
+    name: 'crear_espacio',
+    description: 'Crea un espacio nuevo en Kivo. Tipos: ' + Object.entries(TIPOS).map(([k, t]) => `${k} = ${t.n}${t.etapas ? ' (etapas: ' + t.etapas.join(' → ') + ')' : ''}`).join('; ') +
+      `. "datos" según el tipo — course: {inicio, fin (AAAA-MM-DD), lugar, exigente, ${HORARIO_DOC} con las clases y horas de práctica}; writer: {meta_palabras, palabras_por_dia, fecha_limite, exigente, horario de sesiones de escritura}; student: {carrera, ciclo, nota_aprobatoria (11), exigente, cursos:[{nombre, profesor, aula, horario}]}. Devuelve el id del espacio para luego agregar tareas.`,
+    inputSchema: {
+      type: 'object', required: ['nombre', 'tipo'],
+      properties: {
+        nombre: { type: 'string', description: 'Nombre corto, ej. "Curso de SketchUp"' },
+        tipo: { type: 'string', enum: Object.keys(TIPOS) },
+        datos: { type: 'object', description: 'Horario, fechas, metas o cursos, según el tipo', additionalProperties: true },
+      },
+    },
+    annotations: { title: 'Crear espacio' },
+  },
+  {
+    name: 'agregar_tareas',
+    description: 'Agrega una o varias tareas a Kivo (módulos de un curso, capítulos, entregas, pendientes…). Cada tarea puede tener fecha, hora, etapa (una de las etapas del tipo de espacio), pasos (checklist) y campos según el tipo: ' +
+      Object.entries(TIPOS).filter(([, t]) => t.campos).map(([k, t]) => `${k}: ${t.campos}`).join('; ') + '.',
+    inputSchema: {
+      type: 'object', required: ['tareas'],
+      properties: {
+        tareas: {
+          type: 'array', items: {
+            type: 'object', required: ['texto'],
+            properties: {
+              texto: { type: 'string' },
+              espacio_id: { type: 'string', description: 'id del espacio (de ver_kivo o crear_espacio). Vacío = tarea suelta' },
+              espacio: { type: 'string', description: 'O el nombre exacto del espacio, si no tienes el id' },
+              fecha: { type: 'string', description: 'AAAA-MM-DD' },
+              hora: { type: 'string', description: 'HH:MM (24 h)' },
+              etapa: { type: 'string' },
+              importante: { type: 'boolean' },
+              pasos: { type: 'array', items: { type: 'string' } },
+              notas: { type: 'string' },
+              campos: { type: 'object', additionalProperties: true },
+            },
+          },
+        },
+      },
+    },
+    annotations: { title: 'Agregar tareas' },
+  },
+  {
+    name: 'actualizar_tarea',
+    description: 'Cambia una tarea de Kivo: moverla de día u hora, cambiar el texto o la etapa, marcarla como hecha o pendiente.',
+    inputSchema: {
+      type: 'object', required: ['id'],
+      properties: {
+        id: { type: 'string' }, texto: { type: 'string' },
+        fecha: { type: 'string', description: 'AAAA-MM-DD, o "" para quitar la fecha' }, hora: { type: 'string', description: 'HH:MM o ""' },
+        etapa: { type: 'string' }, hecha: { type: 'boolean' }, importante: { type: 'boolean' }, notas: { type: 'string' },
+      },
+    },
+    annotations: { title: 'Cambiar tarea' },
+  },
+  {
+    name: 'actualizar_espacio',
+    description: 'Cambia un espacio de Kivo: su nombre o sus datos (horario, fechas, metas de palabras, cursos, modo exigente). Los datos que mandes reemplazan a los anteriores de ese mismo tipo (por ejemplo, un "horario" nuevo reemplaza el horario completo).',
+    inputSchema: {
+      type: 'object', required: ['espacio_id'],
+      properties: { espacio_id: { type: 'string' }, nombre: { type: 'string' }, datos: { type: 'object', additionalProperties: true } },
+    },
+    annotations: { title: 'Cambiar espacio' },
+  },
+];
+
+function etapaYestado(tipo, etapa) {
+  const et = (TIPOS[tipo] || {}).etapas;
+  if (!et) return { estado: 'todo' };
+  const e = et.find((x) => sinTilde(x) === sinTilde(etapa || '')) || et[0];
+  const i = et.indexOf(e);
+  return { etapa: e, estado: i === et.length - 1 ? 'done' : i === 0 ? 'todo' : 'doing' };
+}
+
+async function llamar(key, name, a) {
+  a = a || {};
+  if (name === 'ver_kivo') {
+    const v = await rpc('kivo_api_ver', { p_key: key, p_hechas: !!a.incluir_hechas });
+    v.hoy = hoy(); v.ahora = ahora();
+    for (const e of v.espacios) { const t = TIPOS[e.tipo]; if (t && t.etapas) e.etapas = t.etapas; }
+    return JSON.stringify(v);
+  }
+  if (name === 'crear_espacio') {
+    const tipo = TIPOS[a.tipo] ? a.tipo : 'general';
+    const v = await rpc('kivo_api_crear_espacio', {
+      p_key: key, p_nombre: a.nombre, p_tipo: tipo, p_icono: TIPOS[tipo].icono,
+      p_color: COLORES[Math.floor(Math.random() * COLORES.length)], p_datos: datos(tipo, a.datos),
+    });
+    return `Espacio «${v.nombre}» creado (id ${v.id}, tipo ${TIPOS[tipo].n}). Ahora agrega sus tareas con agregar_tareas usando espacio_id = ${v.id}.`;
+  }
+  if (name === 'agregar_tareas') {
+    const ctx = await rpc('kivo_api_ver', { p_key: key, p_hechas: false });
+    const tipoDe = {}; const idDe = {};
+    for (const e of ctx.espacios) { tipoDe[e.id] = e.tipo; idDe[sinTilde(e.nombre)] = e.id; }
+    const lista = (Array.isArray(a.tareas) ? a.tareas : []).slice(0, 100).map((t) => {
+      const eid = t.espacio_id || (t.espacio ? idDe[sinTilde(t.espacio)] : '') || '';
+      const { etapa, estado } = etapaYestado(tipoDe[eid], t.etapa);
+      return {
+        texto: String(t.texto || '').trim(), espacio_id: eid, fecha: fecha(t.fecha), hora: t.hora ? hora(t.hora) : '', etapa: etapa || '', estado,
+        importante: !!t.importante, notas: t.notas || '', campos: t.campos && typeof t.campos === 'object' ? t.campos : {},
+        pasos: (t.pasos || []).slice(0, 20).map((p) => ({ id: uid(), text: String(p), done: false })),
+      };
+    }).filter((t) => t.texto);
+    if (!lista.length) throw new Error('No hay tareas para agregar');
+    const r = await rpc('kivo_api_agregar_tareas', { p_key: key, p_tareas: lista });
+    return `Listo: ${r.length} tarea${r.length === 1 ? '' : 's'} agregada${r.length === 1 ? '' : 's'} a Kivo. ids: ${r.map((x) => x.id).join(', ')}`;
+  }
+  if (name === 'actualizar_tarea') {
+    const c = {};
+    if (a.texto != null) c.texto = String(a.texto);
+    if (a.fecha != null) c.fecha = fecha(a.fecha);
+    if (a.hora != null) c.hora = a.hora ? hora(a.hora) : '';
+    if (a.notas != null) c.notas = String(a.notas);
+    if (a.importante != null) c.importante = !!a.importante;
+    if (a.etapa || a.hecha != null) {
+      const ctx = await rpc('kivo_api_ver', { p_key: key, p_hechas: true });
+      const t = ctx.tareas.find((x) => x.id === a.id);
+      const tipo = t && t.espacio_id ? (ctx.espacios.find((e) => e.id === t.espacio_id) || {}).tipo : null;
+      const et = (TIPOS[tipo] || {}).etapas;
+      if (a.etapa) { const r = etapaYestado(tipo, a.etapa); if (r.etapa) { c.etapa = r.etapa; c.estado = r.estado; } }
+      if (a.hecha != null) {
+        c.estado = a.hecha ? 'done' : 'todo';
+        if (et) { if (a.hecha) c.etapa = et[et.length - 1]; else if (t && t.etapa === et[et.length - 1]) c.etapa = et[0]; }
+      }
+    }
+    if (c.estado === 'done') c.hoy = hoy();
+    await rpc('kivo_api_actualizar_tarea', { p_key: key, p_id: a.id, p_cambios: c });
+    return 'Tarea actualizada en Kivo.';
+  }
+  if (name === 'actualizar_espacio') {
+    const ctx = await rpc('kivo_api_ver', { p_key: key, p_hechas: false });
+    const e = ctx.espacios.find((x) => x.id === a.espacio_id);
+    if (!e) throw new Error('Ese espacio no existe o no es tuyo');
+    await rpc('kivo_api_actualizar_espacio', { p_key: key, p_id: a.espacio_id, p_nombre: a.nombre || null, p_datos: datos(e.tipo, Object.assign({ _editar: 1 }, a.datos || {})) });
+    return 'Espacio actualizado en Kivo.';
+  }
+  throw new Error('Herramienta desconocida: ' + name);
+}
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, mcp-session-id, mcp-protocol-version, x-kivo-key, apikey',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, DELETE',
+};
+const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+
+async function responder(msg, key) {
+  const { id, method, params } = msg || {};
+  const ok = (result) => ({ jsonrpc: '2.0', id, result });
+  const fail = (code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
+  if (method === 'initialize') {
+    return ok({
+      protocolVersion: (params && params.protocolVersion) || '2025-06-18',
+      capabilities: { tools: { listChanged: false } },
+      serverInfo: { name: 'kivo', title: 'Kivo', version: VERSION },
+      instructions: INSTRUCCIONES + '\nHoy es ' + ahora() + '.',
+    });
+  }
+  if (method === 'ping') return ok({});
+  if (method === 'tools/list') return ok({ tools: TOOLS });
+  if (method === 'tools/call') {
+    try {
+      const text = await llamar(key, params && params.name, params && params.arguments);
+      return ok({ content: [{ type: 'text', text }] });
+    } catch (e) {
+      return ok({ content: [{ type: 'text', text: 'No se pudo: ' + (e && e.message || e) }], isError: true });
+    }
+  }
+  if (method === 'resources/list') return ok({ resources: [] });
+  if (method === 'prompts/list') return ok({ prompts: [] });
+  if (method && method.startsWith('notifications/')) return null;
+  return fail(-32601, 'Método no soportado: ' + method);
+}
+
+async function handler(req) {
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  const url = new URL(req.url);
+  const key = url.searchParams.get('key') || req.headers.get('x-kivo-key') ||
+    (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').replace(/^ey[\w-]+\.[\w-]+\.[\w-]+$/, '');
+  if (req.method === 'GET') {
+    if (/\.well-known/.test(url.pathname)) return json({ error: 'not_found' }, 404);
+    return new Response('Kivo · conector para Claude ✓', { status: req.headers.get('accept')?.includes('text/event-stream') ? 405 : 200, headers: CORS });
+  }
+  if (req.method === 'DELETE') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return new Response('', { status: 405, headers: CORS });
+  if (!key) return json({ jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Falta la clave de Kivo (?key=…)' } }, 401);
+  let body;
+  try { body = await req.json(); } catch (_) { return json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'JSON inválido' } }, 400); }
+  if (Array.isArray(body)) {
+    const out = (await Promise.all(body.map((m) => responder(m, key)))).filter(Boolean);
+    return out.length ? json(out) : new Response(null, { status: 202, headers: CORS });
+  }
+  const r = await responder(body, key);
+  return r ? json(r) : new Response(null, { status: 202, headers: CORS });
+}
+
+Deno.serve(handler);
+</script>
 <script src="config.js"></script>
 <script src="vendor/supabase.js" onerror="this.remove()"></script>
 <script>if(!window.supabase)document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
@@ -1726,7 +2207,7 @@ function openListEditor(l,onCreated){
       mhead(isNew?'Nueva lista':'Tipo de espacio',box);
       box.append(h('p','small-note','¿Para qué es? Según lo que elijas, Kivo te arma las herramientas que necesitas.'));
       const g=h('div','tpl-grid');
-      if(isNew){const ai=h('button','tpl-ai',iconHTML('i:spark')+'<span><b>Que la IA lo arme por ti</b><small>Cuéntale qué estás haciendo y crea el espacio con todo.</small></span>');ai.onclick=()=>{closeModal();openAI()};g.append(ai)}
+      if(isNew){const ai=h('button','tpl-ai',iconHTML('i:spark')+'<span><b>Pídeselo a Claude</b><small>Cuéntale qué estás haciendo y lo arma todo en tu Kivo.</small></span>');ai.onclick=()=>{closeModal();openAI()};g.append(ai)}
       Object.entries(TPL).forEach(([k,T])=>{
         const c=h('button','tpl-card'+(st.kind===k?' on':''),`<span class="tpl-ic">${iconHTML(T.icon)}</span><b>${esc(T.name)}</b><small>${esc(T.desc)}</small>${T.views?`<em>${T.views.map(v=>VNAMES[v]).join(' · ')}</em>`:''}`);
         c.onclick=()=>{const prevIcon=(TPL[st.kind]||{}).icon;st.kind=k;if(!st.emoji||st.emoji===prevIcon)st.emoji=T.icon;step='form';draw()};g.append(c)});
@@ -2609,7 +3090,8 @@ function onTaskEvt(p){
     if(CURDETAIL&&CURDETAIL.x===ex){closeModal();toast('Esta tarea fue eliminada por tu equipo')}
     afterRemote(id);return;
   }
-  const r=p.new;if(!r||!r.id||r.updated_dev===DEV)return;
+  const r=p.new;if(r&&r.updated_dev==='claude'&&r.updated_by===ME)claudeSeen(r,p.eventType);
+  if(!r||!r.id||r.updated_dev===DEV)return;
   if(r.list_id&&!listOf(r.list_id)){refetchSoon();return}
   const inc=fromTaskRow(r),ex=S.tasks.find(t=>t.id===inc.id);
   if(inc.stage===undefined){inc.stage=ex?ex.stage:null;inc.fields=ex?ex.fields:{}}
@@ -2785,182 +3267,91 @@ document.addEventListener('paste',e=>{
   if(!CURDETAIL)return;const fs=[...((e.clipboardData&&e.clipboardData.files)||[])];if(!fs.length)return;
   e.preventDefault();addFiles(CURDETAIL.x,fs,CURDETAIL.draw);
 });
-/* ================= CREAR CON IA (Claude o ChatGPT, copiando y pegando) ================= */
-const AI_EX=['Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas y empieza este lunes','Quiero terminar mi novela en marzo, puedo escribir 1 hora en las noches de lunes a viernes','Estudio Arquitectura, 5.º ciclo: Taller 5 lun y mié de 8 a 11, Estructuras 2 mar y jue de 11 a 1. Tengo jurado el 20 de noviembre','Voy a llevar un curso de redes sociales de 6 semanas, organízalo con mi trabajo'];
-function aiPrompt(ask){
-  const d=new Date(),dn=DAYL[d.getDay()];
-  const lists=S.lists.map(l=>{const T=TPL[l.kind]||TPL.general;return `- "${l.name}" (kind: ${l.kind||'general'} · ${T.name})`+(l.kind==='student'&&coursesOf(l).length?' · cursos: '+coursesOf(l).map(c=>c.n).join(', '):'')}).join('\n')||'- (ninguno)';
-  const fixed=[];schedLists().forEach(l=>slotsOf(l).forEach(s=>fixed.push(`- ${daysTxt(s.d)} ${s.s}–${s.e}: ${s.label} (${l.name})`)));
-  const kinds=Object.entries(TPL).map(([k,T])=>{let x=`- ${k}: ${T.name}. ${T.desc}`;if(T.stages)x+=` Etapas (stage): ${T.stages.join(' → ')}.`;
-    const fs=(T.fields||[]).map(f=>{let o=typeof f.o==='function'?(k==='student'?(f.k==='type'?'según la carrera: '+Object.values(STUDY_TYPES).flat().filter((v,i,a)=>a.indexOf(v)===i).join(' | '):'nombre exacto de un curso del espacio'):''):(f.o||[]).join(' | ');return f.k+(f.t==='money'?' (número, soles)':f.t==='number'?' (número)':'')+(o?' ['+o+']':'')});
-    if(fs.length)x+=` fields: ${fs.join('; ')}.`;return x}).join('\n');
-  return `Eres el planificador de Kivo, la app de tareas del usuario. Convierte lo que pide en un plan que Kivo pueda crear automáticamente.
-
-HOY: ${dn} ${d.getDate()} de ${d.toLocaleDateString('es',{month:'long'})} de ${d.getFullYear()} (${today()}), hora ${hmNow()}, zona horaria de Lima (Perú).
-${S.name?'USUARIO: '+S.name+'\n':''}
-ESPACIOS QUE YA TIENE:
-${lists}
-
-HORARIO FIJO QUE YA TIENE (no pongas nada encima):
-${fixed.join('\n')||(S.aiFixed?'':'- (nada registrado)')}${S.aiFixed?'\n- '+S.aiFixed.trim():''}
-
-TIPOS DE ESPACIO (kind):
-${kinds}
-
-DATOS EXTRA (meta) SEGÚN EL TIPO:
-- writer: goal (palabras totales), daily (palabras por día), deadline (AAAA-MM-DD), strict (true = modo exigente), slots (sesiones de escritura).
-- student: career (una de: ${Object.values(CAREERS).flat().join(', ')}), cycle, pass (nota para aprobar, normalmente 11), strict, courses: [{name, teacher, room, slots}]. Sus tareas son entregas y exámenes con fields {course, type, weight (% de la nota)}.
-- course: start, end (AAAA-MM-DD), where (lugar o plataforma), strict, slots (clases y horas de práctica, con label "Clase" o "Práctica"). Sus tareas son los módulos o temas, en orden.
-- slot = {days: [números, 0=domingo, 1=lunes … 6=sábado], start: "HH:MM", end: "HH:MM", label, room}.
-
-REGLAS:
-1. Responde SOLO con un bloque \`\`\`json, sin texto antes ni después.
-2. Fechas AAAA-MM-DD, horas HH:MM en formato 24 h.
-3. Si el usuario no dice algo, decide lo más razonable (número de módulos, horas de práctica, fechas). Reparte el trabajo en el tiempo con fechas realistas a partir de hoy y respeta su horario fijo.
-4. Si corresponde a un espacio que ya tiene, usa "existing": "nombre exacto" en vez de crear uno nuevo.
-5. Las tareas pueden tener "steps" (pasos cortos) y "date"/"time" si tienen fecha. No inventes datos personales.
-6. Si el usuario te pide cambios después, responde otra vez con el JSON COMPLETO actualizado.
-
-FORMATO EXACTO:
-\`\`\`json
-{"kivo":1,"summary":"Una frase con lo que armaste",
- "spaces":[{"ref":"a","name":"Curso de SketchUp","kind":"course","meta":{"start":"2026-11-02","end":"2026-12-23","where":"Zoom","strict":false,"slots":[{"days":[1,3],"start":"19:00","end":"21:00","label":"Clase"},{"days":[6],"start":"10:00","end":"11:30","label":"Práctica"}]}},
-           {"ref":"b","existing":"Arquizo"}],
- "tasks":[{"space":"a","text":"Módulo 1: interfaz y herramientas","date":"2026-11-02","time":"19:00","stage":"Por ver","steps":["Instalar SketchUp","Configurar plantilla"],"notes":""}]}
-\`\`\`
-
-LO QUE PIDE EL USUARIO:
-"""
-${ask.trim()}
-"""`;
+/* ================= CLAUDE: conector directo con Kivo ================= */
+const AI_EX=['Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas y empieza este lunes','Quiero terminar mi novela en marzo, puedo escribir 1 hora en las noches de lunes a viernes','¿Qué tengo pendiente esta semana?','Me enfermé el martes, pasa todo lo de ese día al jueves'];
+const BRIDGE=()=>(window.KIVO_CONFIG&&KIVO_CONFIG.url||'').replace(/\/+$/,'')+'/functions/v1/kivo';
+const SQL4=()=>($('#sql4')||{}).textContent||'';
+function claudeUrl(){return S.claudeUrl||''}
+async function sha256hex(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function newKey(){const a=new Uint8Array(24);crypto.getRandomValues(a);return 'kivo_'+btoa(String.fromCharCode(...a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function makeClaudeKey(){
+  if(!sb||!ME)throw new Error('Inicia sesión primero');
+  const k=newKey();const {error}=await sb.from('api_tokens').insert({token_hash:await sha256hex(k),user_id:ME,label:'Claude'});
+  if(error){if(/api_tokens|relation|schema cache/i.test(error.message||''))throw Object.assign(new Error('nosql'),{nosql:1});throw error}
+  S.claudeUrl=BRIDGE()+'?key='+k;save();return S.claudeUrl;
 }
-function aiExtract(txt){
-  if(!txt||!/"kivo"\s*:/.test(txt))return null;
-  let s=txt;const m=s.match(/```(?:json)?\s*([\s\S]*?)```/);if(m&&/"kivo"/.test(m[1]))s=m[1];
-  const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<a)return null;s=s.slice(a,b+1);
-  const tries=[s,s.replace(/,\s*([}\]])/g,'$1'),s.replace(/[“”]/g,'"').replace(/,\s*([}\]])/g,'$1')];
-  for(const t of tries){try{const o=JSON.parse(t);if(o&&o.kivo)return o}catch(e){}}
-  return null;
+async function dropClaudeKeys(){if(sb&&ME)await sb.from('api_tokens').delete().eq('user_id',ME);S.claudeUrl='';S.claudeOk=false;save()}
+async function testBridge(url){
+  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'ver_kivo',arguments:{}}})});
+    if(r.status===404)return {ok:false,why:'nofn'};if(r.status===401||r.status===403)return {ok:false,why:'jwt'};
+    const j=await r.json().catch(()=>null);if(!j||!j.result)return {ok:false,why:'raro'};if(j.result.isError)return {ok:false,why:/clave/.test(j.result.content[0].text)?'key':'sql',msg:j.result.content[0].text};return {ok:true}}
+  catch(e){return {ok:false,why:'red'}}
 }
-const AI_DAY={dom:0,domingo:0,lun:1,lunes:1,mar:2,martes:2,mie:3,mié:3,miercoles:3,miércoles:3,jue:4,jueves:4,vie:5,viernes:5,sab:6,sáb:6,sabado:6,sábado:6};
-function aiDays(v){return [...new Set((Array.isArray(v)?v:String(v||'').split(/[,\s]+/)).map(x=>typeof x==='number'?x:/^\d$/.test(String(x))?Number(x):AI_DAY[norm(x)]??AI_DAY[String(x).toLowerCase()]).filter(x=>x>=0&&x<=6))]}
-const aiTime=v=>{const m=String(v||'').match(/(\d{1,2})(?::(\d{2}))?/);if(!m)return '';const hh=Math.min(23,Number(m[1])),mm=Math.min(59,Number(m[2]||0));return pad(hh)+':'+pad(mm)};
-const aiDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):'';
-function aiSlots(a){return (Array.isArray(a)?a:[]).map(s=>{const d=aiDays(s.days||s.dias),st=aiTime(s.start||s.inicio),en=aiTime(s.end||s.fin);if(!d.length||!st)return null;return {id:uid(),d,s:st,e:en&&en>st?en:fromMin(toMin(st)+60),label:s.label||s.nombre||'',room:s.room||s.lugar||''}}).filter(Boolean)}
-function aiNormalize(o){
-  const plan={summary:String(o.summary||o.resumen||''),spaces:[],tasks:[]},byRef={};
-  (o.spaces||o.espacios||[]).forEach((sp,i)=>{
-    const ex=sp.existing||sp.existente;let l=null;
-    if(ex)l=S.lists.find(x=>norm(x.name)===norm(ex));
-    if(!l&&sp.name)l=S.lists.find(x=>norm(x.name)===norm(sp.name));
-    const kind=TPL[sp.kind]?sp.kind:l?l.kind:'general';const m=sp.meta||{};
-    const meta={};
-    ['goal','daily','base','pass','free'].forEach(k=>{if(m[k]!=null&&m[k]!=='')meta[k]=Number(m[k])||0});
-    ['deadline','start','end'].forEach(k=>{if(aiDate(m[k]))meta[k]=aiDate(m[k])});
-    ['where','cycle','career'].forEach(k=>{if(m[k])meta[k]=String(m[k])});
-    if(m.strict!=null)meta.strict=!!m.strict;
-    const sl=aiSlots(m.slots||sp.slots);if(sl.length)meta.slots=sl;
-    const cs=(m.courses||sp.courses||[]).map((c,j)=>({id:uid(),n:String(c.name||c.nombre||'Curso').trim(),prof:c.teacher||c.profesor||'',room:c.room||c.aula||'',cred:c.credits||'',color:LIST_COLORS[(j*3+1)%LIST_COLORS.length],slots:aiSlots(c.slots)})).filter(c=>c.n);if(cs.length)meta.courses=cs;
-    const e={ref:String(sp.ref||i),l,isNew:!l,name:l?l.name:String(sp.name||'Nuevo espacio').slice(0,40),kind:l?l.kind:kind,meta};
-    plan.spaces.push(e);byRef[e.ref]=e;
-  });
-  (o.tasks||o.tareas||[]).forEach(t=>{
-    const text=String(t.text||t.texto||'').trim();if(!text)return;
-    let sp=byRef[String(t.space||t.espacio||'')];
-    if(!sp&&(t.space||t.espacio)){const l=S.lists.find(x=>norm(x.name)===norm(t.space||t.espacio));if(l){sp={ref:'x'+l.id,l,isNew:false,name:l.name,kind:l.kind,meta:{}};plan.spaces.push(sp);byRef[sp.ref]=sp}}
-    plan.tasks.push({sp,text:text.slice(0,200),date:aiDate(t.date||t.fecha),time:aiTime(t.time||t.hora),stage:t.stage||t.etapa||'',star:!!(t.star||t.importante),steps:(t.steps||t.pasos||[]).map(String).filter(Boolean).slice(0,15),notes:String(t.notes||t.notas||''),fields:t.fields&&typeof t.fields==='object'?t.fields:{}});
-  });
-  plan.spaces=plan.spaces.filter(s=>s.isNew||Object.keys(s.meta).length||plan.tasks.some(t=>t.sp===s));
-  return plan;
+const copyTxt=(t,msg)=>{try{navigator.clipboard.writeText(t).then(()=>toast(msg||'Copiado'),()=>prompt('Copia esto:',t))}catch(e){prompt('Copia esto:',t)}};
+const openClaude=q=>window.open('https://claude.ai/new'+(q?'?q='+encodeURIComponent(q):''),'_blank');
+function openAI(){if(S.claudeOk&&claudeUrl())openAsk();else openConnect()}
+function openAsk(){
+  const box=h('div','mpad');mhead('Pídeselo a Claude',box);
+  box.append(h('p','small-note','Dilo o escríbelo. Claude lo arma directamente en tu Kivo y aquí te aparece solo.'));
+  const tw=h('div','ai-tw');const ta=h('textarea','field ai-ta');ta.rows=4;ta.placeholder='Toca «Hablar» o escribe: «Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm…»';ta.value=AIASK||'';ta.oninput=()=>{AIASK=ta.value};
+  const mb=h('button','ai-mic',ICO.mic+'<span>Hablar</span>');mb.title='Dictar con tu voz';mb.onclick=()=>startVoice(ta,tw);tw.append(ta,mb);box.append(tw);
+  const ex=h('div','ai-ex');AI_EX.forEach(x=>{const b=h('button','',esc(x));b.onclick=()=>{AIASK=ta.value=x;ta.focus()};ex.append(b)});box.append(ex);
+  const send=()=>{const q=ta.value.trim();if(q.length<4){ta.focus();toast('Dile a Claude qué necesitas');return}
+    openClaude(q+'\n\n(Hazlo directamente en mi Kivo con el conector de Kivo.)');AIASK='';closeModal();
+    inAppAlert('Claude se está encargando','Cuando termine, te traigo de vuelta aquí con todo listo.',[],12000)};
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!VOICE){e.preventDefault();send()}});
+  const f=h('div','foot ai-go');const go=h('button','btn primary',iconHTML('i:spark')+' Enviar a Claude');go.onclick=send;
+  const cf=h('button','btn ghost','Ajustes de la conexión');cf.onclick=()=>{closeModal();openConnect()};f.append(go,cf);box.append(f);
+  openModal(box,{onClose:()=>{if(VOICE)VOICE.cancel()}});preloadVoice();setTimeout(()=>ta.focus(),30);
 }
-function aiApply(plan){
-  let nl=0,first=null;
-  plan.spaces.forEach(sp=>{
-    if(sp.isNew){const T=TPL[sp.kind]||TPL.general;
-      const base=sp.kind==='writer'?{goal:60000,daily:500,strict:true,slots:[]}:sp.kind==='student'?{pass:11,courses:[]}:sp.kind==='course'?{slots:[],strict:false}:{};
-      let name=sp.name,k=2;while(S.lists.some(x=>norm(x.name)===norm(name)))name=sp.name+' '+(k++);
-      sp.l={id:uid(),name,emoji:T.icon,color:LIST_COLORS[(S.lists.length*5)%LIST_COLORS.length],owner:ME,kind:sp.kind,meta:Object.assign(base,sp.meta)};S.lists.push(sp.l);nl++;first=first||sp.l;
-    }else{const m=metaOf(sp.l);Object.entries(sp.meta).forEach(([k,v])=>{if(k==='slots'||k==='courses'){m[k]=(m[k]||[]).concat(v)}else m[k]=v});first=first||sp.l}
-  });
-  plan.tasks.forEach(t=>{
-    const l=t.sp&&t.sp.l,T=l?tplOf(l):null;let stage=null,status='todo';
-    if(T){stage=T.stages.includes(t.stage)?t.stage:T.stages[0];const i=T.stages.indexOf(stage);status=i===0?'todo':i===T.stages.length-1?'done':'doing'}
-    const x=fixTask({text:t.text,list:l?l.id:'',date:t.date,time:t.time,star:t.star,notes:t.notes,stage,status,owner:ME,fields:T?t.fields:{},subtasks:t.steps.map(s=>({id:uid(),text:s,done:false}))});
-    if(status==='done'){x.doneAt=Date.now();x.doneOn=today();x.doneBy=ME;x.progress=100}
-    S.tasks.push(x);
-  });
-  if(first){S.filter=first.id}
-  save();while(MODALS.length)closeModal();renderAll();scrollTo({top:0,behavior:'smooth'});
-  sfx('done');burst(innerWidth/2,innerHeight/3,60,9);
-  toast('¡Listo! '+(nl?nl+' espacio'+(nl>1?'s':'')+' y ':'')+plan.tasks.length+' tarea'+(plan.tasks.length===1?'':'s')+' creadas');
-}
-function aiPreview(plan,back){
-  const box=h('div','mpad');mhead('Tu plan',box);
-  if(plan.summary)box.append(h('p','ai-sum',esc(plan.summary)));
-  if(!plan.spaces.length&&!plan.tasks.length){box.append(h('p','small-note','La respuesta no trae nada para crear. Pídele a la IA que lo vuelva a intentar.'));openModal(box);return}
-  plan.spaces.forEach(sp=>{
-    const T=TPL[sp.kind]||TPL.general,m=sp.meta,c=h('div','card ai-sp');const ts=plan.tasks.filter(t=>t.sp===sp);
-    const lines=[];
-    if(m.career)lines.push(esc(m.career)+(m.cycle?' · '+esc(m.cycle):''));
-    if(m.start||m.end)lines.push((m.start?'Del '+esc(pd(m.start).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})):'')+(m.end?' al '+esc(pd(m.end).toLocaleDateString('es',{day:'numeric',month:'long'})):''));
-    if(m.goal)lines.push('Meta: '+fmtN(m.goal)+' palabras'+(m.daily?' · '+fmtN(m.daily)+' por día':'')+(m.deadline?' · hasta el '+esc(pd(m.deadline).toLocaleDateString('es',{day:'numeric',month:'long'})):''));
-    (m.slots||[]).forEach(s=>lines.push(iconHTML('i:clock')+' '+esc(daysTxt(s.d))+' · '+esc(fmtTime(s.s))+' a '+esc(fmtTime(s.e))+(s.label?' · '+esc(s.label):'')+(s.room?' · '+esc(s.room):'')));
-    (m.courses||[]).forEach(co=>lines.push('<b>'+esc(co.n)+'</b>'+(co.slots.length?' · '+co.slots.map(s=>esc(daysTxt(s.d))+' '+esc(fmtTime(s.s))+'–'+esc(fmtTime(s.e))).join(', '):'')+(co.room?' · '+esc(co.room):'')));
-    if(m.strict)lines.push('<b>Modo exigente</b>');
-    c.innerHTML=`<div class="ai-h"><span class="tpl-ic">${iconHTML(sp.l?sp.l.emoji:T.icon)}</span><div><b>${esc(sp.name)}</b><small>${esc(T.name)} · ${sp.isNew?'nuevo':'ya lo tienes'}</small></div></div>${lines.length?'<div class="ai-l">'+lines.map(x=>'<div>'+x+'</div>').join('')+'</div>':''}`;
-    if(ts.length){const ul=h('div','ai-t');ts.slice(0,12).forEach(t=>ul.append(h('div','',`<span>${esc(t.text)}${t.steps.length?' <small>· '+t.steps.length+' pasos</small>':''}</span><small>${esc([t.date?fmtDate(t.date):'',t.time?fmtTime(t.time):''].filter(Boolean).join(' · '))}</small>`)));if(ts.length>12)ul.append(h('div','',`<small>…y ${ts.length-12} más</small>`));c.append(ul)}
-    box.append(c);
-  });
-  const loose=plan.tasks.filter(t=>!t.sp);
-  if(loose.length){const c=h('div','card ai-sp');c.append(h('div','ai-h',`<span class="tpl-ic">${iconHTML('i:list')}</span><div><b>Tareas sueltas</b><small>Sin espacio</small></div>`));const ul=h('div','ai-t');loose.forEach(t=>ul.append(h('div','',`<span>${esc(t.text)}</span><small>${esc(t.date?fmtDate(t.date):'')}</small>`)));c.append(ul);box.append(c)}
-  box.append(h('p','small-note','¿Quieres cambiar algo? Díselo a la IA en el mismo chat (ej. «mejor las prácticas en la noche») y copia su nueva respuesta: Kivo la detecta sola.'));
-  const f=h('div','foot');const bk=h('button','btn','Volver');bk.onclick=()=>{closeModal();back&&back()};
-  const ok=h('button','btn primary','Crear todo');ok.onclick=()=>aiApply(plan);f.append(bk,h('div','grow'),ok);box.append(f);
-  openModal(box);
-}
-let AIW=null,AIASK='';
-function openAI(){
-  const st={ask:AIASK,step:'ask',last:''};const box=h('div','mpad');
-  const stop=()=>{if(VOICE)VOICE.cancel();clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
-  const tryText=t=>{if(!t||t===st.last||t===st.prompt)return false;const o=aiExtract(t);if(!o)return false;st.last=t;const plan=aiNormalize(o);stop();closeModal();aiPreview(plan,()=>openAI());return true};
-  const peek=async()=>{if(!document.hasFocus())return;try{const t=await navigator.clipboard.readText();tryText(t)}catch(e){}};
-  const draw=()=>{box.innerHTML='';
-    mhead('Crear con IA',box);
-    if(st.step==='ask'){
-      box.append(h('p','small-note','Cuéntale a la IA qué necesitas, como se lo dirías a una persona. Con tu Claude (también el gratuito) o ChatGPT, sin pagar nada extra.'));
-      const tw=h('div','ai-tw');const ta=h('textarea','field ai-ta');ta.rows=5;ta.placeholder='Escribe o toca el micrófono y cuéntale: «Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas…»';ta.value=st.ask;ta.oninput=()=>{st.ask=AIASK=ta.value};
-      const mb=h('button','ai-mic',ICO.mic+'<span>Hablar</span>');mb.title='Dictar con tu voz';mb.onclick=()=>startVoice(ta,tw);ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!VOICE){e.preventDefault();go('https://claude.ai/new','Claude')}});tw.append(ta,mb);box.append(tw);
-      const fx=h('details','ai-fx');if(!S.aiFixed)fx.open=false;fx.innerHTML='<summary>Tu horario fijo'+(S.aiFixed?': <b>'+esc(S.aiFixed.slice(0,60))+(S.aiFixed.length>60?'…':'')+'</b>':' (para que la IA no te ponga cosas encima)')+'</summary>';
-      const fi=h('textarea','field');fi.rows=2;fi.placeholder='Ej. Dicto clases de lunes a viernes de 7 a 9 am. Live los domingos a las 7 pm. Trabajo en Arquizo de 10 am a 6 pm.';fi.value=S.aiFixed||'';fi.oninput=()=>{S.aiFixed=fi.value;save()};fx.append(fi);box.append(fx);
-      const ex=h('div','ai-ex');AI_EX.forEach(x=>{const b=h('button','',esc(x));b.onclick=()=>{st.ask=AIASK=x;ta.value=x;ta.focus()};ex.append(b)});box.append(ex);
-      const f=h('div','foot ai-go');
-      const go=(url,who)=>{if(st.ask.trim().length<6){ta.focus();toast('Escribe qué necesitas');return}
-        st.prompt=aiPrompt(st.ask);const done=()=>{st.step='wait';st.who=who;draw();window.open(url,'_blank')};
-        try{navigator.clipboard.writeText(st.prompt).then(done,()=>{prompt('Copia este texto:',st.prompt);done()})}catch(e){prompt('Copia este texto:',st.prompt);done()}};
-      const c=h('button','btn primary','Copiar y abrir Claude');c.onclick=()=>go('https://claude.ai/new','Claude');
-      const g=h('button','btn','Copiar y abrir ChatGPT');g.onclick=()=>go('https://chatgpt.com/','ChatGPT');
-      const pz=h('button','btn ghost','Ya tengo la respuesta');pz.onclick=()=>{st.step='wait';draw()};
-      f.append(c,g,pz);box.append(f);setTimeout(()=>ta.focus(),30);
-    }else{
-      box.append(h('ol','ai-steps',`<li><b>Pega</b> en ${esc(st.who||'Claude o ChatGPT')} (Ctrl + V) y envíalo.</li><li>Cuando responda, toca <b>Copiar</b> en el bloque de código.</li><li>Vuelve aquí: <b>Kivo lo detecta solo</b> y te muestra el plan.</li>`));
-      box.append(h('div','ai-wait','<span class="dot"></span> Esperando la respuesta…'));
-      const ta=h('textarea','field');ta.rows=3;ta.placeholder='¿No lo detecta? Pega aquí la respuesta (Ctrl + V)';
-      ta.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t){e.preventDefault();if(!tryText(t)){ta.value=t;toast('No encontré el plan en ese texto. Copia el bloque de código completo.')}}});
-      ta.oninput=()=>{if(ta.value.length>20)tryText(ta.value)};box.append(ta);
-      const f=h('div','foot');const bk=h('button','btn','Volver');bk.onclick=()=>{st.step='ask';draw()};const re=h('button','btn ghost','Copiar el pedido otra vez');
-      re.onclick=()=>{st.prompt=st.prompt||aiPrompt(st.ask);try{navigator.clipboard.writeText(st.prompt).then(()=>toast('Copiado. Pégalo en la IA'))}catch(e){prompt('Copia este texto:',st.prompt)}};
-      f.append(bk,h('div','grow'),re);box.append(f);
-      st.onf=()=>setTimeout(peek,250);window.addEventListener('focus',st.onf);clearInterval(st.iv);st.iv=setInterval(peek,1500);
-    }
+function openConnect(){
+  const box=h('div','mpad');
+  const draw=async()=>{box.innerHTML='';mhead('Conectar con Claude',box);
+    box.append(h('p','small-note','Conecta Kivo a tu Claude (Pro o gratis) una sola vez. Luego le hablas a Claude y él crea, mueve y revisa todo directamente en tu Kivo.'));
+    const steps=h('ol','cl-steps');
+    const url=claudeUrl();
+    // 1. base de datos
+    const s1=h('li','',`<b>Prepara tu base de datos</b><small>En Supabase → SQL Editor → pega el código → Run. Solo una vez.</small>`);const b1=h('button','btn','Copiar código');b1.onclick=()=>copyTxt(SQL4(),'Código copiado. Pégalo en Supabase → SQL Editor → Run');s1.append(b1);
+    // 2. puente
+    const s2=h('li','',`<b>Crea el puente en Supabase</b><small>Edge Functions → Deploy a new function → Via Editor → nombre <code>kivo</code> → pega el código → Deploy. Luego en <i>Details</i> desactiva <b>Verify JWT</b> y guarda.</small>`);const b2=h('button','btn','Copiar código del puente');b2.onclick=()=>copyTxt(($('#bridge')||{}).textContent||'','Código del puente copiado');s2.append(b2);
+    // 3. clave
+    const s3=h('li','',`<b>Tu dirección secreta para Claude</b><small>${url?'Ya la creaste. No la compartas: con ella se puede entrar a tu Kivo.':'Kivo crea una dirección con tu clave privada.'}</small>`);
+    if(url){const c=h('div','cl-url');c.append(h('code','',esc(url.replace(/key=(.{6}).*/,'key=$1…'))));const cp=h('button','btn primary','Copiar dirección');cp.onclick=()=>copyTxt(url,'Dirección copiada. Pégala en Claude');c.append(cp);s3.append(c)}
+    else{const b3=h('button','btn primary','Crear mi dirección');b3.onclick=async()=>{b3.disabled=true;b3.textContent='Creando…';try{await makeClaudeKey();draw()}catch(e){b3.disabled=false;b3.textContent='Crear mi dirección';toast(e.nosql?'Primero haz el paso 1 (el código en Supabase)':'No pude crear la clave: '+(e.message||e))}};s3.append(b3)}
+    // 4. en Claude
+    const s4=h('li','',`<b>Agrégala en Claude</b><small>Claude → Personalizar → Conectores → <b>+ Agregar</b> → <b>Agregar conector personalizado</b>. Nombre: <b>Kivo</b>. URL: pega tu dirección. Autenticación: <b>sin inicio de sesión</b>. Agregar.</small>`);
+    const b4=h('button','btn','Abrir conectores de Claude');b4.onclick=()=>window.open('https://claude.ai/settings/connectors','_blank');s4.append(b4);
+    steps.append(s1,s2,s3,s4);box.append(steps);
+    const st=h('div','cl-state');box.append(st);
+    const f=h('div','foot');
+    if(url){const d=h('button','btn danger','Desconectar');d.onclick=async()=>{if(!confirm('¿Desconectar Claude? La dirección actual dejará de funcionar.'))return;await dropClaudeKeys();toast('Claude desconectado');draw()};f.append(d)}
+    f.append(h('div','grow'));
+    const t=h('button','btn'+(url?' primary':''),'Probar conexión');t.disabled=!url;
+    t.onclick=async()=>{t.disabled=true;st.className='cl-state';st.textContent='Probando…';const r=await testBridge(url);t.disabled=false;
+      const M={nofn:'Falta el paso 2: no encuentro el puente «kivo» en tu Supabase.',jwt:'Casi: en Supabase → Edge Functions → kivo → Details, desactiva «Verify JWT» y guarda.',key:'La clave no existe. Toca «Desconectar» y crea una dirección nueva.',sql:'Falta el paso 1 (el código en Supabase). '+(r.msg||''),red:'No me pude conectar. Revisa tu internet.',raro:'El puente respondió algo raro. Vuelve a pegar su código y dale Deploy.'};
+      if(r.ok){S.claudeOk=true;save();st.className='cl-state ok';st.innerHTML='<b>¡Conectado!</b> Ahora agrega la dirección en Claude (paso 4) y listo.';const g=h('button','btn primary','Pedirle algo a Claude');g.onclick=()=>{closeModal();openAsk()};st.append(g)}
+      else{st.className='cl-state bad';st.textContent=M[r.why]||'No funcionó todavía.'}};
+    f.append(t);box.append(f);
   };
-  draw();openModal(box,{onClose:stop});AIW=st;preloadVoice();
+  draw();openModal(box);
 }
-// si pegas una respuesta de la IA en la caja principal, también la detecta
-document.addEventListener('paste',e=>{
-  if(MODALS.length)return;const t=e.clipboardData&&e.clipboardData.getData('text');if(!t||t.length<30)return;const o=aiExtract(t);if(!o)return;
-  e.preventDefault();aiPreview(aiNormalize(o));
-});
-
+/* Cuando Claude cambia algo en tu Kivo: aviso y te trae aquí */
+let CLQ=null;
+function claudeSeen(r,ev){CLQ=CLQ||{n:0,u:0,lists:new Set()};if(ev==='INSERT')CLQ.n++;else CLQ.u++;if(r.list_id)CLQ.lists.add(r.list_id);clearTimeout(CLQ.t);CLQ.t=setTimeout(claudeShow,1600)}
+async function claudeShow(){
+  const q=CLQ;CLQ=null;if(!q)return;
+  document.querySelectorAll('#alerts .al').forEach(x=>{if(/Claude se está encargando/.test(x.textContent))x.remove()});
+  if([...q.lists].some(id=>!listOf(id))){try{await fetchAll()}catch(e){}}
+  const ls=[...q.lists].map(listOf).filter(Boolean),l=ls[0];
+  const what=q.n?'agregó '+q.n+' tarea'+(q.n>1?'s':''):'actualizó '+q.u+' tarea'+(q.u>1?'s':'');
+  const title='Claude '+what+(l?' en «'+l.name+'»':'')+(ls.length>1?' y '+(ls.length-1)+' espacio'+(ls.length>2?'s':'')+' más':'');
+  if(l){S.filter=l.id;save()}renderAll();scrollTo({top:0,behavior:'smooth'});
+  if(window.kivo)kivo.show();else window.focus();
+  sfx('done');burst(innerWidth/2,innerHeight/3,40,8);
+  sysNotify(title,'Ya está en tu Kivo',null,'claude');
+  inAppAlert(title,'Ya está en tu Kivo. Revisa y ajusta lo que quieras.',l?[['Ver',()=>{S.filter=l.id;save();renderAll()},true]]:[],15000);
+}
+let AIASK='';
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'kivo',v:4,data:{tasks:S.tasks,lists:S.lists,contacts:S.contacts}})],{type:'application/json'}));
