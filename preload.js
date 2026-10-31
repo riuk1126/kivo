@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('kivo', {
   platform: process.platform,
   show: () => ipcRenderer.send('kivo:show'),
   attention: (n) => ipcRenderer.send('kivo:attention', n),
+  savePDF: (name) => ipcRenderer.invoke('kivo:save-pdf', name),
   dictate: () => ipcRenderer.invoke('kivo:dictate'),
   voiceStatus: (id) => ipcRenderer.invoke('kivo:voice-status', id),
   voiceDownload: (id) => ipcRenderer.invoke('kivo:voice-download', id),

@@ -140,6 +140,19 @@ ipcMain.on('kivo:attention', (e, n) => {
   if (process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
 });
 ipcMain.handle('kivo:version', () => app.getVersion());
+// Guardar la semana como PDF (para imprimir)
+ipcMain.handle('kivo:save-pdf', async (e, name) => {
+  try {
+    const { dialog } = require('electron');
+    const safe = String(name || 'Kivo-semana.pdf').replace(/[^\w.-]/g, '_');
+    const r = await dialog.showSaveDialog(win, { title: 'Guardar mi semana', defaultPath: path.join(app.getPath('documents'), safe), filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+    if (r.canceled || !r.filePath) return { ok: false };
+    const data = await win.webContents.printToPDF({ landscape: true, pageSize: 'A4', printBackground: true, margins: { marginType: 'custom', top: 0.3, bottom: 0.3, left: 0.3, right: 0.3 } });
+    await fs.promises.writeFile(r.filePath, data);
+    shell.openPath(r.filePath);
+    return { ok: true, path: r.filePath };
+  } catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+});
 // Voz para dictar (Whisper): se descarga una sola vez a la carpeta de datos de Kivo
 const VOICE_DIR = () => path.join(app.getPath('userData'), 'voz');
 const voiceFile = (f) => (!f.includes('/') && /\.(json|txt)$/.test(f)) || /^onnx\/(encoder_model|decoder_model_merged)_quantized\.onnx$/.test(f);

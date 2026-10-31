@@ -846,6 +846,58 @@ select.fin{cursor:pointer}
 .tpl-ai b{font-size:15px;font-weight:650;display:block}
 .tpl-ai small{font-size:12.5px;opacity:.75}
 .tpl-ai .ico{width:22px;height:22px}
+/* ---- imprimir mi semana ---- */
+.modal.wide{width:min(980px,100%)}
+.pr-ops{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:12px 0}
+.pr-op{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.pr-op input{width:17px;height:17px;accent-color:var(--accent)}
+.pr-prev{background:var(--fill);border-radius:12px;padding:12px;overflow:hidden;height:360px;position:relative}
+.pr-scale{transform:scale(.6);transform-origin:top left;width:166.6%}
+.pr-scale .pg{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);border-radius:4px}
+#printArea{display:none}
+.pg{color:#111;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;padding:14px 16px;font-size:11px;line-height:1.3}
+.pg header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:8px}
+.pg h1{margin:0;font-size:22px;letter-spacing:-.02em}
+.pg header p{margin:2px 0 0;color:#555;font-size:11.5px}
+.pg .lg{display:flex;gap:12px;font-size:9.5px;color:#555;align-items:center}
+.pg .lg span{display:flex;align-items:center;gap:4px}
+.pg .bx{width:10px;height:10px;border:1.3px solid #333;border-radius:2.5px;flex:none;display:inline-block;margin-top:1px}
+.pg .lg .sl{width:10px;height:10px;background:#e9e9ec;border-left:3px solid #555;display:inline-block}
+.pg .week{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid #bbb;border-radius:6px;overflow:hidden}
+.pg .day{border-right:1px solid #ccc;padding:6px 5px;min-height:300px;display:flex;flex-direction:column;gap:4px;break-inside:avoid}
+.pg .day:last-child{border-right:0}
+.pg .day.tod{background:#fafafa}
+.pg .day h2{margin:0 0 4px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:3px}
+.pg .day h2 b{font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.pg .day h2 span{font-size:16px;font-weight:700}
+.pg .it{font-size:10px;line-height:1.25;break-inside:avoid}
+.pg .it time{display:block;font-size:9px;color:#555;font-weight:600}
+.pg .it b{font-weight:600}
+.pg .it small{display:flex;align-items:center;gap:3px;color:#666;font-size:8.5px;margin-top:1px}
+.pg .it small em{width:6px;height:6px;border-radius:50%;display:inline-block;flex:none}
+.pg .slot{background:#efeff2;border-left:3px solid var(--c);border-radius:3px;padding:3px 5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg .task{display:flex;gap:5px;padding:2px 1px}
+.pg .task.done b{text-decoration:line-through;color:#888}
+.pg .free{color:#aaa;font-style:italic;margin:2px 0}
+.pg .lines{margin-top:auto;padding-top:6px;display:flex;flex-direction:column;gap:13px}
+.pg .lines i{display:block;border-bottom:1px dotted #aaa}
+.pg .box{margin-top:8px;border:1px solid #bbb;border-radius:6px;padding:6px 8px;break-inside:avoid}
+.pg h3{margin:0 0 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.pg .cols{columns:4;column-gap:14px}
+.pg .grp{break-inside:avoid;margin-bottom:5px}
+.pg h4{margin:0 0 2px;font-size:9.5px;color:#555;text-transform:uppercase;letter-spacing:.03em}
+.pg .li{display:flex;gap:5px;font-size:10px;padding:1.5px 0}
+.pg .li small{color:#888}
+.pg .li.more{color:#888;padding-left:15px}
+.pg .notes .lines{gap:16px}
+.pg footer{margin-top:6px;text-align:right;color:#999;font-size:8.5px}
+@page{size:A4 landscape;margin:8mm}
+@media print{
+  body.printing>*:not(#printArea){display:none!important}
+  body.printing{background:#fff!important}
+  body.printing #printArea{display:block}
+  body.printing .pg{padding:0}
+}
 </style>
 </head>
 <body>
@@ -861,7 +913,7 @@ select.fin{cursor:pointer}
       <svg class="ring" viewBox="0 0 58 58"><circle class="bgc" cx="29" cy="29" r="24"/><circle class="fg" id="ringFg" cx="29" cy="29" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8" transform="rotate(-90 29 29)"/><text x="29" y="33.5" text-anchor="middle" id="ringTxt">0/0</text></svg>
       <div class="streak" id="streak"></div>
     </div>
-    <div class="hbtns"><button class="iconb" id="aiBtn" title="Pídeselo a Claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
+    <div class="hbtns"><button class="iconb" id="aiBtn" title="Pídeselo a Claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="printBtn" title="Imprimir mi semana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="gear" title="Ajustes"></button></div>
   </header>
 
   <div class="add">
@@ -889,6 +941,7 @@ select.fin{cursor:pointer}
 </div>
 <datalist id="contactsDL"></datalist>
 <input type="file" id="file" accept=".json,application/json" hidden>
+<div id="printArea"></div>
 <script type="text/plain" id="sql4">-- ============================================================
 --  KIVO · Conectar con Claude
 --  Permite que Claude (con tu clave de Kivo) vea y cree cosas en tu Kivo.
@@ -3352,6 +3405,57 @@ async function claudeShow(){
   inAppAlert(title,'Ya está en tu Kivo. Revisa y ajusta lo que quieras.',l?[['Ver',()=>{S.filter=l.id;save();renderAll()},true]]:[],15000);
 }
 let AIASK='';
+/* ================= IMPRIMIR MI SEMANA (PDF para pegar en la pared) ================= */
+function repeatsOn(x,ds){
+  if(!x.repeat||!x.date||ds<=x.date)return false;const d=pd(ds),o=pd(x.date),w=d.getDay();
+  if(x.repeat==='day')return true;if(x.repeat==='week5')return w>=1&&w<=5;if(x.repeat==='week')return w===o.getDay();if(x.repeat==='month')return d.getDate()===o.getDate();return false;
+}
+function weekData(off,opt){
+  const ws=weekStart(off),days=[],t=today();
+  const mine=x=>!opt.list||x.list===opt.list;
+  const okL=l=>!opt.list||l.id===opt.list;
+  const tasks=S.tasks.filter(mineOrFree).filter(mine);
+  for(let i=0;i<7;i++){const ds=plus(i,ws),dow=pd(ds).getDay(),items=[];
+    schedLists().filter(okL).forEach(l=>slotsOf(l).forEach(s=>{if((s.d||[]).includes(dow))items.push({k:'slot',t:s.s,e:s.e,txt:(TPL[l.kind].sched==='write'&&s.label==='Escribir'?'Escribir':s.label),sub:[l.name===s.label?'':l.name,s.room].filter(Boolean).join(' · '),c:s.color||l.color})}));
+    tasks.forEach(x=>{const on=x.date===ds||repeatsOn(x,ds);if(!on)return;if(x.status==='done'&&!(opt.done&&x.doneOn===ds))return;
+      const l=listOf(x.list);items.push({k:'task',t:x.time||'',txt:x.text,sub:l?l.name:'',c:l?l.color:'#888',star:x.star,done:x.status==='done',steps:x.subtasks.filter(s=>!s.done).length})});
+    items.sort((a,b)=>(a.t||'99')<(b.t||'99')?-1:(a.t||'99')>(b.t||'99')?1:a.k==='slot'?-1:1);
+    days.push({ds,dow,items,today:ds===t});
+  }
+  const late=opt.late?tasks.filter(x=>x.status!=='done'&&x.date&&x.date<ws).sort(sortT):[];
+  const nodate=opt.nodate?tasks.filter(x=>x.status!=='done'&&!x.date).sort(sortT):[];
+  return {ws,days,late,nodate};
+}
+function printHTML(off,opt){
+  const W=weekData(off,opt),f=d=>pd(d).toLocaleDateString('es',{day:'numeric',month:'long'});
+  const L=listOf(opt.list);
+  const head=`<header><div><h1>Mi semana${L?' · '+esc(L.name):''}</h1><p>Del ${esc(f(W.ws))} al ${esc(f(plus(6,W.ws)))} de ${pd(W.ws).getFullYear()}${S.name?' · '+esc(S.name):''}</p></div><div class="lg"><span><i class="bx"></i> Por hacer</span><span><i class="sl"></i> Horario fijo</span><span>★ Importante</span></div></header>`;
+  const cols=W.days.map(d=>`<section class="day${d.today?' tod':''}"><h2><b>${DAYS[d.dow]}</b><span>${pd(d.ds).getDate()}</span></h2>${d.items.length?d.items.map(it=>it.k==='slot'
+      ?`<div class="it slot" style="--c:${esc(it.c)}"><time>${esc(fmtTime(it.t))}${it.e?'–'+esc(fmtTime(it.e)):''}</time><b>${esc(it.txt)}</b>${it.sub?`<small>${esc(it.sub)}</small>`:''}</div>`
+      :`<div class="it task${it.done?' done':''}"><i class="bx"></i><div>${it.t?`<time>${esc(fmtTime(it.t))}</time>`:''}<b>${it.star?'★ ':''}${esc(it.txt)}</b>${it.sub||it.steps?`<small><em style="background:${esc(it.c)}"></em>${esc(it.sub)}${it.steps?' · '+it.steps+' pasos':''}</small>`:''}</div></div>`).join(''):'<p class="free">Libre</p>'}${opt.lines?'<div class="lines"><i></i><i></i><i></i></div>':''}</section>`).join('');
+  const listBox=(title,a)=>{if(!a.length)return '';const g={};a.forEach(x=>{const n=(listOf(x.list)||{}).name||'Sin lista';(g[n]=g[n]||[]).push(x)});
+    return `<div class="box"><h3>${esc(title)} · ${a.length}</h3><div class="cols">${Object.entries(g).map(([n,xs])=>`<div class="grp"><h4>${esc(n)}</h4>${xs.slice(0,14).map(x=>`<div class="li"><i class="bx"></i><span>${x.star?'★ ':''}${esc(x.text)}${x.date?` <small>(${esc(fmtDate(x.date))})</small>`:''}</span></div>`).join('')}${xs.length>14?`<div class="li more">…y ${xs.length-14} más</div>`:''}</div>`).join('')}</div></div>`};
+  const foot=`<footer>Hecho con Kivo · ${esc(new Date().toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'}))}</footer>`;
+  return `<div class="pg">${head}<div class="week">${cols}</div>${listBox('Atrasadas',W.late)}${listBox('Pendientes sin fecha',W.nodate)}${opt.notes?'<div class="box notes"><h3>Notas</h3><div class="lines"><i></i><i></i><i></i></div></div>':''}${foot}</div>`;
+}
+function openPrint(){
+  const st=Object.assign({list:'',late:true,nodate:true,done:false,lines:true,notes:true},S.printOpt||{},{off:[0,6].includes(new Date().getDay())?1:0});
+  const box=h('div','mpad');mhead('Imprimir mi semana',box);
+  box.append(h('p','small-note','Un PDF de lunes a domingo con tu horario, tus tareas y lo pendiente, para imprimir y pegar donde lo veas.'));
+  const seg=h('div','seg');[['Esta semana',0],['Próxima semana',1]].forEach(([n,v])=>{const b=h('button',st.off===v?'on':'',n);b.onclick=()=>{st.off=v;seg.querySelectorAll('button').forEach(z=>z.classList.toggle('on',z===b));draw()};seg.append(b)});box.append(seg);
+  const sel=h('select','field');sel.style.marginTop='10px';sel.append(new Option('Todo lo mío',''));S.lists.forEach(l=>sel.append(new Option(l.name,l.id)));sel.value=st.list;sel.onchange=()=>{st.list=sel.value;draw()};box.append(sel);
+  const ops=h('div','pr-ops');[['late','Incluir atrasadas'],['nodate','Incluir pendientes sin fecha'],['done','Mostrar lo ya hecho (tachado)'],['lines','Renglones para escribir a mano'],['notes','Recuadro de notas']].forEach(([k,n])=>{const r=h('label','pr-op');const c=h('input');c.type='checkbox';c.checked=!!st[k];c.onchange=()=>{st[k]=c.checked;draw()};r.append(c,h('span','',n));ops.append(r)});box.append(ops);
+  const pv=h('div','pr-prev');box.append(pv);
+  const draw=()=>{pv.innerHTML='<div class="pr-scale">'+printHTML(st.off,st)+'</div>'};draw();
+  const f=h('div','foot');f.append(h('div','grow'));
+  const go=h('button','btn primary',window.kivo&&kivo.savePDF?'Guardar PDF':'Imprimir / guardar PDF');
+  go.onclick=async()=>{S.printOpt=st;save();const area=$('#printArea');area.innerHTML=printHTML(st.off,st);document.body.classList.add('printing');
+    const name='Kivo-semana-'+weekStart(st.off)+'.pdf';
+    try{if(window.kivo&&kivo.savePDF){const r=await kivo.savePDF(name);if(r&&r.ok)toast('PDF guardado. Ya puedes imprimirlo');else if(r&&r.error)toast('No pude guardar el PDF: '+r.error)}else window.print()}
+    finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML=''},300)}};
+  f.append(go);box.append(f);openModal(box,{cls:'wide'});
+}
+
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'kivo',v:4,data:{tasks:S.tasks,lists:S.lists,contacts:S.contacts}})],{type:'application/json'}));
@@ -3519,6 +3623,7 @@ $('#emoBtn').onclick=()=>emojiPicker(e=>{D.emoji=e;renderAdd();$('#txt').focus()
 $('#gear').onclick=()=>openSettings();
 $('#searchBtn').onclick=openSearch;
 $('#aiBtn').onclick=openAI;
+$('#printBtn').onclick=openPrint;
 $('#statsBtn').onclick=()=>{statsOff=0;openStats()};
 $('#mic').onclick=toggleMic;
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;save();renderList()});
