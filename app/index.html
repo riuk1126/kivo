@@ -1434,6 +1434,7 @@ async function handler(req) {
 
 Deno.serve(handler);
 </script>
+<script>window.KIVO_VERSION='__KIVO_VERSION__'</script>
 <script src="config.js"></script>
 <script src="vendor/supabase.js" onerror="this.remove()"></script>
 <script>if(!window.supabase)document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
@@ -1499,7 +1500,7 @@ function save(){
   if(lastJ!==null&&j!==lastJ&&!restoring){const now=Date.now();if(now-lastPush>1200){HIST.push(lastJ);if(HIST.length>80)HIST.shift();REDO=[]}lastPush=now}
   lastJ=j;
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('⚠️ No se pudo guardar')}
-  scheduleSync();
+  scheduleSync();if(IS_APP)scheduleNative();
 }
 const listOf=id=>S.lists.find(l=>l.id===id);
 const open=()=>S.tasks.filter(t=>t.status!=='done');
@@ -2586,6 +2587,7 @@ function renderBanner(){
   const b=$('#banner');b.innerHTML='';
   if(NOCOLS){const d=h('div','banner','<b>Falta un paso para usar los espacios: actualiza tu base de datos. En Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL)}};d.append(y);b.append(d)}
   if(NOMETA&&!NOCOLS&&schedLists().length){const d=h('div','banner','<b>Para que tu horario, metas y sesiones se guarden en la nube, actualiza la base de datos: en Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL2).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL2)}};d.append(y);b.append(d)}
+  mobileBanners(b);
   if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary','Reiniciar y actualizar');y.onclick=()=>kivo.installUpdate();d.append(y);b.append(d)}
   if(DEFERRED&&!S.installOff){const d=h('div','banner','<span style="font-size:22px">📲</span><b>Instala Kivo en este equipo para abrirla como un programa.</b>');const y=h('button','btn primary','Instalar');y.onclick=installApp;const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.installOff=true;save();renderBanner()};d.append(y,n);b.append(d)}
   if(!S.alerts||S.bannerOff||notifState()!=='default')return;
@@ -2597,6 +2599,7 @@ function renderBanner(){
 let unseen=0;
 function sysNotify(title,body,cb,tag){
   title=noEmo(title);body=noEmo(body);
+  if(IS_APP){nativeNow(title,body);return}
   if(notifState()!=='granted')return;
   const opt={body,tag:tag||undefined,icon:'icons/icon-192.png',badge:'icons/icon-192.png'};
   if(navigator.serviceWorker&&navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(r=>r.showNotification(title,opt)).catch(()=>{});return}
@@ -2963,7 +2966,7 @@ document.addEventListener('keydown',voiceKey,true);
 async function startVoice(el,host,after){
   if(VOICE){VOICE.ok();return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!voiceLocal()&&!SR){el.focus();toast('Este navegador no permite dictar. Usa Google Chrome o Edge');return}
+  if(!voiceLocal()&&!SR){el.focus();toast(IS_APP||IS_IOS?'Para dictar, toca el micrófono de tu teclado':'Este navegador no permite dictar. Usa Google Chrome o Edge');return}
   const base=el.value.trim();
   const bar=h('div','vbar');bar.innerHTML=`<button class="vx" title="Cancelar (Esc)">✕</button><div class="vmid"><span class="vlab"><i></i>Escuchando…</span><div class="vwave"></div><span class="vtime">0:00</span></div><button class="vok" title="Listo (Enter)">✓</button>`;
   host.classList.add('vhost');host.append(bar);
@@ -3156,6 +3159,7 @@ function subscribe(){
 }
 let rT=null;
 function afterRemote(id){
+  if(IS_APP)scheduleNative();
   lastJ=snapJ();HIST=[];REDO=[];cacheLocal();clearTimeout(rT);
   rT=setTimeout(()=>{renderList();
     if(CURDETAIL&&CURDETAIL.x.id===id){const ae=document.activeElement;const typing=ae&&ae.closest&&ae.closest('.modal.sheet')&&/INPUT|TEXTAREA/.test(ae.tagName);if(!typing)CURDETAIL.draw()}},80);
@@ -3512,6 +3516,43 @@ function openPrint(){
   f.append(go);box.append(f);openModal(box,{cls:'wide'});
 }
 
+/* ================= CELULAR: app de Android (Capacitor) y web instalable (iPhone) ================= */
+const IS_APP=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const IS_IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const LN=()=>IS_APP&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;
+const nid=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
+let NATIVE_OK=false;
+async function nativeSetup(){
+  const P=LN();if(!P)return;
+  try{let p=await P.checkPermissions();if(p.display!=='granted')p=await P.requestPermissions();NATIVE_OK=p.display==='granted'}catch(e){NATIVE_OK=false}
+  try{P.addListener('localNotificationActionPerformed',a=>{const id=a&&a.notification&&a.notification.extra&&a.notification.extra.task;const x=id&&S.tasks.find(t=>t.id===id);if(x)setTimeout(()=>openDetail(x),300)})}catch(e){}
+  scheduleNative();
+}
+function nativeNow(title,body,extra){const P=LN();if(!P||!NATIVE_OK)return false;try{P.schedule({notifications:[{id:nid(title+Date.now()),title:noEmo(title),body:noEmo(body||''),extra:extra||{}}]})}catch(e){}return true}
+// Programa en el celular los avisos de los próximos 10 días, para que lleguen aunque Kivo esté cerrado
+let natT=null;
+function scheduleNative(){clearTimeout(natT);natT=setTimeout(async()=>{
+  const P=LN();if(!P||!NATIVE_OK||!ME)return;
+  const now=Date.now(),lim=now+10*864e5,out=[];
+  if(S.alerts)open().filter(mineOrFree).forEach(x=>{if(!x.date||!x.time||x.remind==='none')return;const at=dueMs(x)-Number(x.remind||0)*6e4;if(at>now+3e4&&at<lim){const l=listOf(x.list);out.push({id:nid(x.id+'|'+x.date+x.time),title:noEmo(x.text),body:(Number(x.remind)?'En '+(Number(x.remind)>=60?Number(x.remind)/60+' h':x.remind+' min')+', a las ':'Ahora, ')+fmtTime(x.time)+(l?' · '+l.name:''),schedule:{at:new Date(at),allowWhileIdle:true},extra:{task:x.id}})}});
+  if(S.alerts)for(let i=0;i<8;i++){const ds=plus(i),dow=pd(ds).getDay();schedLists().forEach(l=>slotsOf(l).forEach(s=>{if(!(s.d||[]).includes(dow))return;const at=atMs(ds,s.s)-6e5;if(at>now+3e4&&at<lim)out.push({id:nid(l.id+s.id+ds),title:noEmo((TPL[l.kind].sched==='class'?'Clase en 10 min: ':'En 10 min: ')+s.label),body:fmtTime(s.s)+(s.room?' · '+s.room:'')+' · '+l.name,schedule:{at:new Date(at),allowWhileIdle:true}})}))}
+  out.sort((a,b)=>a.schedule.at-b.schedule.at);
+  try{const pend=await P.getPending();if(pend.notifications&&pend.notifications.length)await P.cancel({notifications:pend.notifications.map(n=>({id:n.id}))});if(out.length)await P.schedule({notifications:out.slice(0,60)})}catch(e){console.warn('avisos',e)}
+},1500)}
+// ¿Hay una versión nueva del APK?
+async function checkApkUpdate(){
+  if(!IS_APP)return;const cur=String(window.KIVO_VERSION||'');if(!/^\d/.test(cur))return;
+  try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases/latest');if(!r.ok)return;const j=await r.json();const v=String(j.tag_name||'').replace(/^v/,'');
+    const newer=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)>(y[i]||0))return true;if((x[i]||0)<(y[i]||0))return false}return false};
+    if(v&&newer(v,cur)&&(j.assets||[]).some(a=>a.name==='Kivo.apk')){APKUPD=v;renderBanner()}}catch(e){}
+}
+let APKUPD=null;
+function mobileBanners(b){
+  if(APKUPD){const d=h('div','banner','<b>Hay una versión nueva de Kivo para el celular ('+esc(APKUPD)+').</b>');const y=h('button','btn primary','Descargar');y.onclick=()=>window.open('https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk','_blank');d.append(y);b.append(d)}
+  if(IS_IOS&&!IS_STANDALONE&&!IS_APP&&!S.iosHintOff){const d=h('div','banner','<b>Instala Kivo en tu iPhone: toca el botón Compartir <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> y luego «Agregar a inicio».</b>');const n=h('button','btn ghost','Entendido');n.onclick=()=>{S.iosHintOff=true;save();renderBanner()};d.append(n);b.append(d)}
+}
+
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'kivo',v:4,data:{tasks:S.tasks,lists:S.lists,contacts:S.contacts}})],{type:'application/json'}));
@@ -3641,11 +3682,13 @@ async function start(session){
   try{await fetchAll();READY=true;renderAll();subscribe();await flush();
     if(!S.seeded){if(S.lists.some(l=>l.owner===ME))S.seeded=true;else firstRun()}
   }catch(e){console.warn(e);READY=true;setSync('err');setTimeout(()=>fetchAll().then(()=>{renderAll();if(!CH)subscribe();flush()}).catch(()=>{}),15000)}
-  $('#txt').focus();setTimeout(tick,1500);
+  if(!IS_APP)$('#txt').focus();setTimeout(tick,1500);
+  if(IS_APP){nativeSetup();checkApkUpdate()}
 }
 function boot(){
   $('#searchBtn').innerHTML=ICO.search;$('#statsBtn').innerHTML=ICO.chart;$('#gear').innerHTML=ICO.gear;$('#mic').innerHTML=ICO.mic;
-  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if(IS_APP){$('#printBtn').style.display='none';const wo=window.open.bind(window);window.open=(u,t,f)=>{if(/^(https?|mailto|tel|whatsapp):/i.test(String(u||''))&&!/^https?:\/\/localhost/.test(u)){location.href=u;return null}return wo(u,t,f)}}
+  if(!IS_APP&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;if(ME)renderBanner()});
   S=defaults();applyLook();
   if(window.__PENDIENTES_MOCK__)sb=window.__PENDIENTES_MOCK__;

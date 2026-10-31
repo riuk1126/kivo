@@ -1,0 +1,8 @@
+{
+  "appId": "com.arquizo.kivo",
+  "appName": "Kivo",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "android": { "backgroundColor": "#f5f5f7" },
+  "plugins": { "LocalNotifications": { "iconColor": "#1d1d1f" } }
+}
