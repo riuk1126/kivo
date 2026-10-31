@@ -74,6 +74,11 @@ h1{margin:0;font-size:30px;letter-spacing:-.02em;line-height:1.15}
 .fchip{flex:none;border-radius:999px;padding:5px 12px;font-size:13.5px;color:var(--muted);background:var(--card);box-shadow:var(--shadow);display:inline-flex;gap:6px;align-items:center}
 .fchip.on{color:#fff;background:var(--fc,var(--accent))}
 .fchip .c{opacity:.7;font-size:12px}
+.fchip.add{background:transparent;box-shadow:none;border:1.5px dashed var(--soft);color:var(--muted)}
+.fchip.add:hover{border-color:var(--accent);color:var(--accent)}
+.fchip.edit{padding:5px 9px}
+@media (min-width:561px){.filters{flex-wrap:wrap;overflow:visible;align-items:center;row-gap:8px}}
+.fchip{line-height:1.4}
 /* lista */
 .sec{font-size:12.5px;font-weight:700;color:var(--muted);margin:20px 4px 8px;text-transform:uppercase;letter-spacing:.05em}
 .sec.late{color:var(--late)}
@@ -562,8 +567,45 @@ function pickList(cur,cb){
   const box=h('div','mpad');mhead('¿En qué lista?',box);
   const add=(label,id,color)=>{const b=h('button','prop',`<span class="k">${label.split(' ')[0]}</span><span class="v">${esc(label.split(' ').slice(1).join(' '))}</span>${cur===id?'<b style="color:var(--accent)">✓</b>':''}`);if(color)b.style.borderLeft='4px solid '+color;b.onclick=()=>{closeModal();cb(id)};box.append(b)};
   S.lists.forEach(l=>add(l.emoji+' '+l.name,l.id,l.color));add('— Sin lista','',null);
+  const nw=h('button','prop','<span class="k">＋</span><span class="v">Nueva lista…</span>');nw.onclick=()=>{closeModal();openListEditor(null,id=>cb(id))};box.append(nw);
   const f=h('div','foot');const m=h('button','btn ghost','✎ Editar listas');m.onclick=()=>{closeModal();openSettings('listas')};f.append(m);box.append(f);
   openModal(box,{cls:'small'});
+}
+
+/* ---------- crear / editar listas ---------- */
+const LIST_COLORS=['#e8590c','#db2777','#be123c','#7c3aed','#4338ca','#2563eb','#0891b2','#0f766e','#16a34a','#ca8a04','#b45309','#475569'];
+function deleteListUI(l,after){
+  const mine=!l.owner||l.owner===ME;if(!mine){leaveList(l,after);return}
+  const k=S.tasks.filter(t=>t.list===l.id).length;
+  if(!confirm(isShared(l.id)?`«${l.name}» está compartida. Si la borras, desaparece para todo el equipo (las tareas quedan sin lista). ¿Borrar?`:k?`La lista «${l.name}» tiene ${k} tarea(s). Las tareas se quedan, solo sin lista. ¿Borrar?`:`¿Borrar la lista «${l.name}»?`))return;
+  dropListLocally(l);save();renderAll();after&&after();toast('Lista borrada');
+}
+function openListEditor(l,onCreated){
+  const isNew=!l;const st=l?{name:l.name,emoji:l.emoji,color:l.color}:{name:'',emoji:'📁',color:LIST_COLORS[S.lists.length%LIST_COLORS.length]};
+  const box=h('div','mpad');
+  const draw=()=>{
+    box.innerHTML='';mhead(isNew?'＋ Nueva lista':'✎ Editar lista',box);
+    if(isNew)box.append(h('p','small-note','Crea una lista por cada negocio, proyecto o área de tu vida. Cada una tiene sus propias tareas.'));
+    const row=h('div','lrow');const e=h('button','le',esc(st.emoji));e.title='Elegir emoji';e.onclick=()=>emojiPicker(v=>{st.emoji=v||'📁';draw()});
+    const n=h('input','field');n.type='text';n.maxLength=40;n.placeholder='Nombre (ej. Arquizo, Tinta13, Casa…)';n.value=st.name;n.oninput=()=>{st.name=n.value};
+    row.append(e,n);box.append(row);
+    box.append(h('div','lbl','Color'));const sw=h('div','sw-row');
+    LIST_COLORS.forEach(c=>{const b=h('button','sw'+(st.color===c?' on':''));b.style.background=c;b.onclick=()=>{st.color=c;draw()};sw.append(b)});box.append(sw);
+    const f=h('div','foot');
+    if(!isNew){const sh=h('button','btn ghost',isShared(l.id)?'👥 Ver equipo':'🔗 Compartir');sh.onclick=async()=>{closeModal();await flush();openShare(l)};f.append(sh);
+      const mine=!l.owner||l.owner===ME;const del=h('button','btn danger',mine?'🗑 Borrar':'🚪 Salir');del.onclick=()=>{closeModal();deleteListUI(l)};f.append(del)}
+    f.append(h('div','grow'));
+    const ok=h('button','btn primary',isNew?'Crear lista':'Guardar');
+    ok.onclick=()=>{
+      const name=st.name.trim();if(!name){n.focus();toast('Ponle un nombre a la lista ✍️');return}
+      if(isNew&&S.lists.some(x=>norm(x.name)===norm(name))){toast('Ya tienes una lista llamada «'+name+'»');n.focus();return}
+      if(isNew){const nl={id:uid(),name,emoji:st.emoji,color:st.color,owner:ME};S.lists.push(nl);if(onCreated)onCreated(nl.id);else S.filter=nl.id;save();closeModal();renderAll();toast('Lista «'+name+'» creada ✓');if(!onCreated)burst(innerWidth/2,180,24,6)}
+      else{l.name=name;l.emoji=st.emoji;l.color=st.color;save();closeModal();renderAll();toast('Lista actualizada ✓')}
+    };
+    n.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();ok.click()}};
+    f.append(ok);box.append(f);setTimeout(()=>{n.focus();n.select()},30);
+  };
+  draw();openModal(box,{cls:'small'});
 }
 
 /* ---------- elegir fecha y hora ---------- */
@@ -626,10 +668,12 @@ function renderList(){
   document.querySelectorAll('.tab').forEach(b=>{b.classList.toggle('on',b.dataset.v===S.view);b.querySelector('.n').textContent=counts[b.dataset.v]||''});
   // filtros
   const fl=$('#filters');fl.innerHTML='';
-  const fchip=(label,id,color,n)=>{const b=h('button','fchip'+(S.filter===id?' on':''),label+(n?` <span class="c">${n}</span>`:''));if(color)b.style.setProperty('--fc',color);b.onclick=()=>{S.filter=id;save();renderList();renderAdd()};fl.append(b)};
+  const fchip=(label,id,color,n)=>{const b=h('button','fchip'+(S.filter===id?' on':''),label+(n?` <span class="c">${n}</span>`:''));if(color)b.style.setProperty('--fc',color);b.onclick=()=>{S.filter=id;save();renderList();renderAdd()};fl.append(b);return b};
   fchip('Todo','all',null,op.length);
   if(teammates().length){const b=h('button','fchip'+(S.mine?' on':''),'🙋 Mías');b.title='Solo lo que me toca a mí';b.onclick=()=>{S.mine=!S.mine;save();renderList()};fl.append(b)}
-  S.lists.forEach(l=>fchip(esc(l.emoji+' '+l.name)+(isShared(l.id)?' <span title="Compartida con tu equipo">👥</span>':''),l.id,l.color,op.filter(x=>x.list===l.id).length));
+  S.lists.forEach(l=>{const b=fchip(esc(l.emoji+' '+l.name)+(isShared(l.id)?' <span title="Compartida con tu equipo">👥</span>':''),l.id,l.color,op.filter(x=>x.list===l.id).length);b.title='Doble clic o clic derecho para editar';b.ondblclick=()=>openListEditor(l);b.oncontextmenu=e=>{e.preventDefault();openListEditor(l)}});
+  const cur=listOf(S.filter);if(cur){const ed=h('button','fchip edit','✎');ed.title='Editar «'+cur.name+'»';ed.onclick=()=>openListEditor(cur);fl.append(ed)}
+  const nb=h('button','fchip add','＋ Lista');nb.title='Crear una lista nueva (un negocio, proyecto…)';nb.onclick=()=>openListEditor();fl.append(nb);
   // anillo, racha, subtítulo
   const allToday=op.filter(x=>x.date&&x.date<=t).length,doneToday=S.tasks.filter(x=>x.status==='done'&&x.doneOn===t).length,tot=allToday+doneToday;
   $('#ringTxt').textContent=doneToday+'/'+tot;$('#ringFg').style.strokeDashoffset=150.8*(1-(tot?doneToday/tot:0));
