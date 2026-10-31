@@ -794,6 +794,9 @@ select.fin{cursor:pointer}
 .vwave{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:3px;height:32px;overflow:hidden}
 .vwave i{width:3px;min-width:3px;border-radius:3px;background:var(--text);opacity:.75;height:3px;transition:height .08s}
 .vtime{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vbar.dl .vwave{background:linear-gradient(90deg,var(--accent) var(--pc,0%),var(--fill2) var(--pc,0%));height:6px;border-radius:9px}
+.vbar.dl .vwave i,.vbar.dl .vok{display:none}
+.vbar.dl .vlab{white-space:normal;font-size:13px;line-height:1.25}
 .vbar.busy .vwave,.vbar.busy .vtime,.vbar.busy .vok{opacity:.3}
 .vbar.busy .vlab i{background:var(--accent);animation:pulse .6s infinite}
 .ai-tw .vbar{inset:auto 0 0 0;height:auto;padding:8px;border-radius:0 0 12px 12px}
@@ -2373,7 +2376,8 @@ function openStats(){
 /* ---------- dictar por voz ---------- */
 let REC=null;
 /* ---------- dictado por voz, estilo Claude: escuchando… ✕ ✓ ---------- */
-const WHISPER_ID='onnx-community/whisper-base';
+const WHISPER_ID='onnx-community/whisper-small';
+const WID=()=>window.KIVO_WHISPER||WHISPER_ID;
 const RES='kivo-res://m/';
 let VW=null;
 // Whisper corre en un hilo aparte para que la app no se congele
@@ -2385,11 +2389,14 @@ function vwCall(msg,transfer){
   if(!VW){VW={w:new Worker(URL.createObjectURL(new Blob([VW_SRC],{type:'text/javascript'})),{type:'module'}),n:0,cb:{}};
     VW.w.onmessage=e=>{const c=VW.cb[e.data.id];if(c){delete VW.cb[e.data.id];e.data.err?c.rej(new Error(e.data.err)):c.res(e.data)}};
     VW.w.onerror=e=>{Object.values(VW.cb).forEach(c=>c.rej(new Error('worker')));VW.cb={};try{VW.w.terminate()}catch(_){}VW=null}}
-  const n=++VW.n;return new Promise((res,rej)=>{VW.cb[n]={res,rej};VW.w.postMessage(Object.assign({n,res:RES,id:window.KIVO_WHISPER||WHISPER_ID},msg),transfer||[])});
+  const n=++VW.n;return new Promise((res,rej)=>{VW.cb[n]={res,rej};VW.w.postMessage(Object.assign({n,res:RES,id:WID()},msg),transfer||[])});
 }
 let VLOAD=null;
 const voiceLocal=()=>!!(window.kivo&&kivo.desktop);
-function preloadVoice(){if(voiceLocal()&&!VLOAD)VLOAD=vwCall({t:'load'}).catch(e=>{VLOAD=null;console.warn('voz',e)})}
+let VREADY=null,VDL=null,VPROG=null;
+async function voiceReady(){if(VREADY)return true;if(!kivo.voiceStatus)return true;VREADY=await kivo.voiceStatus(WID());return VREADY}
+function voiceDownload(onp){VPROG=onp;if(!VDL){if(kivo.onVoiceProgress&&!voiceDownload.hooked){voiceDownload.hooked=1;kivo.onVoiceProgress(p=>VPROG&&VPROG(p))}VDL=kivo.voiceDownload(WID()).then(ok=>{VDL=null;if(!ok)throw new Error('id');VREADY=true;return true},e=>{VDL=null;throw e})}return VDL}
+function preloadVoice(){if(!voiceLocal()||VLOAD)return;voiceReady().then(ok=>{if(ok&&!VLOAD)VLOAD=vwCall({t:'load'}).catch(e=>{VLOAD=null;console.warn('voz',e)})}).catch(()=>{})}
 function resample16k(buf,rate){if(rate===16000)return buf;const r=rate/16000,n=Math.floor(buf.length/r),o=new Float32Array(n);for(let i=0;i<n;i++){const x=i*r,a=Math.floor(x),f=x-a;o[i]=buf[a]*(1-f)+(buf[a+1]||0)*f}return o}
 let VOICE=null;
 function voiceKey(e){if(!VOICE)return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();VOICE.ok()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();VOICE.cancel()}}
@@ -2413,7 +2420,7 @@ async function startVoice(el,host,after){
     lv.push(v);lv.shift();bars.forEach((b,i)=>{b.style.height=Math.max(3,lv[i]*30)+'px'});raf=requestAnimationFrame(draw)};
   VOICE={
     cancel(){if(done)return;done=true;cleanup();el.value=base?base:'';if(!base)el.value='';el.dispatchEvent(new Event('input'));close()},
-    async ok(){if(done)return;done=true;
+    async ok(){if(done)return;if(bar.classList.contains('dl'))return;done=true;
       if(!voiceLocal()){try{sr&&sr.stop()}catch(e){}setTimeout(()=>{cleanup();close();if(el.value.trim()&&after)after()},350);return}
       cleanup();bar.classList.add('busy');lab.innerHTML='<i></i>Escribiendo lo que dijiste…';
       const len=chunks.reduce((a,c)=>a+c.length,0);if(len<rate*0.4){close();toast('No te escuché. Intenta otra vez');return}
@@ -2423,6 +2430,12 @@ async function startVoice(el,host,after){
     }
   };
   bar.querySelector('.vx').onclick=()=>VOICE&&VOICE.cancel();bar.querySelector('.vok').onclick=()=>VOICE&&VOICE.ok();
+  if(voiceLocal()){let ready=false;try{ready=await voiceReady()}catch(e){}
+    if(!ready){bar.classList.add('dl');lab.innerHTML='<i></i>Preparando el dictado (solo la primera vez, unos 250 MB)…';tm.textContent='0%';
+      try{await voiceDownload(p=>{const pc=Math.floor(p.done/p.total*100);tm.textContent=pc+'%';wave.style.setProperty('--pc',pc+'%')})}
+      catch(e){if(!done){done=true;cleanup();close()}toast('No pude descargar la voz. Revisa tu internet e intenta otra vez');return}
+      if(done){toast('La voz quedó lista. Toca el micrófono para dictar');return}
+      bar.classList.remove('dl');lab.innerHTML='<i></i>Escuchando…';t0=Date.now();preloadVoice()}}
   try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false})}
   catch(e){done=true;cleanup();close();toast('Necesito permiso para usar el micrófono');return}
   if(done){cleanup();return}

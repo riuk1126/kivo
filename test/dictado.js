@@ -11,10 +11,13 @@ const note = (x) => console.log('::notice::' + String(x).replace(/\n/g, ' ').sli
   const r = await win.evaluate(async (model) => {
     window.KIVO_WHISPER = model;
     const log = []; const t0 = Date.now();
-    try { await vwCall({ t: 'load' }); log.push('modelo cargado en ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s'); } catch (e) { log.push('modelo ERROR ' + e.message); return log; }
     const host = document.createElement('div'); host.style.cssText = 'position:fixed;top:10px;left:10px;width:600px;height:60px;z-index:99999';
     const ta = document.createElement('textarea'); host.append(ta); document.body.append(host);
     startVoice(ta, host);
+    const td = Date.now();
+    for (let i = 0; i < 1200; i++) { await new Promise((r) => setTimeout(r, 500)); const b = host.querySelector('.vbar'); if (!b || !b.classList.contains('dl')) break; }
+    log.push('descarga de la voz: ' + ((Date.now() - td) / 1000).toFixed(0) + ' s · barra: ' + (host.querySelector('.vlab') || {}).textContent);
+    if (!host.querySelector('.vbar')) { log.push('la barra se cerró'); return log; }
     await new Promise((r) => setTimeout(r, 9000));
     log.push('barra visible: ' + !!host.querySelector('.vbar') + ' · ' + (host.querySelector('.vlab') || {}).textContent);
     const t1 = Date.now(); VOICE.ok();

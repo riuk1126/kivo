@@ -35,8 +35,9 @@ if (!app.requestSingleInstanceLock()) {
     const TYPES = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.json': 'application/json', '.txt': 'text/plain' };
     protocol.handle('kivo-res', async (req) => {
       const rel = decodeURIComponent(new URL(req.url).pathname).replace(/^\/+/, '');
-      const file = path.normalize(path.join(VENDOR, rel));
-      if (!file.startsWith(VENDOR)) return new Response('', { status: 403 });
+      let file = path.normalize(path.join(VENDOR, rel));
+      if (rel.startsWith('models/')) { const alt = path.normalize(path.join(VOICE_DIR(), rel.slice(7))); if (alt.startsWith(VOICE_DIR()) && fs.existsSync(alt)) file = alt; }
+      else if (!file.startsWith(VENDOR)) return new Response('', { status: 403 });
       try {
         const data = await fs.promises.readFile(file);
         return new Response(data, { headers: { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'access-control-allow-origin': '*' } });
@@ -139,6 +140,45 @@ ipcMain.on('kivo:attention', (e, n) => {
   if (process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
 });
 ipcMain.handle('kivo:version', () => app.getVersion());
+// Voz para dictar (Whisper): se descarga una sola vez a la carpeta de datos de Kivo
+const VOICE_DIR = () => path.join(app.getPath('userData'), 'voz');
+const voiceFile = (f) => (!f.includes('/') && /\.(json|txt)$/.test(f)) || /^onnx\/(encoder_model|decoder_model_merged)_quantized\.onnx$/.test(f);
+const okId = (id) => /^[\w.-]+\/[\w.-]+$/.test(String(id || ''));
+let voiceDl = null;
+ipcMain.handle('kivo:voice-status', (e, id) => okId(id) && fs.existsSync(path.join(VOICE_DIR(), id, '.listo')));
+ipcMain.handle('kivo:voice-download', (e, id) => {
+  if (!okId(id)) return false;
+  if (voiceDl) return voiceDl;
+  voiceDl = (async () => {
+    const dest = path.join(VOICE_DIR(), id);
+    const info = await (await fetch('https://huggingface.co/api/models/' + id + '?blobs=true')).json();
+    const files = (info.siblings || []).filter((s) => voiceFile(s.rfilename));
+    if (!files.length) throw new Error('modelo vacío');
+    const total = files.reduce((a, s) => a + (s.size || 0), 0) || 1;
+    let done = 0, last = 0;
+    const tell = (force) => { const now = Date.now(); if ((force || now - last > 300) && win && !win.isDestroyed()) { last = now; win.webContents.send('kivo:voice-progress', { done, total }); } };
+    for (const s of files) {
+      const out = path.join(dest, s.rfilename);
+      if (s.size && fs.existsSync(out) && fs.statSync(out).size === s.size) { done += s.size; tell(); continue; }
+      fs.mkdirSync(path.dirname(out), { recursive: true });
+      const r = await fetch('https://huggingface.co/' + id + '/resolve/main/' + s.rfilename);
+      if (!r.ok || !r.body) throw new Error(s.rfilename + ' ' + r.status);
+      const tmp = out + '.part';
+      const ws = fs.createWriteStream(tmp);
+      for await (const chunk of r.body) {
+        if (!ws.write(Buffer.from(chunk))) await new Promise((ok) => ws.once('drain', ok));
+        done += chunk.length; tell();
+      }
+      await new Promise((ok, ko) => { ws.on('error', ko); ws.end(ok); });
+      fs.renameSync(tmp, out);
+    }
+    fs.writeFileSync(path.join(dest, '.listo'), new Date().toISOString());
+    tell(true);
+    return true;
+  })().finally(() => { voiceDl = null; });
+  return voiceDl;
+});
+
 // Dictado: en Windows abre el dictado del sistema (Windows + H) sobre el campo activo
 const DICTATE_PS = 'QQBkAGQALQBUAHkAcABlACAALQBOAGEAbQBlAHMAcABhAGMAZQAgAEsAIAAtAE4AYQBtAGUAIABXACAALQBNAGUAbQBiAGUAcgBEAGUAZgBpAG4AaQB0AGkAbwBuACAAJwBbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgB1AHMAZQByADMAMgAuAGQAbABsACIAKQBdACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAdgBvAGkAZAAgAGsAZQB5AGIAZABfAGUAdgBlAG4AdAAoAGIAeQB0AGUAIABiACwAIABiAHkAdABlACAAcwAsACAAdQBpAG4AdAAgAGYALAAgAFUASQBuAHQAUAB0AHIAIABlACkAOwAnADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANQBCACwAMAAsADAALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANAA4ACwAMAAsADAALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANAA4ACwAMAAsADIALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANQBCACwAMAAsADIALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApAA==';
 ipcMain.handle('kivo:dictate', () => {

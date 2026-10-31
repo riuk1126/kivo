@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        modelo: [onnx-community/whisper-base, onnx-community/whisper-small]
+        modelo: [onnx-community/whisper-small]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,7 +15,6 @@ jobs:
           node-version: 20
       - run: npm install && npm i --no-save playwright@1.48.2
       - run: node scripts/vendor.js | sed 's/^/::notice::/'
-      - run: node scripts/modelo-voz.js ${{ matrix.modelo }} && du -sh app/vendor app/vendor/models | sed 's/^/::notice::/'
       - name: Audio de prueba
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng xvfb >/dev/null
