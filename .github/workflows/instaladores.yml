@@ -12,7 +12,20 @@ permissions:
   contents: write
 
 jobs:
+  modelo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Modelo de voz en español (dictado sin internet)
+        run: |
+          curl -sL -o m.zip https://alphacephei.com/vosk/models/vosk-model-small-es-0.42.zip
+          unzip -q m.zip
+          mkdir out && tar czf out/vosk-es.tar.gz vosk-model-small-es-0.42
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelo-voz
+          path: out/vosk-es.tar.gz
   build:
+    needs: modelo
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +38,10 @@ jobs:
           node-version: 20
       - run: npm install
       - run: node scripts/vendor.js
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelo-voz
+          path: app/vendor
       - run: npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
