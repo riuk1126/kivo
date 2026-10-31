@@ -53,7 +53,11 @@ jobs:
           V=$(node -p "require('../package.json').version")
           sed -i "s/__KIVO_VERSION__/$V/" www/index.html
           npx cap add android
-          npx capacitor-assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#111111' --splashBackgroundColor '#f5f5f7' --splashBackgroundColorDark '#000000' || echo "sin íconos"
+          cp -r res/* android/app/src/main/res/
+          for f in $(find android/app/src/main/res -name 'splash.png'); do
+            W=$(identify -format '%w' "$f"); H=$(identify -format '%h' "$f"); M=$(( W<H ? W : H )); L=$(( M*38/100 ))
+            convert -size ${W}x${H} xc:black \( splash-logo.png -resize ${L}x${L} \) -gravity center -composite "$f"
+          done
           CODE=$(node -p "const [a,b,c]=require('../package.json').version.split('.').map(Number);a*10000+b*100+c")
           sed -i "s/versionCode [0-9]*/versionCode $CODE/; s/versionName \"[^\"]*\"/versionName \"$V\"/" android/app/build.gradle
           npx cap sync android
