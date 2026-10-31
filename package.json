@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "electron-updater": "6.3.9",
-    "@supabase/supabase-js": "2.45.4",
-    "vosk-browser": "0.0.8"
+    "@supabase/supabase-js": "2.45.4"
   },
   "devDependencies": {
     "electron": "33.2.1",
-    "electron-builder": "25.1.8"
+    "electron-builder": "25.1.8",
+    "@huggingface/transformers": "3.0.2"
   },
   "build": {
     "appId": "com.arquizo.kivo",

@@ -1,4 +1,4 @@
-# Prueba el dictado sin internet (modelo de voz en español) dentro del programa
+# Prueba el dictado sin internet (Whisper en español) dentro del programa
 name: Probar dictado
 on: workflow_dispatch
 jobs:
@@ -7,27 +7,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        empaque: [carpeta, plano]
+        modelo: [onnx-community/whisper-base, onnx-community/whisper-small]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install && npm i --no-save playwright@1.48.2
-      - run: node scripts/vendor.js && ls -la app/vendor
-      - name: Modelo de voz
-        run: |
-          curl -sL -o m.zip https://alphacephei.com/vosk/models/vosk-model-small-es-0.42.zip
-          unzip -q m.zip
-          if [ "${{ matrix.empaque }}" = carpeta ]; then tar czf app/vendor/vosk-es.tar.gz vosk-model-small-es-0.42; else tar -C vosk-model-small-es-0.42 -czf app/vendor/vosk-es.tar.gz .; fi
-          ls -la app/vendor
+      - run: node scripts/vendor.js | sed 's/^/::notice::/'
+      - run: node scripts/modelo-voz.js ${{ matrix.modelo }} && du -sh app/vendor app/vendor/models | sed 's/^/::notice::/'
       - name: Audio de prueba
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng xvfb >/dev/null
-          espeak-ng -v es -s 135 -w test/es.wav "estoy llevando un curso de diseño los lunes y miércoles de siete a nueve de la noche"
+          espeak-ng -v es-419 -s 140 -w test/es.wav "estoy llevando un curso de sketchup los lunes y miércoles de siete a nueve de la noche, dura ocho semanas"
       - run: xvfb-run -a node test/dictado.js
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: captura-${{ matrix.empaque }}
-          path: test/captura.png
+        env:
+          MODELO: ${{ matrix.modelo }}

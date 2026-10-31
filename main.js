@@ -30,11 +30,16 @@ if (!app.requestSingleInstanceLock()) {
     session.defaultSession.setPermissionRequestHandler((wc, permission, cb) => {
       cb(['notifications', 'media', 'clipboard-read', 'clipboard-sanitized-write'].includes(permission));
     });
+    // kivo-res://m/<ruta> → archivos de app/vendor (modelo de voz y su motor)
+    const VENDOR = path.join(__dirname, 'app', 'vendor');
+    const TYPES = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.json': 'application/json', '.txt': 'text/plain' };
     protocol.handle('kivo-res', async (req) => {
-      const name = path.basename(new URL(req.url).pathname);
+      const rel = decodeURIComponent(new URL(req.url).pathname).replace(/^\/+/, '');
+      const file = path.normalize(path.join(VENDOR, rel));
+      if (!file.startsWith(VENDOR)) return new Response('', { status: 403 });
       try {
-        const data = await fs.promises.readFile(path.join(__dirname, 'app', 'vendor', name));
-        return new Response(data, { headers: { 'content-type': 'application/octet-stream', 'access-control-allow-origin': '*' } });
+        const data = await fs.promises.readFile(file);
+        return new Response(data, { headers: { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'access-control-allow-origin': '*' } });
       } catch (e) { return new Response('', { status: 404 }); }
     });
     createWin();

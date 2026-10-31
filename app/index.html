@@ -783,6 +783,21 @@ select.fin{cursor:pointer}
 .ai-fx summary{cursor:pointer;padding:4px 2px}
 .ai-fx summary b{color:var(--text);font-weight:500}
 .ai-fx .field{margin-top:6px;font-size:14px}
+.vhost{position:relative}
+.vbar{position:absolute;inset:0;z-index:5;display:flex;align-items:center;gap:10px;padding:6px;background:var(--card);border-radius:14px;animation:callin .15s ease}
+.vbar .vx,.vbar .vok{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:17px;font-weight:600}
+.vbar .vx{background:var(--fill);color:var(--text)}
+.vbar .vok{background:var(--accent);color:var(--on-accent)}
+.vmid{flex:1;min-width:0;display:flex;align-items:center;gap:12px;height:40px;background:var(--fill);border-radius:999px;padding:0 16px}
+.vlab{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;white-space:nowrap}
+.vlab i{width:9px;height:9px;border-radius:50%;background:var(--late);animation:pulse 1.2s infinite}
+.vwave{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:3px;height:32px;overflow:hidden}
+.vwave i{width:3px;min-width:3px;border-radius:3px;background:var(--text);opacity:.75;height:3px;transition:height .08s}
+.vtime{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vbar.busy .vwave,.vbar.busy .vtime,.vbar.busy .vok{opacity:.3}
+.vbar.busy .vlab i{background:var(--accent);animation:pulse .6s infinite}
+.ai-tw .vbar{inset:auto 0 0 0;height:auto;padding:8px;border-radius:0 0 12px 12px}
+@media (max-width:560px){.vwave{display:none}}
 .ai-tw{position:relative}
 .ai-tw .ai-ta{padding-bottom:52px}
 .ai-mic{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:7px 14px 7px 11px;font-size:13.5px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px var(--line)}
@@ -2357,66 +2372,69 @@ function openStats(){
 
 /* ---------- dictar por voz ---------- */
 let REC=null;
-const DICT_HELP=()=>window.kivo&&kivo.platform==='darwin'?'Para dictar: pulsa dos veces la tecla Fn (🌐) y habla':window.kivo&&kivo.platform==='win32'?'Para dictar: pulsa la tecla Windows + H y habla':'Usa el dictado de tu sistema, si lo tienes activado';
-async function deskDictate(el){
-  el.focus();
-  if(window.kivo&&kivo.dictate&&kivo.platform==='win32'){let ok=false;try{ok=await kivo.dictate()}catch(e){}if(ok){el.focus();toast('Habla ahora. Para terminar, pulsa otra vez Windows + H');return}}
-  toast(DICT_HELP());
+/* ---------- dictado por voz, estilo Claude: escuchando… ✕ ✓ ---------- */
+const WHISPER_ID='onnx-community/whisper-base';
+const RES='kivo-res://m/';
+let VW=null;
+// Whisper corre en un hilo aparte para que la app no se congele
+const VW_SRC=`let P=null;
+async function load(res,id){const T=await import(res+'transformers.min.js');T.env.allowRemoteModels=false;T.env.allowLocalModels=true;T.env.localModelPath=res+'models/';T.env.backends.onnx.wasm.wasmPaths=res;T.env.backends.onnx.wasm.numThreads=1;return T.pipeline('automatic-speech-recognition',id,{dtype:'q8',device:'wasm'})}
+onmessage=async e=>{const d=e.data;try{if(!P)P=load(d.res,d.id);const p=await P;if(d.t==='load'){postMessage({id:d.n,ok:1});return}
+const o=await p(d.audio,{language:'spanish',task:'transcribe',chunk_length_s:30,stride_length_s:5});postMessage({id:d.n,ok:1,text:(o&&o.text)||''})}catch(err){P=null;postMessage({id:d.n,err:String(err&&err.message||err)})}};`;
+function vwCall(msg,transfer){
+  if(!VW){VW={w:new Worker(URL.createObjectURL(new Blob([VW_SRC],{type:'text/javascript'})),{type:'module'}),n:0,cb:{}};
+    VW.w.onmessage=e=>{const c=VW.cb[e.data.id];if(c){delete VW.cb[e.data.id];e.data.err?c.rej(new Error(e.data.err)):c.res(e.data)}};
+    VW.w.onerror=e=>{Object.values(VW.cb).forEach(c=>c.rej(new Error('worker')));VW.cb={};try{VW.w.terminate()}catch(_){}VW=null}}
+  const n=++VW.n;return new Promise((res,rej)=>{VW.cb[n]={res,rej};VW.w.postMessage(Object.assign({n,res:RES,id:window.KIVO_WHISPER||WHISPER_ID},msg),transfer||[])});
 }
-let REC2=null;
-/* dictado en vivo dentro del programa (Vosk, sin internet) */
-let VOSKP=null,LIVE=null;
-const MODEL_URL='kivo-res://m/vosk-es.tar.gz';
-function voskLib(){return window.Vosk?Promise.resolve(window.Vosk):new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='vendor/vosk.js';sc.onload=()=>window.Vosk?res(window.Vosk):rej(new Error('nolib'));sc.onerror=()=>rej(new Error('nolib'));document.head.append(sc)})}
-function voskModel(){if(!VOSKP)VOSKP=voskLib().then(V=>V.createModel(window.KIVO_MODEL_URL||MODEL_URL)).catch(e=>{VOSKP=null;throw e});return VOSKP}
-function preloadVoice(){if(window.kivo&&!REC2)voskModel().catch(()=>{})}
-function setMicBtn(btn,label,on){if(!btn)return;btn.classList.toggle('on',!!on);btn.classList.toggle('busy',label==='Preparando…');const t=btn.querySelector('span');if(t)t.textContent=label}
-async function liveDictate(el,btn,idle){
-  if(LIVE){LIVE.stop();return true}
-  setMicBtn(btn,'Preparando…',false);let model;
-  try{model=await voskModel()}catch(e){setMicBtn(btn,idle||'Hablar',false);return false}
-  let stream;
-  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1},video:false})}
-  catch(e){setMicBtn(btn,idle||'Hablar',false);toast('Necesito permiso para usar el micrófono');return true}
-  const ac=new AudioContext();const rec=new model.KaldiRecognizer(ac.sampleRate);
-  const base=el.value.trim();let fin='';
-  const show=p=>{let t=[fin,p].filter(Boolean).join(' ');if(!base&&t)t=t[0].toUpperCase()+t.slice(1);el.value=[base,t].filter(Boolean).join(' ');el.dispatchEvent(new Event('input'));el.scrollTop=el.scrollHeight};
-  rec.on('result',m=>{const t=((m.result||{}).text||'').trim();if(t){fin+=(fin?' ':'')+t;show('')}});
-  rec.on('partialresult',m=>{const p=((m.result||{}).partial||'').trim();if(p)show(p)});
-  const node=ac.createScriptProcessor(4096,1,1);node.onaudioprocess=e=>{try{rec.acceptWaveform(e.inputBuffer)}catch(_){}};
-  const src=ac.createMediaStreamSource(stream);src.connect(node);node.connect(ac.destination);
-  const old=el.placeholder;el.placeholder='Te escucho… habla con calma';
-  LIVE={stop(){try{rec.retrieveFinalResult()}catch(e){}setTimeout(()=>{try{src.disconnect();node.disconnect();stream.getTracks().forEach(t=>t.stop());ac.close();rec.remove()}catch(e){}},400);
-    LIVE=null;el.placeholder=old;setMicBtn(btn,idle||'Hablar',false);if(btn&&btn.id==='mic')btn.classList.remove('on');el.focus()}};
-  setMicBtn(btn,'Detener',true);if(btn&&btn.id==='mic')btn.classList.add('on');el.focus();
-  return true;
-}
-function dictateInto(el,btn){
-  if(window.kivo){if(LIVE){LIVE.stop();return}liveDictate(el,btn).then(ok=>{if(!ok)deskDictate(el)});return}
+let VLOAD=null;
+const voiceLocal=()=>!!(window.kivo&&kivo.desktop);
+function preloadVoice(){if(voiceLocal()&&!VLOAD)VLOAD=vwCall({t:'load'}).catch(e=>{VLOAD=null;console.warn('voz',e)})}
+function resample16k(buf,rate){if(rate===16000)return buf;const r=rate/16000,n=Math.floor(buf.length/r),o=new Float32Array(n);for(let i=0;i<n;i++){const x=i*r,a=Math.floor(x),f=x-a;o[i]=buf[a]*(1-f)+(buf[a+1]||0)*f}return o}
+let VOICE=null;
+function voiceKey(e){if(!VOICE)return;if(e.key==='Enter'){e.preventDefault();e.stopPropagation();VOICE.ok()}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();VOICE.cancel()}}
+document.addEventListener('keydown',voiceKey,true);
+/* el = campo donde va el texto · host = caja sobre la que aparece la barra */
+async function startVoice(el,host,after){
+  if(VOICE){VOICE.ok();return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){el.focus();toast('Este navegador no permite dictar. Usa Google Chrome o Edge, o '+DICT_HELP().toLowerCase());return}
-  if(REC2){try{REC2.stop()}catch(e){}return}
-  const r=new SR();r.lang='es-PE';r.interimResults=true;r.continuous=true;
+  if(!voiceLocal()&&!SR){el.focus();toast('Este navegador no permite dictar. Usa Google Chrome o Edge');return}
   const base=el.value.trim();
-  r.onstart=()=>{if(btn){btn.classList.add('on');const t=btn.querySelector('span');if(t)t.textContent='Detener'}el.placeholder='Te escucho… habla con calma'};
-  r.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;el.value=(base?base+' ':'')+s.trim();el.dispatchEvent(new Event('input'))};
-  r.onerror=e=>{const m={'not-allowed':'Necesito permiso para usar el micrófono','service-not-allowed':'Necesito permiso para usar el micrófono','no-speech':'No te escuché. Intenta otra vez','network':'Para dictar necesitas internet','audio-capture':'No encontré un micrófono'};toast(m[e.error]||'No pude escucharte')};
-  r.onend=()=>{REC2=null;if(btn){btn.classList.remove('on');const t=btn.querySelector('span');if(t)t.textContent='Hablar'}el.focus()};
-  REC2=r;try{r.start()}catch(e){REC2=null;toast('No pude usar el micrófono')}
+  const bar=h('div','vbar');bar.innerHTML=`<button class="vx" title="Cancelar (Esc)">✕</button><div class="vmid"><span class="vlab"><i></i>Escuchando…</span><div class="vwave"></div><span class="vtime">0:00</span></div><button class="vok" title="Listo (Enter)">✓</button>`;
+  host.classList.add('vhost');host.append(bar);
+  const wave=bar.querySelector('.vwave'),lab=bar.querySelector('.vlab'),tm=bar.querySelector('.vtime');
+  const NB=36;for(let i=0;i<NB;i++)wave.append(h('i'));const bars=[...wave.children];const lv=new Array(NB).fill(0);
+  let stream=null,ac=null,an=null,node=null,src=null,raf=null,chunks=[],rate=48000,sr=null,live='',t0=Date.now(),done=false;
+  const cleanup=()=>{cancelAnimationFrame(raf);clearInterval(tick);try{node&&node.disconnect();src&&src.disconnect();stream&&stream.getTracks().forEach(t=>t.stop());ac&&ac.close()}catch(e){}try{sr&&sr.abort()}catch(e){}};
+  const close=()=>{bar.remove();host.classList.remove('vhost');VOICE=null;el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(e){}};
+  const put=t=>{t=String(t||'').replace(/\s+/g,' ').trim();if(!t)return false;if(!base)t=t[0].toUpperCase()+t.slice(1);el.value=[base,t].filter(Boolean).join(' ');el.dispatchEvent(new Event('input'));return true};
+  const tick=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);tm.textContent=Math.floor(s/60)+':'+pad(s%60);if(s>=180)VOICE&&VOICE.ok()},250);
+  const draw=()=>{let v=0;if(an){const d=new Uint8Array(an.fftSize);an.getByteTimeDomainData(d);let sum=0;for(let i=0;i<d.length;i++){const x=(d[i]-128)/128;sum+=x*x}v=Math.min(1,Math.sqrt(sum/d.length)*5)}
+    lv.push(v);lv.shift();bars.forEach((b,i)=>{b.style.height=Math.max(3,lv[i]*30)+'px'});raf=requestAnimationFrame(draw)};
+  VOICE={
+    cancel(){if(done)return;done=true;cleanup();el.value=base?base:'';if(!base)el.value='';el.dispatchEvent(new Event('input'));close()},
+    async ok(){if(done)return;done=true;
+      if(!voiceLocal()){try{sr&&sr.stop()}catch(e){}setTimeout(()=>{cleanup();close();if(el.value.trim()&&after)after()},350);return}
+      cleanup();bar.classList.add('busy');lab.innerHTML='<i></i>Escribiendo lo que dijiste…';
+      const len=chunks.reduce((a,c)=>a+c.length,0);if(len<rate*0.4){close();toast('No te escuché. Intenta otra vez');return}
+      const all=new Float32Array(len);let o=0;chunks.forEach(c=>{all.set(c,o);o+=c.length});const a16=resample16k(all,rate);
+      try{const r=await vwCall({t:'run',audio:a16},[a16.buffer]);close();if(put(r.text)){if(after)after()}else toast('No entendí nada. Habla un poco más cerca del micrófono')}
+      catch(e){console.warn('voz',e);close();toast('No pude escribir lo que dijiste. Intenta otra vez')}
+    }
+  };
+  bar.querySelector('.vx').onclick=()=>VOICE&&VOICE.cancel();bar.querySelector('.vok').onclick=()=>VOICE&&VOICE.ok();
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false})}
+  catch(e){done=true;cleanup();close();toast('Necesito permiso para usar el micrófono');return}
+  if(done){cleanup();return}
+  ac=new AudioContext();rate=ac.sampleRate;src=ac.createMediaStreamSource(stream);an=ac.createAnalyser();an.fftSize=1024;src.connect(an);draw();
+  if(voiceLocal()){preloadVoice();node=ac.createScriptProcessor(4096,1,1);node.onaudioprocess=e=>{if(!done)chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)))};src.connect(node);node.connect(ac.destination)}
+  else{sr=new SR();sr.lang='es-PE';sr.interimResults=true;sr.continuous=true;
+    sr.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;live=s;put(s)};
+    sr.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;const m={'not-allowed':'Necesito permiso para usar el micrófono','network':'Para dictar en el navegador necesitas internet'};toast(m[e.error]||'No pude escucharte')};
+    sr.onend=()=>{if(!done&&VOICE){try{sr.start()}catch(_){}}};try{sr.start()}catch(e){}}
 }
-function toggleMic(){
-  if(window.kivo){if(LIVE){LIVE.stop();return}liveDictate($('#txt'),$('#mic')).then(ok=>{if(!ok)deskDictate($('#txt'))});return}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){toast('Tu navegador no permite dictar. Ábrela con Google Chrome o Edge 🎤');return}
-  if(REC){try{REC.stop()}catch(e){}return}
-  const r=new SR();r.lang='es-PE';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
-  const base=$('#txt').value.trim();let heard=false;
-  r.onstart=()=>{$('#mic').classList.add('on');$('#txt').placeholder='Te escucho… 🎤'};
-  r.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;$('#txt').value=(base?base+' ':'')+s.trim();renderAdd();heard=true};
-  r.onerror=e=>{const m={'not-allowed':'Necesito permiso para usar el micrófono 🎤','service-not-allowed':'Necesito permiso para usar el micrófono 🎤','no-speech':'No te escuché. Intenta otra vez 🙂','network':'Para dictar necesitas internet 🌐','audio-capture':'No encontré un micrófono 🎤'};toast(m[e.error]||'No pude escucharte 😕')};
-  r.onend=()=>{REC=null;$('#mic').classList.remove('on');$('#txt').placeholder='¿Qué tienes que hacer?';if(heard&&$('#txt').value.trim()){$('#txt').focus();toast('¿Está bien así?','Agregar',addTask)}};
-  REC=r;try{r.start()}catch(e){REC=null;toast('No pude usar el micrófono 😕')}
-}
+
+function toggleMic(){startVoice($('#txt'),$('.add-row'))}
 
 /* ---------- contactos ---------- */
 function telNum(p){let d=String(p||'').replace(/\D/g,'');if(d.length===9&&d[0]==='9')d='51'+d;return d}
@@ -2890,7 +2908,7 @@ function aiPreview(plan,back){
 let AIW=null,AIASK='';
 function openAI(){
   const st={ask:AIASK,step:'ask',last:''};const box=h('div','mpad');
-  const stop=()=>{if(REC2)try{REC2.stop()}catch(e){};if(LIVE)LIVE.stop();clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
+  const stop=()=>{if(VOICE)VOICE.cancel();clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
   const tryText=t=>{if(!t||t===st.last||t===st.prompt)return false;const o=aiExtract(t);if(!o)return false;st.last=t;const plan=aiNormalize(o);stop();closeModal();aiPreview(plan,()=>openAI());return true};
   const peek=async()=>{if(!document.hasFocus())return;try{const t=await navigator.clipboard.readText();tryText(t)}catch(e){}};
   const draw=()=>{box.innerHTML='';
@@ -2898,7 +2916,7 @@ function openAI(){
     if(st.step==='ask'){
       box.append(h('p','small-note','Cuéntale a la IA qué necesitas, como se lo dirías a una persona. Con tu Claude (también el gratuito) o ChatGPT, sin pagar nada extra.'));
       const tw=h('div','ai-tw');const ta=h('textarea','field ai-ta');ta.rows=5;ta.placeholder='Escribe o toca el micrófono y cuéntale: «Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas…»';ta.value=st.ask;ta.oninput=()=>{st.ask=AIASK=ta.value};
-      const mb=h('button','ai-mic',ICO.mic+'<span>Hablar</span>');mb.title='Dictar con tu voz';mb.onclick=()=>dictateInto(ta,mb);tw.append(ta,mb);box.append(tw);
+      const mb=h('button','ai-mic',ICO.mic+'<span>Hablar</span>');mb.title='Dictar con tu voz';mb.onclick=()=>startVoice(ta,tw);ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!VOICE){e.preventDefault();go('https://claude.ai/new','Claude')}});tw.append(ta,mb);box.append(tw);
       const fx=h('details','ai-fx');if(!S.aiFixed)fx.open=false;fx.innerHTML='<summary>Tu horario fijo'+(S.aiFixed?': <b>'+esc(S.aiFixed.slice(0,60))+(S.aiFixed.length>60?'…':'')+'</b>':' (para que la IA no te ponga cosas encima)')+'</summary>';
       const fi=h('textarea','field');fi.rows=2;fi.placeholder='Ej. Dicto clases de lunes a viernes de 7 a 9 am. Live los domingos a las 7 pm. Trabajo en Arquizo de 10 am a 6 pm.';fi.value=S.aiFixed||'';fi.oninput=()=>{S.aiFixed=fi.value;save()};fx.append(fi);box.append(fx);
       const ex=h('div','ai-ex');AI_EX.forEach(x=>{const b=h('button','',esc(x));b.onclick=()=>{st.ask=AIASK=x;ta.value=x;ta.focus()};ex.append(b)});box.append(ex);
