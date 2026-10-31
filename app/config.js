@@ -1,10 +1,10 @@
 // ===============================================================
-//  KIVO · Conexión con tu base de datos (Supabase)
-//  Pega aquí los datos de tu proyecto:
-//  Supabase → Project Settings → API  (o "API Keys")
+//  KIVO · Conexión con la base de datos (Supabase)
+//  La clave "anon" es pública por diseño: los datos los protegen
+//  las reglas de seguridad de la base de datos.
 // ===============================================================
 window.KIVO_CONFIG = {
-  url:  "PEGA_AQUI_TU_PROJECT_URL",          // ejemplo: https://abcdefghijk.supabase.co
-  key:  "PEGA_AQUI_TU_CLAVE_ANON",           // la clave "anon public" o "publishable"
-  site: "https://arquizo.com/kivo/"          // la página de descarga de Kivo
+  url:  "https://yaeqxcwvlsnzqcqldktu.supabase.co",
+  key:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZXF4Y3d2bHNuenFjcWxka3R1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NjMwMDAsImV4cCI6MjEwOTAzOTAwMH0.5CeMhdJiZzIgogDlCiAec12uyep9YRsyRKB2JbV2Vb0",
+  site: "https://arquizo.com/kivo/"
 };
