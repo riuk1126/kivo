@@ -88,7 +88,7 @@ function datos(tipo, d) {
 async function rpc(fn, args) {
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
-    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+    headers: { apikey: SB_KEY, 'Content-Type': 'application/json', ...(SB_KEY.startsWith('ey') ? { Authorization: `Bearer ${SB_KEY}` } : {}) },
     body: JSON.stringify(args),
   });
   const t = await r.text();
