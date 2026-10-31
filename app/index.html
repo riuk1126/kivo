@@ -783,6 +783,11 @@ select.fin{cursor:pointer}
 .ai-fx summary{cursor:pointer;padding:4px 2px}
 .ai-fx summary b{color:var(--text);font-weight:500}
 .ai-fx .field{margin-top:6px;font-size:14px}
+.ai-tw{position:relative}
+.ai-tw .ai-ta{padding-bottom:52px}
+.ai-mic{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:7px 14px 7px 11px;font-size:13.5px;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 .5px var(--line)}
+.ai-mic svg{width:17px;height:17px}
+.ai-mic.on{background:var(--late);color:#fff;animation:pulse 1.4s infinite}
 .ai-ex{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .ai-ex button{background:var(--fill);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--muted);text-align:left;line-height:1.3}
 .ai-ex button:hover{background:var(--fill2);color:var(--text)}
@@ -2351,8 +2356,28 @@ function openStats(){
 
 /* ---------- dictar por voz ---------- */
 let REC=null;
+const DICT_HELP=()=>window.kivo&&kivo.platform==='darwin'?'Para dictar: pulsa dos veces la tecla Fn (🌐) y habla':window.kivo&&kivo.platform==='win32'?'Para dictar: pulsa la tecla Windows + H y habla':'Usa el dictado de tu sistema, si lo tienes activado';
+async function deskDictate(el){
+  el.focus();
+  if(window.kivo&&kivo.dictate&&kivo.platform==='win32'){let ok=false;try{ok=await kivo.dictate()}catch(e){}if(ok){el.focus();toast('Habla ahora. Para terminar, pulsa otra vez Windows + H');return}}
+  toast(DICT_HELP());
+}
+let REC2=null;
+function dictateInto(el,btn){
+  if(window.kivo){deskDictate(el);return}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){el.focus();toast('Este navegador no permite dictar. Usa Google Chrome o Edge, o '+DICT_HELP().toLowerCase());return}
+  if(REC2){try{REC2.stop()}catch(e){}return}
+  const r=new SR();r.lang='es-PE';r.interimResults=true;r.continuous=true;
+  const base=el.value.trim();
+  r.onstart=()=>{if(btn){btn.classList.add('on');const t=btn.querySelector('span');if(t)t.textContent='Detener'}el.placeholder='Te escucho… habla con calma'};
+  r.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;el.value=(base?base+' ':'')+s.trim();el.dispatchEvent(new Event('input'))};
+  r.onerror=e=>{const m={'not-allowed':'Necesito permiso para usar el micrófono','service-not-allowed':'Necesito permiso para usar el micrófono','no-speech':'No te escuché. Intenta otra vez','network':'Para dictar necesitas internet','audio-capture':'No encontré un micrófono'};toast(m[e.error]||'No pude escucharte')};
+  r.onend=()=>{REC2=null;if(btn){btn.classList.remove('on');const t=btn.querySelector('span');if(t)t.textContent='Hablar'}el.focus()};
+  REC2=r;try{r.start()}catch(e){REC2=null;toast('No pude usar el micrófono')}
+}
 function toggleMic(){
-  if(window.kivo){$('#txt').focus();toast(kivo.platform==='darwin'?'Para dictar: pulsa dos veces la tecla Fn (🌐) y habla 🎤':kivo.platform==='win32'?'Para dictar: pulsa la tecla Windows + H y habla 🎤':'En Linux usa el dictado de tu sistema, si lo tienes activado 🎤');return}
+  if(window.kivo){deskDictate($('#txt'));return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){toast('Tu navegador no permite dictar. Ábrela con Google Chrome o Edge 🎤');return}
   if(REC){try{REC.stop()}catch(e){}return}
@@ -2837,14 +2862,15 @@ function aiPreview(plan,back){
 let AIW=null,AIASK='';
 function openAI(){
   const st={ask:AIASK,step:'ask',last:''};const box=h('div','mpad');
-  const stop=()=>{clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
+  const stop=()=>{if(REC2)try{REC2.stop()}catch(e){};clearInterval(st.iv);window.removeEventListener('focus',st.onf);AIW=null};
   const tryText=t=>{if(!t||t===st.last||t===st.prompt)return false;const o=aiExtract(t);if(!o)return false;st.last=t;const plan=aiNormalize(o);stop();closeModal();aiPreview(plan,()=>openAI());return true};
   const peek=async()=>{if(!document.hasFocus())return;try{const t=await navigator.clipboard.readText();tryText(t)}catch(e){}};
   const draw=()=>{box.innerHTML='';
     mhead('Crear con IA',box);
     if(st.step==='ask'){
       box.append(h('p','small-note','Cuéntale a la IA qué necesitas, como se lo dirías a una persona. Con tu Claude (también el gratuito) o ChatGPT, sin pagar nada extra.'));
-      const ta=h('textarea','field ai-ta');ta.rows=5;ta.placeholder='Ej. Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas…';ta.value=st.ask;ta.oninput=()=>{st.ask=AIASK=ta.value};box.append(ta);
+      const tw=h('div','ai-tw');const ta=h('textarea','field ai-ta');ta.rows=5;ta.placeholder='Escribe o toca el micrófono y cuéntale: «Estoy llevando un curso de SketchUp los lunes y miércoles de 7 a 9 pm, dura 8 semanas…»';ta.value=st.ask;ta.oninput=()=>{st.ask=AIASK=ta.value};
+      const mb=h('button','ai-mic',ICO.mic+'<span>Hablar</span>');mb.title='Dictar con tu voz';mb.onclick=()=>dictateInto(ta,mb);tw.append(ta,mb);box.append(tw);
       const fx=h('details','ai-fx');if(!S.aiFixed)fx.open=false;fx.innerHTML='<summary>Tu horario fijo'+(S.aiFixed?': <b>'+esc(S.aiFixed.slice(0,60))+(S.aiFixed.length>60?'…':'')+'</b>':' (para que la IA no te ponga cosas encima)')+'</summary>';
       const fi=h('textarea','field');fi.rows=2;fi.placeholder='Ej. Dicto clases de lunes a viernes de 7 a 9 am. Live los domingos a las 7 pm. Trabajo en Arquizo de 10 am a 6 pm.';fi.value=S.aiFixed||'';fi.oninput=()=>{S.aiFixed=fi.value;save()};fx.append(fi);box.append(fx);
       const ex=h('div','ai-ex');AI_EX.forEach(x=>{const b=h('button','',esc(x));b.onclick=()=>{st.ask=AIASK=x;ta.value=x;ta.focus()};ex.append(b)});box.append(ex);

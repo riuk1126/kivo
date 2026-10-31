@@ -117,6 +117,15 @@ ipcMain.on('kivo:attention', (e, n) => {
   if (process.platform === 'darwin' && app.dock) app.dock.bounce('informational');
 });
 ipcMain.handle('kivo:version', () => app.getVersion());
+// Dictado: en Windows abre el dictado del sistema (Windows + H) sobre el campo activo
+const DICTATE_PS = 'QQBkAGQALQBUAHkAcABlACAALQBOAGEAbQBlAHMAcABhAGMAZQAgAEsAIAAtAE4AYQBtAGUAIABXACAALQBNAGUAbQBiAGUAcgBEAGUAZgBpAG4AaQB0AGkAbwBuACAAJwBbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgB1AHMAZQByADMAMgAuAGQAbABsACIAKQBdACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAdgBvAGkAZAAgAGsAZQB5AGIAZABfAGUAdgBlAG4AdAAoAGIAeQB0AGUAIABiACwAIABiAHkAdABlACAAcwAsACAAdQBpAG4AdAAgAGYALAAgAFUASQBuAHQAUAB0AHIAIABlACkAOwAnADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANQBCACwAMAAsADAALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANAA4ACwAMAAsADAALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANAA4ACwAMAAsADIALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApADsAWwBLAC4AVwBdADoAOgBrAGUAeQBiAGQAXwBlAHYAZQBuAHQAKAAwAHgANQBCACwAMAAsADIALABbAFUASQBuAHQAUAB0AHIAXQA6ADoAWgBlAHIAbwApAA==';
+ipcMain.handle('kivo:dictate', () => {
+  if (process.platform !== 'win32') return false;
+  return new Promise((res) => {
+    require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-EncodedCommand', DICTATE_PS],
+      { windowsHide: true, timeout: 8000 }, (err) => res(!err));
+  });
+});
 // Modo exigente: poner Kivo delante de todo hasta que respondas
 ipcMain.on('kivo:force', (e, on) => {
   if (!win || win.isDestroyed()) return;
