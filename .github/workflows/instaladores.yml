@@ -54,9 +54,10 @@ jobs:
           sed -i "s/__KIVO_VERSION__/$V/" www/index.html
           npx cap add android
           cp -r res/* android/app/src/main/res/
+          sudo apt-get install -y -qq imagemagick >/dev/null 2>&1 || true
           for f in $(find android/app/src/main/res -name 'splash.png'); do
-            W=$(identify -format '%w' "$f"); H=$(identify -format '%h' "$f"); M=$(( W<H ? W : H )); L=$(( M*38/100 ))
-            convert -size ${W}x${H} xc:black \( splash-logo.png -resize ${L}x${L} \) -gravity center -composite "$f"
+            W=$(identify -format '%w' "$f" || echo 0); H=$(identify -format '%h' "$f" || echo 0); [ "$W" = 0 ] && continue; M=$(( W<H ? W : H )); L=$(( M*38/100 ))
+            convert -size ${W}x${H} xc:black \( splash-logo.png -resize ${L}x${L} \) -gravity center -composite "$f" || echo "splash sin cambiar: $f"
           done
           CODE=$(node -p "const [a,b,c]=require('../package.json').version.split('.').map(Number);a*10000+b*100+c")
           sed -i "s/versionCode [0-9]*/versionCode $CODE/; s/versionName \"[^\"]*\"/versionName \"$V\"/" android/app/build.gradle
