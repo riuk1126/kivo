@@ -861,6 +861,33 @@ select.fin{cursor:pointer}
 .cotv-who{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
 .cotv iframe{flex:1;border:0;width:100%;background:var(--bg)}
 body.cot-open{overflow:hidden}
+/* ---- Carta de presentación ---- */
+@font-face{font-family:KInter;font-weight:400;src:url(carta/inter-Regular.woff) format("woff")}
+@font-face{font-family:KInter;font-weight:500;src:url(carta/inter-Medium.woff) format("woff")}
+@font-face{font-family:KInter;font-weight:600;src:url(carta/inter-SemiBold.woff) format("woff")}
+@font-face{font-family:KInter;font-weight:700;src:url(carta/inter-Bold.woff) format("woff")}
+@font-face{font-family:KInter;font-weight:800;src:url(carta/inter-ExtraBold.woff) format("woff")}
+.cp-body{flex:1;display:grid;grid-template-columns:360px 1fr;min-height:0}
+.cp-side{overflow:auto;border-right:.5px solid var(--line);background:var(--card);padding:14px 16px 30px}
+.cp-form{display:flex;flex-direction:column;gap:11px}
+.cp-row{display:flex;flex-direction:column;gap:5px}
+.cp-l{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.cp-h{font-size:12px;color:var(--muted)}
+.cp-seg{margin-top:0}
+.cp-st{font-size:12.5px;color:var(--muted);background:var(--fill);border-radius:10px;padding:8px 11px}.cp-st b{color:var(--text)}
+.cp-two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.cp-two.n{grid-template-columns:118px 1fr}
+.cp-form textarea.field{min-height:64px}
+.cp-firm{display:flex;flex-direction:column;gap:6px}
+.cp-hist{margin-top:22px;display:flex;flex-direction:column;gap:6px}
+.cp-it{display:flex;align-items:center;gap:4px;border-radius:12px;padding:4px 4px 4px 2px}
+.cp-it.on{background:var(--fill)}
+.cp-inf{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:4px 8px;border-radius:9px;line-height:1.3}
+.cp-inf:hover{background:var(--fill)}
+.cp-inf b{font-size:13px}.cp-inf span{font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cp-inf small{font-size:11.5px;color:var(--muted)}
+.btn.sm{padding:5px 9px;font-size:12.5px}
+.cp-prev{overflow:auto;padding:20px;display:flex;justify-content:center;align-items:flex-start;background:var(--fill)}
+.cp-host{flex:none;box-shadow:0 6px 30px rgba(0,0,0,.18);overflow:hidden;background:#fff}
+@media (max-width:900px){.cp-body{grid-template-columns:minmax(0,1fr);overflow:auto}.cpv .cotv-h{flex-wrap:wrap;row-gap:6px}.cpv .cotv-h .grow{flex-basis:100%;height:0}.cp-side{border-right:0;overflow:visible}.cp-prev{overflow:visible}.cotv-h .btn{padding:7px 10px;font-size:13px}}
 /* ---- imprimir mi semana ---- */
 .modal.wide{width:min(980px,100%)}
 .pr-ops{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:12px 0}
@@ -2316,7 +2343,7 @@ function openListEditor(l,onCreated){
     const row=h('div','lrow');const e=h('button','le',iconHTML(st.emoji||T.icon));e.title='Elegir ícono';e.onclick=()=>emojiPicker(v=>{st.emoji=v||T.icon;draw()});
     const n=h('input','field');n.type='text';n.maxLength=40;n.placeholder=T.ph||'Nombre de la lista';n.value=st.name;n.oninput=()=>{st.name=n.value};
     row.append(e,n);box.append(row);
-    if(!isNew&&(!l.owner||l.owner===ME)&&!NOMETA){box.append(h('div','lbl','Apps del equipo'));box.append(toggleRow('Cotizador Arquizo','Quienes tengan acceso a este espacio verán el cotizador al costado de Kivo.',!!metaOf(l).cotizador,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).cotizador&&v)delete x.meta.cotizador});if(v)metaOf(l).cotizador=true;else delete metaOf(l).cotizador;save();renderDock()}))}
+    if(!isNew&&(!l.owner||l.owner===ME)&&!NOMETA){box.append(h('div','lbl','Apps del equipo'));box.append(toggleRow('Cotizador y Carta de presentación Arquizo','Quienes tengan acceso a este espacio verán el cotizador y la carta de presentación al costado de Kivo.',!!metaOf(l).cotizador,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).cotizador&&v)delete x.meta.cotizador});if(v)metaOf(l).cotizador=true;else delete metaOf(l).cotizador;save();renderDock()}))}
     box.append(h('div','lbl','Color'));const sw=h('div','sw-row');
     LIST_COLORS.forEach(c=>{const b=h('button','sw'+(st.color===c?' on':''));b.style.background=c;b.onclick=()=>{st.color=c;draw()};sw.append(b)});box.append(sw);
     const f=h('div','foot');
@@ -3582,6 +3609,7 @@ function renderDock(){
   if(!t||!ME){if(d)d.remove();return}
   if(!d){d=h('nav','dock');d.id='dock';document.body.append(d)}
   d.innerHTML='';const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=openCot;d.append(b);
+  const c=h('button','dapp',`<img src="icons/carta.svg" alt=""><span>Carta de<br>presentación</span>`);c.title='Carta de presentación · equipo de '+t.name;c.onclick=openCarta;d.append(c);
 }
 let COTV=null,COTCH=null,COTWATCH=false;
 function openCot(){
@@ -3645,6 +3673,189 @@ window.addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot||!COTV||e.so
   if(d.op==='watch'){cotWatch();return}
   if(d.id)cotRPC(d);
 });
+
+/* ---- Carta de presentación Arquizo ---- */
+const CP_SERV=['Arquitectura Residencial','Interiorismo','Home Office','Remodelaciones y Renovaciones','Oficinas y Retail','Paisajismo','Diseño de Edificios Inteligentes','Ejecución de Obras','Sistema Drywall'];
+const CP_TRAT={'Sra.':['f','señora','Sra.'],'Srta.':['f','señorita','Srta.'],'Sr.':['m','señor','Sr.'],'Dra.':['f','doctora','Dra.'],'Dr.':['m','doctor','Dr.'],'Arq. (ella)':['f','arquitecta','Arq.'],'Arq. (él)':['m','arquitecto','Arq.'],'Ing. (ella)':['f','ingeniera','Ing.'],'Ing. (él)':['m','ingeniero','Ing.']};
+const CP_FIRM=[{id:'kim',n:'Kimberly Nicole Laguna Pecho',c:'Gerente General',img:'carta/firma-kimberly.png',cls:'k'},{id:'may',n:'Mayckol Mori Ríos',c:'Gerente de Proyectos',img:'carta/firma-mayckol.png',cls:'m'}];
+const CP_MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const cpEsc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function cpHoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function cpFecha(iso){const d=new Date((iso||cpHoy())+'T12:00');return 'Lima, '+d.getDate()+' de '+CP_MES[d.getMonth()]+' de '+d.getFullYear()}
+function cpApellido(n){const w=String(n||'').trim().split(/\s+/).filter(Boolean);return w.length>=3?w[w.length-2]:w.length===2?w[1]:(w[0]||'')}
+function cpT(c){return CP_TRAT[c.trat]||CP_TRAT['Sra.']}
+function cpSaludoAuto(c){if(c.tipo==='empresa')return 'De nuestra consideración:';const t=cpT(c),ap=cpApellido(c.nombre);return (t[0]==='f'?'Estimada ':'Estimado ')+t[1]+(ap?' '+ap:'')+':'}
+function cpCierreAuto(c){return c.tipo==='empresa'?'Quedamos atentos para coordinar una reunión en la que podamos conocer sus necesidades y presentarles una propuesta a medida.':'Nos encantaría conocer su proyecto. Podemos coordinar una visita o una reunión para escuchar lo que tiene en mente y proponerle la mejor solución.'}
+function cpDest(c){return c.tipo==='empresa'?(c.razon||'Empresa'):((c.nombre?cpT(c)[2]+' '+c.nombre:'')||'Persona')}
+function cpNew(){return {tipo:'persona',trat:'Sra.',nombre:'',direccion:'',razon:'',ruc:'',distrito:'',atencion:'',saludo:'',nota:'',cierre:'',fecha:cpHoy(),firmas:['kim','may']}}
+const CP_CSS=`.pg{width:210mm;height:297mm;display:grid;grid-template-columns:64mm 1fr;overflow:hidden;background:#fff;font-family:KInter,Inter,"Segoe UI",-apple-system,Roboto,Arial,sans-serif;color:#1d2430;-webkit-print-color-adjust:exact;print-color-adjust:exact;text-align:left}
+.pg *{box-sizing:border-box}
+.pg aside{position:relative;background:#02192E;color:#fff;padding:15mm 9mm 12mm 10mm;display:flex;flex-direction:column;overflow:hidden;background-image:linear-gradient(rgba(255,255,255,.045) .3mm,transparent .3mm),linear-gradient(90deg,rgba(255,255,255,.045) .3mm,transparent .3mm);background-size:6mm 6mm}
+.pg aside::after{content:"";position:absolute;right:0;top:0;bottom:0;width:1.6mm;background:#CF0100}
+.pg .lg{height:8.5mm;width:auto;align-self:flex-start}
+.pg .mot{margin-top:11mm;font-weight:700;font-size:17pt;line-height:1.08;letter-spacing:-.025em}
+.pg .mot span{display:block}.pg .mot span:last-of-type{color:#CF0100}
+.pg .mot small{display:block;width:10mm;height:.8mm;background:#fff;margin-top:5mm}
+.pg .sv{margin-top:11mm;position:relative;z-index:1}
+.pg .lab{font-size:6.6pt;letter-spacing:.24em;text-transform:uppercase;color:#8fa0b3;margin-bottom:3mm}
+.pg .sv ol{list-style:none;margin:0;padding:0}
+.pg .sv li{display:flex;gap:3mm;font-size:8.6pt;line-height:1.25;padding:1.55mm 0;border-bottom:.3pt solid rgba(255,255,255,.12)}
+.pg .sv li b{color:#CF0100;font-weight:700;font-size:7.4pt;width:4.5mm;flex:none;padding-top:.3mm}
+.pg .mark{position:absolute;left:-14mm;bottom:22mm;height:62mm;opacity:.16}
+.pg .ct{margin-top:auto;position:relative;z-index:1;font-size:7.8pt;line-height:1.75;color:#d5dde6}
+.pg .ct b{display:block;color:#fff;font-size:9pt;font-weight:600}
+.pg main{position:relative;padding:15mm 15mm 12mm 14mm;display:flex;flex-direction:column;font-size:10pt;line-height:1.6;min-width:0}
+.pg .top{display:flex;justify-content:space-between;align-items:flex-start}
+.pg .doc{font-size:6.6pt;letter-spacing:.24em;text-transform:uppercase;color:#CF0100;font-weight:600;display:flex;align-items:center;gap:2.5mm}
+.pg .doc::before{content:"";width:7mm;height:.6mm;background:#CF0100}
+.pg .date{text-align:right;font-size:8.4pt;color:#5A6675;line-height:1.45}.pg .date b{display:block;color:#02192E;font-size:9pt;letter-spacing:.06em}
+.pg h1{font-size:31pt;line-height:1.02;letter-spacing:-.035em;color:#02192E;margin:12mm 0 8mm;font-weight:800}
+.pg h1 em{font-style:normal;color:#CF0100}
+.pg .to{background:#F2F4F7;border-left:1.2mm solid #CF0100;padding:3.6mm 5mm;margin-bottom:8mm;display:flex;flex-direction:column;gap:.4mm}
+.pg .to .lab{color:#8a93a0;margin-bottom:.8mm}.pg .to b{font-size:11pt;color:#02192E}.pg .to span{font-size:8.6pt;color:#5A6675}
+.pg p{margin:0 0 3.6mm;color:#2b3440}.pg .sal{font-weight:700;color:#02192E}
+.pg .hl{font-weight:700;color:#02192E;background:linear-gradient(transparent 62%,rgba(207,1,0,.16) 62%)}
+.pg .why{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin:7mm 0 7mm}
+.pg .why div{border-top:.5pt solid #02192E;padding-top:2mm}
+.pg .why i{display:block;font-style:normal;font-weight:800;font-size:19pt;line-height:1;color:#CF0100;letter-spacing:-.03em;margin-bottom:1.6mm}
+.pg .why b{display:block;font-size:9.2pt;color:#02192E;margin-bottom:.6mm}.pg .why span{display:block;font-size:8.4pt;color:#5A6675;line-height:1.4}
+.pg .cta{background:#02192E;color:#fff;padding:4mm 5mm;font-size:9.2pt;line-height:1.5;position:relative}
+.pg .cta::after{content:"";position:absolute;right:0;bottom:0;border-style:solid;border-width:0 0 6mm 6mm;border-color:transparent transparent #CF0100 transparent}
+.pg .fir{margin-top:auto;padding-top:5mm}
+.pg .firmas{display:grid;grid-template-columns:1fr 1fr;gap:10mm}
+.pg .f{display:flex;flex-direction:column;font-size:8.4pt}.pg .f b{font-size:9.4pt;color:#02192E;border-top:.5pt solid #02192E;padding-top:1.5mm}.pg .f span{color:#CF0100;font-size:7.2pt;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-top:.4mm}
+.pg .sig{height:21mm;display:flex;align-items:flex-end}.pg .sig img{height:22mm;margin-bottom:-1.5mm;margin-left:-2mm}.pg .sig img.m{height:24mm}.pg .sig img.k{height:23mm;margin-bottom:-2mm}`;
+function cartaPage(c){
+  const emp=c.tipo==='empresa',f=cpT(c)[0]==='f';
+  const HL='<span class="hl">desde el primer boceto hasta la instalación final</span>';
+  const sv=CP_SERV.map((s,i)=>`<li><b>${String(i+1).padStart(2,'0')}</b>${s}</li>`).join('');
+  const rec=emp?`<b>${cpEsc(c.razon||'Razón social de la empresa')}</b>${(c.ruc||c.distrito)?`<span>${[c.ruc?'RUC '+cpEsc(c.ruc):'',cpEsc(c.distrito)].filter(Boolean).join(' · ')}</span>`:''}${c.atencion?`<span>Atención: ${cpEsc(c.atencion)}</span>`:''}`
+    :`<b>${cpEsc(cpT(c)[2]+' '+(c.nombre||'Nombre y apellidos'))}</b>${c.direccion?`<span>${cpEsc(c.direccion)}</span>`:''}`;
+  const p1=emp?'Reciban un cordial saludo de parte de <b>Arquizo</b>. Nos dirigimos a ustedes para presentar nuestro estudio y ponernos a su disposición para los proyectos de su empresa.'
+    :`Reciba un cordial saludo de parte de <b>Arquizo</b>. Nos dirigimos a usted para presentarnos y contarle cómo podemos ${f?'ayudarla':'ayudarlo'} a convertir su espacio en un lugar funcional, bonito y pensado para usted.`;
+  const p2=`Somos un estudio de arquitectura en Lima que reúne todas las especialidades bajo una sola dirección técnica: ${HL}. Cuidamos el diseño, los acabados, los tiempos y el presupuesto, para que ${emp?'ustedes tengan':'usted tenga'} un solo responsable de principio a fin.`;
+  const nota=String(c.nota||'').trim()?`<p>${cpEsc(c.nota).replace(/\n/g,'<br>')}</p>`:'';
+  const fs=CP_FIRM.filter(x=>(c.firmas||[]).includes(x.id));
+  const firmas=fs.map(x=>`<div class="f"><div class="sig"><img class="${x.cls}" src="${x.img}" alt=""></div><b>${x.n}</b><span>${x.c}</span></div>`).join('');
+  return `<section class="pg"><aside><img class="lg" src="carta/logo-blanco.png" alt="Arquizo">
+<div class="mot"><span>Diseñamos.</span><span>Construimos.</span><span>Transformamos.</span><small></small></div>
+<div class="sv"><div class="lab">Nuestros servicios</div><ol>${sv}</ol></div>
+<img class="mark" src="carta/icono.png" alt="">
+<div class="ct"><b>arquizo.com</b>+51 952 346 734<br>RUC 20614468131<br>Lima, Perú</div></aside>
+<main><div class="top"><div class="doc">Carta de presentación</div><div class="date"><b>${cpEsc(c.num||'CP-'+(c.fecha||cpHoy()).slice(0,4)+'-···')}</b>${cpFecha(c.fecha)}</div></div>
+<h1>Presentación<br>de <em>Arquizo</em></h1>
+<div class="to"><div class="lab">${emp?'Señores':'Para'}</div>${rec}</div>
+<p class="sal">${cpEsc(String(c.saludo||'').trim()||cpSaludoAuto(c))}</p><p>${p1}</p><p>${p2}</p>${nota}
+<div class="why"><div><i>01</i><b>Un solo equipo</b><span>Diseño y ejecución con una misma dirección: menos coordinaciones y menos sorpresas.</span></div>
+<div><i>02</i><b>A la medida</b><span>Cada propuesta responde a sus necesidades, estilo y presupuesto.</span></div>
+<div><i>03</i><b>Diseño descontado</b><span>Si ejecutamos la obra, el costo del diseño se descuenta del presupuesto.</span></div></div>
+<div class="cta">${cpEsc(String(c.cierre||'').trim()||cpCierreAuto(c))}</div>
+<div class="fir"><p class="sal" style="margin-bottom:0">Cordialmente,</p><div class="firmas"${fs.length===1?' style="grid-template-columns:1fr 1fr"':''}>${firmas}</div></div>
+</main></section>`;
+}
+let CPV=null,CP={c:null,list:[],busy:false};
+function openCarta(){
+  const t=cotTeam();if(!t){toast('La carta de presentación es solo para el equipo de Arquizo');return}
+  if(!CPV){
+    CPV=h('div','cotv cpv');
+    const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCarta;
+    const nw=h('button','btn','Nueva');nw.onclick=()=>{CP.c=cpNew();cpForm();cpPrev()};
+    const sv=h('button','btn','Guardar');sv.onclick=()=>cpSave(false);
+    const pd=h('button','btn primary','Descargar PDF');pd.onclick=()=>cpSave(true);
+    hd.append(bk,h('b','',`<img src="icons/carta.svg" alt=""> Carta de presentación`),h('span','grow'),nw,sv,pd);
+    const bd=h('div','cp-body');
+    const side=h('div','cp-side');side.append(h('div','cp-form'),h('div','cp-hist'));
+    const pv=h('div','cp-prev');const host=h('div','cp-host');pv.append(host);
+    host.attachShadow({mode:'open'}).innerHTML=`<style>${CP_CSS}:host{display:block}</style><div class="wrap"></div>`;
+    bd.append(side,pv);CPV.append(hd,bd);document.body.append(CPV);CPV.host=host;
+    new ResizeObserver(cpScale).observe(pv);
+  }
+  if(!CP.c)CP.c=cpNew();
+  CPV.style.display='flex';document.body.classList.add('cot-open');
+  cpForm();cpPrev();cpLoad();
+}
+function closeCarta(){if(CPV){CPV.style.display='none';document.body.classList.remove('cot-open')}}
+function cpScale(){if(!CPV)return;const pv=CPV.querySelector('.cp-prev'),host=CPV.host;const w=pv.clientWidth-40,k=Math.min(1,w/794);host.style.setProperty('--k',k);host.style.width=794*k+'px';host.style.height=1123*k+'px'}
+function cpPrev(){if(!CPV)return;const w=CPV.host.shadowRoot.querySelector('.wrap');w.innerHTML=cartaPage(CP.c);w.style.cssText='transform:scale(var(--k,1));transform-origin:top left;width:794px';cpScale()}
+function cpForm(){
+  const box=CPV.querySelector('.cp-form'),c=CP.c;box.innerHTML='';
+  const up=()=>{clearTimeout(cpForm.t);cpForm.t=setTimeout(cpPrev,120)};
+  const row=(lbl,el,hint)=>{const r=h('label','cp-row');r.append(h('span','cp-l',lbl),el);if(hint)r.append(h('small','cp-h',hint));box.append(r);return el};
+  const inp=(k,ph,type)=>{const e=h('input','field');e.type=type||'text';e.placeholder=ph||'';e.value=c[k]||'';e.oninput=()=>{c[k]=e.value;up();if(k==='nombre'||k==='trat')sal.placeholder=cpSaludoAuto(c)};return e};
+  const st=h('div','cp-st',c.num?`<b>${cpEsc(c.num)}</b> · guardada${c.autor?' por '+cpEsc(c.autor):''}`:'Carta nueva · el número se asigna al guardar');box.append(st);
+  const seg=h('div','seg cp-seg');[['persona','Persona'],['empresa','Empresa']].forEach(([v,l])=>{const b=h('button',c.tipo===v?'on':'',l);b.onclick=()=>{c.tipo=v;cpForm();cpPrev()};seg.append(b)});row('Para',seg);
+  let sal;
+  if(c.tipo==='empresa'){
+    row('Razón social',inp('razon','Inmobiliaria Los Álamos S.A.C.'));
+    const two=h('div','cp-two');two.append(inp('ruc','RUC'),inp('distrito','Distrito, ciudad'));row('RUC y lugar',two);
+    row('Atención',inp('atencion','Ing. Carlos Rivas, Gerente de Proyectos'),'Opcional: a quién va dirigida dentro de la empresa');
+  }else{
+    const sel=h('select','field');Object.keys(CP_TRAT).forEach(k=>{const o=h('option','',k);o.value=k;if(c.trat===k)o.selected=true;sel.append(o)});sel.onchange=()=>{c.trat=sel.value;up();sal.placeholder=cpSaludoAuto(c)};
+    const two=h('div','cp-two n');two.append(sel,inp('nombre','Nombres y apellidos'));row('Nombre',two);
+    row('Dirección',inp('direccion','Santiago de Surco, Lima'),'Opcional');
+  }
+  sal=row('Saludo',inp('saludo',cpSaludoAuto(c)),'Déjalo vacío y se escribe solo');
+  const fe=row('Fecha',inp('fecha','','date'));
+  const nt=h('textarea','field');nt.placeholder='Opcional: un párrafo personal (por ejemplo, cómo nos conocimos o qué proyecto tiene en mente)';nt.value=c.nota||'';nt.oninput=()=>{c.nota=nt.value;up()};row('Nota personal',nt);
+  const ci=h('textarea','field');ci.placeholder=cpCierreAuto(c);ci.value=c.cierre||'';ci.oninput=()=>{c.cierre=ci.value;up()};row('Cierre',ci,'Vacío = texto de cierre de siempre');
+  const fw=h('div','cp-firm');CP_FIRM.forEach(x=>{const l=h('label','pr-op');const cb=h('input');cb.type='checkbox';cb.checked=(c.firmas||[]).includes(x.id);cb.onchange=()=>{c.firmas=CP_FIRM.filter(y=>y.id===x.id?cb.checked:(c.firmas||[]).includes(y.id)).map(y=>y.id);up()};l.append(cb,document.createTextNode(x.n.split(' ')[0]+' · '+x.c));fw.append(l)});row('Firman',fw);
+}
+async function cpLoad(){
+  const t=cotTeam();if(!t||!sb)return;
+  const {data,error}=await sb.from('cot_config').select('key,data').eq('team',t.id).like('key','carta/%');
+  if(error){cpHist(error);return}
+  CP.list=(data||[]).map(r=>r.data).filter(x=>x&&!x.borrada).sort((a,b)=>String(b.num).localeCompare(String(a.num)));cpHist();
+}
+function cpHist(err){
+  const box=CPV.querySelector('.cp-hist');box.innerHTML='';box.append(h('div','cp-l','Cartas anteriores'));
+  if(err){box.append(h('small','cp-h',/cot_config|relation|schema/i.test(String(err.message))?'Falta el paso de la base de datos (código 5 en Supabase)':'No se pudo cargar: '+cpEsc(err.message)));return}
+  if(!CP.list.length){box.append(h('small','cp-h','Todavía no hay cartas. Las que guardes aparecerán aquí, para ti y para Kimberly.'));return}
+  CP.list.forEach(x=>{
+    const r=h('div','cp-it'+(CP.c&&CP.c.num===x.num?' on':''));
+    const info=h('button','cp-inf',`<b>${cpEsc(x.num)}</b><span>${cpEsc(cpDest(x))}</span><small>${cpEsc(cpFecha(x.fecha).replace('Lima, ',''))}${x.autor?' · '+cpEsc(x.autor):''}</small>`);
+    info.onclick=()=>{CP.c=JSON.parse(JSON.stringify(x));cpForm();cpPrev();cpHist()};
+    const pdf=h('button','btn sm','PDF');pdf.onclick=()=>cartaPDF(x);
+    const del=h('button','btn sm ghost','Borrar');del.onclick=async()=>{if(!del.dataset.ok){del.dataset.ok=1;del.textContent='¿Seguro?';setTimeout(()=>{delete del.dataset.ok;del.textContent='Borrar'},3000);return}
+      const r2=await sb.from('cot_config').update({data:Object.assign({},x,{borrada:true,borradaPor:pname(ME),actualizado:Date.now()})}).eq('team',cotTeam().id).eq('key','carta/'+x.num);if(r2.error){toast('No se pudo borrar');return}
+      if(CP.c&&CP.c.num===x.num){CP.c=cpNew();cpForm();cpPrev()}cpLoad()};
+    r.append(info,pdf,del);box.append(r);
+  });
+}
+async function cpSave(pdf){
+  if(CP.busy)return;const t=cotTeam(),c=CP.c;if(!t||!sb){toast('Sin conexión con el equipo de Arquizo');return}
+  if(c.tipo==='empresa'?!String(c.razon||'').trim():!String(c.nombre||'').trim()){toast(c.tipo==='empresa'?'Falta la razón social':'Falta el nombre de la persona');return}
+  CP.busy=true;
+  try{
+    c.actualizado=Date.now();c.editadoPor=pname(ME);if(!c.autor){c.autor=pname(ME);c.autorId=ME;c.creado=Date.now()}
+    if(c.num){const r=await sb.from('cot_config').update({data:c}).eq('team',t.id).eq('key','carta/'+c.num);if(r.error)throw r.error}
+    else{
+      const y=(c.fecha||cpHoy()).slice(0,4);
+      const {data,error}=await sb.from('cot_config').select('key').eq('team',t.id).like('key','carta/CP-'+y+'-%');if(error)throw error;
+      let n=Math.max(0,...(data||[]).map(r=>parseInt(String(r.key).split('-').pop(),10)||0))+1,ok=false;
+      for(let i=0;i<8&&!ok;i++,n++){c.num='CP-'+y+'-'+String(n).padStart(3,'0');
+        const r=await sb.from('cot_config').insert({team:t.id,key:'carta/'+c.num,data:c});
+        if(!r.error)ok=true;else if(!/duplicate|unique|23505|conflict/i.test(String(r.error.message)+r.error.code)){delete c.num;throw r.error}}
+      if(!ok){delete c.num;throw new Error('No se pudo asignar número')}
+    }
+    cpForm();cpPrev();await cpLoad();
+    if(pdf)await cartaPDF(c);else toast('Carta '+c.num+' guardada');
+  }catch(e){toast(/cot_config|relation|schema/i.test(String(e&&e.message))?'Falta el paso de la base de datos (código 5 en Supabase)':'No se pudo guardar: '+(e&&e.message||e))}
+  finally{CP.busy=false}
+}
+async function cartaPDF(c){
+  const area=$('#printArea');area.innerHTML='';const host=h('div');area.append(host);
+  host.attachShadow({mode:'open'}).innerHTML=`<style>${CP_CSS}:host{display:block}</style>${cartaPage(c)}`;
+  const pg=h('style');pg.id='cpPage';pg.textContent='@page{size:A4 portrait;margin:0}';document.head.append(pg);
+  document.body.classList.add('printing');
+  const fn=('Carta '+(c.num||'')+' - '+cpDest(c)).replace(/[\\/:*?"<>|]+/g,' ').trim()+'.pdf';
+  try{
+    await Promise.all([...host.shadowRoot.querySelectorAll('img')].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+    try{await document.fonts.ready}catch(e){}
+    if(window.kivo&&kivo.savePDF){const r=await kivo.savePDF(fn,{portrait:true});if(r&&r.ok)toast('PDF guardado'+(r.path?' en '+r.path:''));else if(r&&r.error)toast('No se pudo guardar el PDF');return}
+    if(IS_APP){toast('En el celular, descarga el PDF desde la compu');return}
+    window.print();
+  }finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML='';pg.remove()},400)}
+}
 
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){

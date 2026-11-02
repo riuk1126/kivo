@@ -33,6 +33,7 @@ jobs:
   # ---------- Android (APK) ----------
   android:
     needs: build
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
