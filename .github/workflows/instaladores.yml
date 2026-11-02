@@ -7,12 +7,19 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      solo_android:
+        description: 'Solo volver a armar el APK de Android'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ !inputs.solo_android }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -31,9 +38,8 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
   # ---------- Android (APK) ----------
+  # Ya no espera a Mac: sale al mismo tiempo que Windows
   android:
-    needs: build
-    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,10 +81,14 @@ jobs:
           $BT/apksigner sign --ks movil/kivo.jks --ks-key-alias kivo --ks-pass pass:kivo-arquizo-2026 --key-pass pass:kivo-arquizo-2026 --out Kivo.apk aligned.apk
           $BT/apksigner verify Kivo.apk && ls -la Kivo.apk
           V=$(node -p "require('./package.json').version")
+          # espera a que Windows/Linux creen la versión (máx. 20 min); si no aparece, la crea
+          for i in $(seq 1 40); do gh release view "v$V" >/dev/null 2>&1 && break; sleep 30; done
+          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --title "$V" --notes "Kivo $V"
           gh release upload "v$V" Kivo.apk --clobber
 
   # ---------- Versión web instalable (iPhone y Android) ----------
   web:
+    if: ${{ !inputs.solo_android }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
