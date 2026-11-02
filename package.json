@@ -1,7 +1,7 @@
 {
   "name": "kivo",
   "productName": "Kivo",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "Tus tareas y las de tu equipo, siempre al día.",
   "main": "main.js",
   "author": {

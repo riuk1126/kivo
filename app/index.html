@@ -893,6 +893,17 @@ body.cot-open{overflow:hidden}
 .ar-who{color:var(--muted);font-size:13.5px;margin-bottom:16px}
 .ar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .ar-card{background:var(--card);border-radius:16px;box-shadow:0 0 0 .5px var(--line),0 2px 10px rgba(0,0,0,.04);padding:14px;display:flex;flex-direction:column;gap:12px}
+.arviewer{z-index:8100}
+.arviewer .cotv-h{gap:8px}.pv-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block!important;max-width:40%}
+.pv-pg{color:var(--muted);font-size:12.5px;white-space:nowrap;margin-right:4px}
+.pv-body{flex:1;overflow:auto;background:#2a2d33;display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 0 40px;-webkit-overflow-scrolling:touch}
+.pv-page{background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.35);flex:none;position:relative}
+.pv-page canvas{width:100%;height:100%;display:block}
+.pv-img{max-width:calc(100% - 32px);height:auto;box-shadow:0 4px 20px rgba(0,0,0,.35)}
+.pv-msg{color:#e6e8eb;font-size:14.5px;margin:auto;display:flex;align-items:center;gap:10px;padding:20px;text-align:center}
+.pv-spin{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:pvs 1s linear infinite;flex:none}
+@keyframes pvs{to{transform:rotate(360deg)}}
+@media (max-width:600px){.pv-body{padding:8px 0 30px;gap:8px}.arviewer .pv-pg{display:none}.pv-t{max-width:35%}}
 .ar-card.up{opacity:.75}
 .ar-fail{border:1px solid #CF0100;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}.ar-fail b{color:#CF0100;white-space:normal}
 .dock{max-height:calc(100vh - 130px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none}.dock::-webkit-scrollbar{display:none}
@@ -3999,27 +4010,70 @@ async function arUpload(files){
   if(ok)toast(ok>1?ok+' archivos subidos para todo el equipo':'Archivo subido para todo el equipo');if(AR.fails.length)toast('Algunos archivos no se subieron. Mira el motivo en Archivos.');
   arLoad();
 }
+async function arBytes(a){const bl=[];for(const p of (a.parts||[a.path])){const {data,error}=await sb.storage.from('equipo').download(p);if(error||!data)throw error||new Error('sin datos');bl.push(data)}return new Blob(bl,{type:a.type||'application/octet-stream'})}
+const arIsPdf=a=>/pdf/.test(a.type||'')||/\.pdf$/i.test(a.nombre||'');
+const arIsImg=a=>/^image\//.test(a.type||'')||/\.(png|jpe?g|webp|gif)$/i.test(a.nombre||'');
+async function arDownload(a,blob){
+  if(IS_APP){if(a.parts){toast('Este archivo es muy pesado para descargarse en la tableta; puedes verlo aquí mismo');return}
+    const {data}=await sb.storage.from('equipo').createSignedUrl(a.path,3600,{download:a.nombre});if(data)window.open(data.signedUrl,'_blank');return}
+  try{blob=blob||await arBytes(a)}catch(e){toast('No se pudo descargar');return}
+  const url=URL.createObjectURL(blob);const x=h('a');x.href=url;x.download=a.nombre;document.body.append(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
 async function arOpen(a,download){
   if(arOpen.busy===a.id)return;arOpen.busy=a.id;setTimeout(()=>{if(arOpen.busy===a.id)arOpen.busy=null},1500);
-  if(!a.parts){
-    const {data,error}=await sb.storage.from('equipo').createSignedUrl(a.path,3600,download?{download:a.nombre}:undefined);
-    if(error||!data){toast('No se pudo abrir el archivo');return}
-    window.open(data.signedUrl,'_blank');return}
-  if(IS_APP){toast('Este archivo es muy pesado para abrirse en la tableta. Ábrelo desde la compu o súbelo en una versión de menos de 45 MB');return}
-  toast('Abriendo «'+a.nombre+'»…');
-  try{const bl=[];for(const p of a.parts){const {data,error}=await sb.storage.from('equipo').download(p);if(error||!data)throw error||0;bl.push(data)}
-    const url=URL.createObjectURL(new Blob(bl,{type:a.type||'application/pdf'}));
-    if(download){const x=h('a');x.href=url;x.download=a.nombre;document.body.append(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return}
-    arViewer(a,url);
-  }catch(e){toast('No se pudo abrir el archivo')}
+  if(download){arDownload(a);return}
+  if(!arIsPdf(a)&&!arIsImg(a)){const {data,error}=await sb.storage.from('equipo').createSignedUrl(a.path,3600);if(error||!data){toast('No se pudo abrir el archivo');return}window.open(data.signedUrl,'_blank');return}
+  arViewer(a);
 }
-function arViewer(a,url){
-  document.querySelectorAll('.arviewer').forEach(x=>x.remove());
-  const v=h('div','cotv arviewer');v.style.display='flex';v.style.zIndex=8100;
-  const hd=h('div','cotv-h');const bk=h('button','btn','‹ Volver');bk.onclick=()=>{v.remove();URL.revokeObjectURL(url);if(!ARV||ARV.style.display!=='flex')document.body.classList.remove('cot-open')};
-  const dl=h('button','btn','Descargar');dl.onclick=()=>{const x=h('a');x.href=url;x.download=a.nombre;document.body.append(x);x.click();x.remove()};
-  hd.append(bk,h('b','',esc(a.nombre)),h('span','grow'),dl);const fr=document.createElement('iframe');fr.src=url;fr.title=a.nombre;
-  v.append(hd,fr);document.body.append(v);document.body.classList.add('cot-open');
+let PDFJS=null;
+async function loadPdfJs(){
+  if(PDFJS)return PDFJS;
+  await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='vendor/pdf.min.js';sc.onload=ok;sc.onerror=()=>ko(new Error('No se encontró el visor de PDF'));document.head.append(sc)});
+  const lib=window.pdfjsLib;if(!lib)throw new Error('Visor de PDF no disponible');
+  let src='vendor/pdf.worker.min.js';
+  try{const r=await fetch(window.kivo&&kivo.desktop?RES+'pdf.worker.min.js':'vendor/pdf.worker.min.js');if(r.ok)src=URL.createObjectURL(new Blob([await r.text()],{type:'text/javascript'}))}catch(e){}
+  lib.GlobalWorkerOptions.workerSrc=src;PDFJS=lib;return lib;
+}
+async function arViewer(a){
+  document.querySelectorAll('.arviewer').forEach(x=>x.close?x.close():x.remove());
+  const v=h('div','cotv arviewer');v.style.display='flex';
+  const hd=h('div','cotv-h');const bk=h('button','btn','‹ Volver');
+  const ttl=h('b','pv-t',esc(a.nombre));const pg=h('small','pv-pg','');
+  const zo=h('button','btn sm','−'),zi=h('button','btn sm','＋');zo.title='Alejar';zi.title='Acercar';
+  const dl=h('button','btn','Descargar');
+  hd.append(bk,ttl,h('span','grow'),pg,zo,zi,dl);
+  const body=h('div','pv-body');const msg=h('div','pv-msg','<span class="pv-spin"></span>Abriendo «'+esc(a.nombre)+'»…');body.append(msg);
+  v.append(hd,body);document.body.append(v);document.body.classList.add('cot-open');
+  let blob=null,url=null,doc=null,zoom=1,io=null,pages=[],dead=false;
+  v.close=()=>{dead=true;try{io&&io.disconnect()}catch(e){}try{doc&&doc.destroy()}catch(e){}if(url)URL.revokeObjectURL(url);v.remove();if(!((COTV&&COTV.style.display==='flex')||(CPV&&CPV.style.display==='flex')||(ARV&&ARV.style.display==='flex')))document.body.classList.remove('cot-open')};
+  bk.onclick=()=>v.close();
+  dl.onclick=()=>arDownload(a,blob);
+  try{blob=await arBytes(a)}catch(e){msg.innerHTML='No se pudo abrir el archivo. Revisa tu internet.';return}
+  if(dead)return;
+  if(arIsImg(a)){url=URL.createObjectURL(blob);msg.remove();zo.remove();zi.remove();const im=h('img','pv-img');im.src=url;body.append(im);return}
+  try{const lib=await loadPdfJs();doc=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise}
+  catch(e){msg.innerHTML='No se pudo mostrar el PDF ('+esc(e&&e.message||e)+'). Puedes descargarlo.';return}
+  if(dead)return;msg.remove();
+  const n=doc.numPages;pg.textContent=n+(n===1?' página':' páginas');
+  const first=await doc.getPage(1);const base=first.getViewport({scale:1});
+  for(let i=1;i<=n;i++){const d=h('div','pv-page');d.dataset.n=i;pages.push(d);body.append(d)}
+  const avail=()=>Math.max(200,body.clientWidth-(innerWidth<600?16:48));
+  const layout=()=>{const w=Math.min(avail(),1100)*zoom;pages.forEach(d=>{const r=d.ratio||base.height/base.width;d.style.width=w+'px';d.style.height=w*r+'px'})};
+  const drop=d=>{const c=d.querySelector('canvas');if(c){c.width=0;c.height=0;c.remove()}d.done=0};
+  const draw=async d=>{const want=d.style.width;if(d.done===want||d.busy)return;d.busy=1;
+    try{const p=await doc.getPage(+d.dataset.n);const vp1=p.getViewport({scale:1});d.ratio=vp1.height/vp1.width;const w=parseFloat(d.style.width);d.style.height=w*d.ratio+'px';
+      const dpr=Math.min(2,window.devicePixelRatio||1);const vp=p.getViewport({scale:w/vp1.width*dpr});
+      const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+      await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;if(dead)return;
+      const old=d.querySelector('canvas');if(old){old.width=0;old.remove()}d.append(c);d.done=want}catch(e){}finally{d.busy=0}};
+  const vis=new Set();
+  io=new IntersectionObserver(es=>{es.forEach(e=>{const d=e.target;if(e.isIntersecting){vis.add(d);draw(d)}else{vis.delete(d)}});
+    const ids=[...vis].map(d=>+d.dataset.n);if(ids.length){const lo=Math.min(...ids),hi=Math.max(...ids);pg.textContent='Página '+lo+' de '+n;
+      pages.forEach(d=>{const k=+d.dataset.n;if(k<lo-3||k>hi+3)drop(d)})}},{root:body,rootMargin:'600px 0px'});
+  layout();pages.forEach(d=>io.observe(d));
+  const rez=()=>{layout();[...vis].forEach(draw)};
+  zo.onclick=()=>{zoom=Math.max(.5,+(zoom-.25).toFixed(2));rez()};zi.onclick=()=>{zoom=Math.min(3,+(zoom+.25).toFixed(2));rez()};
+  new ResizeObserver(()=>{if(!dead)rez()}).observe(body);
 }
 async function arDelete(a){
   const t=cotTeam();if(!t)return;
