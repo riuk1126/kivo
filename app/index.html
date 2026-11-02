@@ -3623,8 +3623,10 @@ async function checkApkUpdate(){
     if(v&&vNewer(v,cur)&&(j.assets||[]).some(a=>a.name==='Kivo.apk')){APKUPD=v;renderBanner()}}catch(e){}
 }
 let APKUPD=null;
+// enlace al APK más reciente que ya esté publicado (evita el 404 mientras se arma una versión nueva)
+async function apkUrl(){try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases?per_page=8',{cache:'no-store'});const j=await r.json();for(const rel of j){const a=(rel.assets||[]).find(x=>x.name==='Kivo.apk');if(a&&!rel.draft)return a.browser_download_url}}catch(e){}return 'https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk'}
 function mobileBanners(b){
-  if(APKUPD){const d=h('div','banner',APKUPD==='app'?'<b>Instala la app de Kivo una última vez para guardar PDF y actualizarte con un clic.</b>':'<b>Hay una versión nueva de Kivo para el celular ('+esc(APKUPD)+').</b>');const y=h('button','btn primary','Descargar');y.onclick=()=>window.open('https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk','_blank');d.append(y);b.append(d)}
+  if(APKUPD){const d=h('div','banner',APKUPD==='app'?'<b>Instala la app de Kivo una última vez para guardar PDF y actualizarte con un clic.</b>':'<b>Hay una versión nueva de Kivo para el celular ('+esc(APKUPD)+').</b>');const y=h('button','btn primary','Descargar');y.onclick=async()=>{y.disabled=true;y.textContent='Abriendo…';window.open(await apkUrl(),'_blank');setTimeout(()=>{y.disabled=false;y.textContent='Descargar'},3000)};d.append(y);b.append(d)}
   if(IS_IOS&&!IS_STANDALONE&&!IS_APP&&!S.iosHintOff){const d=h('div','banner','<b>Instala Kivo en tu iPhone: toca el botón Compartir <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> y luego «Agregar a inicio».</b>');const n=h('button','btn ghost','Entendido');n.onclick=()=>{S.iosHintOff=true;save();renderBanner()};d.append(n);b.append(d)}
 }
 
