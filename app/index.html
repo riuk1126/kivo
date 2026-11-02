@@ -3618,7 +3618,7 @@ async function cotRPC(d){
     if(d.op==='set'){
       if(p.startsWith('config/')){const key=p.slice(7);const ex=await sb.from('cot_config').select('key').eq('team',t.id).eq('key',key).limit(1);if(ex.error)throw ex.error;
         const r=ex.data&&ex.data.length?await sb.from('cot_config').update({data:a.v}).eq('team',t.id).eq('key',key):await sb.from('cot_config').insert({team:t.id,key,data:a.v});if(r.error)throw r.error;return reply(true)}
-      if(p.startsWith('cotizaciones/')){const id=p.slice(13);const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
+      if(p.startsWith('cotizaciones/')){const id=p.slice(13);if(a.v&&typeof a.v==='object'){if(!a.v.autor){a.v.autor=pname(ME);a.v.autorId=ME}a.v.editadoPor=pname(ME)}const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
         const ex=await sb.from('cotizaciones').select('id').eq('id',id).limit(1);if(ex.error)throw ex.error;
         const r=ex.data&&ex.data.length?await sb.from('cotizaciones').update(row).eq('id',id):await sb.from('cotizaciones').insert(Object.assign({id,team:t.id},row));if(r.error)throw r.error;cotSnap();return reply(true)}
     }

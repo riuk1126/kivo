@@ -375,7 +375,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     </div>
     <div class="top-act">
       <button class="btn ghost" id="btn-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Nueva</button>
-      <button class="btn ghost" id="btn-saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Guardadas <span class="chip" id="saved-count">0</span></button>
+      <button class="btn ghost" id="btn-saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Anteriores <span class="chip" id="saved-count">0</span></button>
       <button class="btn" id="btn-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes y logo</button>
     </div>
   </div>
@@ -492,7 +492,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 
 <!-- Modal: Guardadas -->
 <div class="ov" id="m-saved" hidden><div class="modal">
-  <div class="modal-h"><h3>Cotizaciones guardadas</h3><div class="r"><input id="saved-q" placeholder="Buscar cliente o proyecto" style="width:220px"><button class="btn ghost" data-close>Cerrar</button></div></div>
+  <div class="modal-h"><h3>Cotizaciones anteriores</h3><div class="r"><input id="saved-q" placeholder="Buscar número, cliente o proyecto" style="width:240px"><button class="btn" id="dl-csv" title="Lista de todas las cotizaciones para abrir en Excel">Descargar lista (Excel)</button><button class="btn" id="dl-all" title="Todas las cotizaciones en un solo PDF">Descargar todas (PDF)</button><button class="btn ghost" data-close>Cerrar</button></div></div>
   <div class="modal-b"><div class="saved-list" id="saved-list"></div></div>
 </div></div>
 
@@ -723,7 +723,7 @@ document.addEventListener("input",e=>{
   if(t.dataset.xc){q.extras[t.dataset.xc].cant=Math.max(1,Math.round(num(t.value)||1));changed();renderSummary();return}
   if(t.dataset.hn!=null){q.hitos[+t.dataset.hn].nombre=t.value;changed();renderSummary();return}
   if(t.dataset.hp!=null){q.hitos[+t.dataset.hp].pct=num(t.value);changed();renderSummary();return}
-  if(t.id==="q-num"){q.numero=t.value.trim();changed();renderSummary();return}
+  if(t.id==="q-num"){q.numero=t.value.trim();q.numManual=true;changed();renderSummary();return}
   if(t.id==="desc-range"||t.id==="desc-num"){q.descuento=Math.min(25,Math.max(0,num(t.value)));changed();renderSummary();return}
 });
 document.addEventListener("change",e=>{
@@ -904,7 +904,7 @@ const store={
     saved=(LS.get("arq_cots")||[]).filter(s=>s.id!==id);LS.set("arq_cots",saved);renderSavedCount();renderSaved();
   },
   watch(){
-    if(caps.db){caps.db.collection("cotizaciones").orderBy("actualizado","desc").limit(300).onSnapshot(s=>{saved=s.docs.map(d=>d.data());renderSavedCount();if(!$("#m-saved").hidden)renderSaved();if(q.ejemplo||(!dirty&&!saved.some(z=>z.id===q.id))){q.numero=nextNumero();$("#q-num").textContent=q.numero}},()=>{})}
+    if(caps.db){caps.db.collection("cotizaciones").orderBy("actualizado","desc").limit(300).onSnapshot(s=>{saved=s.docs.map(d=>d.data());renderSavedCount();if(!$("#m-saved").hidden)renderSaved();const taken=saved.some(z=>z.id!==q.id&&z.numero===q.numero);if(q.ejemplo||(!dirty&&!saved.some(z=>z.id===q.id))||(taken&&!q.numManual)){const old=q.numero;q.numero=nextNumero();$("#q-num").value=q.numero;if(taken&&dirty&&old!==q.numero)toast("El "+old+" ya lo usó tu equipo. Esta cotización ahora es "+q.numero)}},()=>{})}
     else{saved=LS.get("arq_cots")||[];renderSavedCount()}
   }
 };
@@ -913,7 +913,8 @@ $("#btn-save").onclick=async()=>{
   const c=calc();
   if(!q.cliente.nombre){toast("Escribe el nombre del cliente antes de guardar");$("#f-cli-nombre").focus();return}
   if(!q.numero){toast("Escribe el número de la cotización");$("#q-num").focus();return}
-  const dup=saved.find(z=>z.id!==q.id&&z.numero===q.numero);
+  let dup=saved.find(z=>z.id!==q.id&&z.numero===q.numero);
+  if(dup&&!q.numManual){const old=q.numero;q.numero=nextNumero();$("#q-num").value=q.numero;dup=null;toast("El "+old+" ya estaba usado. Se guardó como "+q.numero)}
   if(dup&&!(await askConfirm(`El número ${q.numero} ya lo usa la cotización de ${dup.cliente&&dup.cliente.nombre||"otro cliente"}. ¿Guardar de todos modos?`,"Guardar igual")))return;
   q.ejemplo=false;q.actualizado=Date.now();q.total=c.total;
   if(JSON.stringify(q).length>240000){toast("La cotización pesa demasiado. Quita o cambia la imagen de referencia.");return}
@@ -934,20 +935,32 @@ function renderSavedCount(){$("#saved-count").textContent=saved.length}
 const estadoChip=s=>({borrador:'<span class="chip">Borrador</span>',enviada:'<span class="chip acc">Enviada</span>',aceptada:'<span class="chip ok">Aceptada</span>',rechazada:'<span class="chip warn">Rechazada</span>'}[s]||"");
 function renderSaved(){
   const f=($("#saved-q").value||"").toLowerCase();
-  const list=saved.filter(s=>!f||[s.numero,s.cliente&&s.cliente.nombre,s.proyecto&&s.proyecto.nombre].join(" ").toLowerCase().includes(f));
+  const list=sortedSaved().filter(s=>!f||[s.numero,s.cliente&&s.cliente.nombre,s.proyecto&&s.proyecto.nombre,s.autor].join(" ").toLowerCase().includes(f));
   $("#saved-list").innerHTML=list.length?list.map(s=>`<div class="saved" data-sid="${esc(s.id)}">
     <div style="min-width:0"><div class="t">${esc(s.proyecto&&s.proyecto.nombre||"Sin nombre")} ${estadoChip(s.estado)}</div>
-    <div class="m">${esc(s.numero)} · ${esc(s.cliente&&s.cliente.nombre||"")} · ${s.actualizado?new Date(s.actualizado).toLocaleDateString("es-PE"):""}</div></div>
-    <div class="acts"><span class="total">${money(s.total||0,"PEN")}</span><button class="btn" data-open="${esc(s.id)}">Abrir</button><button class="btn ghost" data-dup="${esc(s.id)}">Duplicar</button><button class="btn ghost danger" data-del="${esc(s.id)}">Eliminar</button></div></div>`).join("")
+    <div class="m"><b>${esc(s.numero)}</b> · ${esc(s.cliente&&s.cliente.nombre||"")} · ${new Date(s.fecha||s.actualizado||Date.now()).toLocaleDateString("es-PE")}${s.autor?" · hecha por "+esc(s.autor):""}${s.editadoPor&&s.editadoPor!==s.autor?" · editada por "+esc(s.editadoPor):""}</div></div>
+    <div class="acts"><span class="total">${money(s.total||0,"PEN")}</span><button class="btn" data-open="${esc(s.id)}">Abrir</button><button class="btn ghost" data-pdf="${esc(s.id)}">PDF</button><button class="btn ghost" data-dup="${esc(s.id)}">Duplicar</button><button class="btn ghost danger" data-del="${esc(s.id)}">Eliminar</button></div></div>`).join("")
     :`<p class="empty">${saved.length?"No hay resultados para esa búsqueda.":"Todavía no hay cotizaciones guardadas. Llena una y pulsa «Guardar»."}</p>`;
 }
 $("#btn-saved").onclick=()=>{$("#m-saved").hidden=false;renderSaved()};
+function sortedSaved(){const k=s=>{const m=/(\d+)\D*$/.exec(s.numero||"");return [String(s.numero||"").replace(/-?\d+\D*$/,""),m?+m[1]:0]};
+  return saved.slice().sort((a,b)=>{const x=k(a),y=k(b);return x[0]<y[0]?1:x[0]>y[0]?-1:y[1]-x[1]||(b.actualizado||0)-(a.actualizado||0)})}
+// genera la hoja A4 de cualquier cotización guardada, sin perder la que está abierta
+function sheetFor(s){const keep=q;try{q=clone(s);q.extras=q.extras||{};q.tarifas=q.tarifas||{};q.hitos=q.hitos||clone(cfg.hitos);return buildSheet()}finally{q=keep}}
+async function pdfOf(list,filename){const box=document.createElement("div");box.innerHTML=list.map((s,i)=>(i?'<div style="break-before:page;page-break-before:always"></div>':"")+sheetFor(s)).join("");await exportPDF(box,filename)}
+$("#dl-all").onclick=async()=>{const l=sortedSaved();if(!l.length){toast("Todavía no hay cotizaciones guardadas");return}toast("Preparando "+l.length+" cotizaciones…");await pdfOf(l,"Cotizaciones-Arquizo-"+new Date().toISOString().slice(0,10)+".pdf")};
+$("#dl-csv").onclick=()=>{const l=sortedSaved();if(!l.length){toast("Todavía no hay cotizaciones guardadas");return}
+  const cell=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';const est={borrador:"Borrador",enviada:"Enviada",aceptada:"Aceptada",rechazada:"Rechazada"};
+  const rows=[["Número","Fecha","Cliente","DNI/RUC","Teléfono","Proyecto","Ubicación","Área (m²)","Total (S/)","Estado","Hecha por"]].concat(l.map(s=>[s.numero,new Date(s.fecha||s.actualizado||Date.now()).toLocaleDateString("es-PE"),s.cliente&&s.cliente.nombre,s.cliente&&s.cliente.doc,s.cliente&&s.cliente.telefono,s.proyecto&&s.proyecto.nombre,s.proyecto&&s.proyecto.ubicacion,s.proyecto&&s.proyecto.area,(Number(s.total)||0).toFixed(2),est[s.estado]||s.estado||"",s.autor||""]));
+  const blob=new Blob(["\ufeff"+rows.map(r=>r.map(cell).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Cotizaciones-Arquizo-"+new Date().toISOString().slice(0,10)+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast("Lista descargada")};
 $("#saved-q").addEventListener("input",renderSaved);
 $("#saved-list").addEventListener("click",async e=>{
-  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]"),x=e.target.closest("[data-del]");
+  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]"),x=e.target.closest("[data-del]"),pf=e.target.closest("[data-pdf]");
+  if(pf){const s=saved.find(z=>z.id===pf.dataset.pdf);if(s)await pdfOf([s],`${s.numero}-${slug(s.proyecto&&s.proyecto.nombre||s.cliente&&s.cliente.nombre)||"cotizacion"}.pdf`);return}
   if(o||d){if(dirty&&!(await askConfirm("Hay cambios sin guardar en la cotización actual. ¿Abrir otra de todos modos?","Abrir")))return;
     const s=saved.find(z=>z.id===(o||d).dataset[o?"open":"dup"]);if(!s)return;q=clone(s);q.extras=q.extras||{};q.tarifas=q.tarifas||{};q.hitos=q.hitos||clone(cfg.hitos);
-    if(d){q.id=uid();q.numero=nextNumero();q.fecha=Date.now();q.estado="borrador";q.contratoHTML=null;dirty=true}else dirty=false;
+    if(d){q.id=uid();q.numero=nextNumero();q.numManual=false;q.autor=null;q.editadoPor=null;q.fecha=Date.now();q.estado="borrador";q.contratoHTML=null;dirty=true}else dirty=false;
     q.ejemplo=false;$("#m-saved").hidden=true;renderAll();toast(d?"Copia creada como "+q.numero:"Abriste "+q.numero);return}
   if(x){const s=saved.find(z=>z.id===x.dataset.del);if(!s)return;if(!(await askConfirm(`¿Eliminar la cotización ${s.numero} de ${s.cliente&&s.cliente.nombre||"este cliente"}? No se puede deshacer.`,"Eliminar")))return;
     try{await store.delQuote(s.id);toast("Cotización eliminada")}catch(_){toast("No se pudo eliminar. Inténtalo de nuevo.")}}
