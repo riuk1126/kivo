@@ -3729,8 +3729,27 @@ function mobileBanners(b){
 
 /* ================= APPS DEL EQUIPO: Cotizador Arquizo ================= */
 // El cotizador aparece solo para quienes son miembros del espacio de Arquizo (marcado con meta.cotizador)
-function cotTeam(){return S.lists.find(l=>metaOf(l).cotizador)||null}
+function cotTeam(){
+  // si hay varias listas con las apps de Arquizo, manda la compartida (la del equipo), no una copia personal vacía
+  const fl=S.lists.filter(l=>metaOf(l).cotizador);if(fl.length<2)return fl[0]||null;
+  const sc=l=>(isShared(l.id)?4:0)+(l.owner&&l.owner!==ME?2:0)+(S.tasks.some(t=>t.list===l.id)?1:0);
+  return fl.slice().sort((a,b)=>sc(b)-sc(a))[0];
+}
+// une listas repetidas: si tengo una lista propia sin compartir con el mismo nombre que una lista del equipo, paso mis tareas a la del equipo y borro la copia
+function mergeDupLists(){
+  if(!ME||NOMETA||!sb||typeof SYNC==='undefined')return false;let did=[];
+  S.lists.filter(l=>(!l.owner||l.owner===ME)&&!isShared(l.id)).forEach(mine=>{
+    const team=S.lists.find(x=>x.id!==mine.id&&x.owner&&x.owner!==ME&&isShared(x.id)&&norm(x.name)===norm(mine.name));
+    if(!team||!(mine.id in SYNC.lists))return;
+    S.tasks.forEach(t=>{if(t.list===mine.id){t.list=team.id;t.stage=''}});
+    if(metaOf(mine).cotizador)metaOf(team).cotizador=true;
+    dropListLocally(mine);did.push(team.name);
+  });
+  if(did.length){save();setTimeout(()=>{fetchAll().then(renderAll).catch(()=>{})},1500);setTimeout(()=>toast('Uní tu lista «'+did[0]+'» con la del equipo: ahora es una sola'),800);return true}
+  return false;
+}
 function cotAutoFlag(){
+  try{if(mergeDupLists()){renderList()}}catch(e){console.warn(e)}
   if(cotTeam()||NOMETA)return;
   const l=S.lists.find(x=>(!x.owner||x.owner===ME)&&norm(x.name)==='arquizo');
   if(l){metaOf(l).cotizador=true;save()}
@@ -4321,7 +4340,7 @@ function guessCat(name,kind){
   if(kind==='writer')return 'esc';if(kind==='student'||kind==='course')return 'est';if(kind==='personal')return 'per';
   if(['arch','community','creator','design','shop','teach'].includes(kind))return 'emp';
   const x=' '+norm(name||'')+' ';
-  if(/\b(s\.?a\.?c\.?|e\.?i\.?r\.?l\.?|s\.?a\.?|empresa|estudio|tienda|negocio|marca|clientes?|ventas|agencia|academia|inmobiliaria|consultora|taller de|store|shop)\b/.test(x)||(typeof cotTeam==='function'&&false))return 'emp';
+  if(/\b(s\.?a\.?c\.?|e\.?i\.?r\.?l\.?|s\.?a\.?|empresa|estudio|tienda|negocio|marca|clientes?|ventas|agencia|academia|inmobiliaria|consultora|taller de|store|shop|arquizo|zaitex|tinta 13)\b/.test(x)||(typeof cotTeam==='function'&&false))return 'emp';
   if(/(novela|libro|cuento|poema|poesia|escrit|capitulo|blog|guion|saga|manuscrito)/.test(x))return 'esc';
   if(/(curso|tesis|universidad|\buni\b|clases?\b|maestria|diplomado|examen|estudi|certificacion|ingles|idioma|carrera|ciclo)/.test(x))return 'est';
   return 'per';
