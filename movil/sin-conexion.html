@@ -1,0 +1,7 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Kivo</title>
+<style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,Roboto,"Segoe UI",sans-serif;background:#f5f5f7;color:#1d1d1f;text-align:center;padding:24px;box-sizing:border-box}
+@media (prefers-color-scheme:dark){body{background:#000;color:#f5f5f7}p{color:#a1a1a6!important}}
+b{font-size:28px;letter-spacing:-.02em}p{color:#6e6e73;font-size:16px;line-height:1.5;max-width:320px;margin:12px auto 24px}
+button{border:0;background:#1d1d1f;color:#fff;font-size:16px;font-weight:600;padding:13px 26px;border-radius:999px}@media (prefers-color-scheme:dark){button{background:#f5f5f7;color:#000}}</style></head>
+<body><div><b>Kivo</b><p>No hay conexión a internet. Conéctate y Kivo se abrirá solo, con todos tus pendientes.</p><button onclick="go()">Reintentar</button></div>
+<script>function go(){location.href='https://riuk1126.github.io/kivo/'}addEventListener('online',go);setInterval(()=>{if(navigator.onLine)fetch('https://riuk1126.github.io/kivo/manifest.json',{cache:'no-store',mode:'no-cors'}).then(go).catch(()=>{})},5000)</script></body></html>

@@ -57,6 +57,7 @@ jobs:
           npm install
           rm -rf www android && mkdir www && cp -r ../app/* www/
           rm -f www/vendor/transformers.min.js www/vendor/ort-wasm* www/sw.js
+          cp sin-conexion.html www/
           V=$(node -p "require('../package.json').version")
           sed -i "s/__KIVO_VERSION__/$V/" www/index.html
           npx cap add android
