@@ -12,6 +12,10 @@ on:
         description: 'Solo volver a armar el APK de Android'
         type: boolean
         default: false
+      solo_mac:
+        description: 'Solo volver a armar el instalador de Mac'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -23,7 +27,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        # macos-14 (Apple M1): macos-latest se quedaba sin máquinas libres
+        os: ${{ fromJSON(inputs.solo_mac && '["macos-14"]' || '["windows-latest","macos-14","ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +45,7 @@ jobs:
   # ---------- Android (APK) ----------
   # Ya no espera a Mac: sale al mismo tiempo que Windows
   android:
+    if: ${{ !inputs.solo_mac }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +96,7 @@ jobs:
 
   # ---------- Versión web instalable (iPhone y Android) ----------
   web:
-    if: ${{ !inputs.solo_android }}
+    if: ${{ !inputs.solo_android && !inputs.solo_mac }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
