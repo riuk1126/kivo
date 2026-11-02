@@ -64,6 +64,7 @@ function createWin() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       sandbox: true,
+      plugins: true, // visor de PDF dentro de Kivo
       backgroundThrottling: false // los recordatorios siguen funcionando con la ventana oculta
     }
   });

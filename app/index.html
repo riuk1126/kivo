@@ -894,6 +894,12 @@ body.cot-open{overflow:hidden}
 .ar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .ar-card{background:var(--card);border-radius:16px;box-shadow:0 0 0 .5px var(--line),0 2px 10px rgba(0,0,0,.04);padding:14px;display:flex;flex-direction:column;gap:12px}
 .ar-card.up{opacity:.75}
+.ar-fail{border:1px solid #CF0100;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}.ar-fail b{color:#CF0100;white-space:normal}
+.dock{max-height:calc(100vh - 130px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none}.dock::-webkit-scrollbar{display:none}
+.dapp.dfile .ar-ic{width:56px;height:56px;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.dapp.dfile .ar-ic svg{width:34px;height:40px}.dapp.dfile .ar-ic b{bottom:12px;font-size:8.5px}
+.dapp.dfile:hover .ar-ic{transform:translateY(-2px)}
+.dapp.dfile span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .ar-open{display:flex;gap:12px;align-items:center;text-align:left;min-width:0;padding:0;background:none;border:0;color:inherit;cursor:pointer}
 .ar-ic{position:relative;width:46px;height:54px;flex:none;color:var(--c);display:block}
 .ar-ic svg{width:100%;height:100%}
@@ -906,6 +912,7 @@ body.cot-open{overflow:hidden}
 .ar-empty img{width:64px;height:64px;border-radius:16px;margin-bottom:6px}
 .ar-empty b{color:var(--text);font-size:17px}.ar-empty span{max-width:380px;font-size:14px;line-height:1.5}.ar-empty .btn{margin-top:10px}
 .arv.drag .ar-body{outline:2px dashed var(--accent);outline-offset:-12px;border-radius:18px}
+@media (max-width:1100px){.dock{max-height:none;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap}.dapp.dfile .ar-ic{width:34px;height:34px;border-radius:9px}.dapp.dfile .ar-ic svg{width:22px;height:26px}.dapp.dfile .ar-ic b{display:none}.dapp.dfile span:last-child{-webkit-line-clamp:1;max-width:120px;white-space:nowrap;text-overflow:ellipsis;display:block}}
 @media (max-width:600px){.ar-body{padding:16px}.arv .cotv-h .btn{padding:7px 10px;font-size:13px}}
 /* ---- imprimir mi semana ---- */
 .modal.wide{width:min(980px,100%)}
@@ -3663,7 +3670,9 @@ function renderDock(){
   if(!d){d=h('nav','dock');d.id='dock';document.body.append(d)}
   d.innerHTML='';const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=openCot;d.append(b);
   const c=h('button','dapp',`<img src="icons/carta.svg" alt=""><span>Carta de<br>presentación</span>`);c.title='Carta de presentación · equipo de '+t.name;c.onclick=openCarta;d.append(c);
-  const f=h('button','dapp',`<img src="icons/archivos.svg" alt=""><span>Agregar<br>archivos</span>`);f.title='Archivos del equipo de '+t.name+' (portafolio, brochure, PDFs)';f.onclick=openArchivos;d.append(f);
+  if(AR.team!==t.id){AR.team=t.id;AR.list=[];arLoad();arWatch()}
+  AR.list.forEach(a=>{const b2=h('button','dapp dfile',arIcon(a)+`<span>${esc(arBase(a.nombre))}</span>`);b2.title=a.nombre+' · subido por '+(a.autor||'')+' — tócalo para abrirlo';b2.onclick=()=>arOpen(a,false);d.append(b2)});
+  const f=h('button','dapp',`<img src="icons/archivos.svg" alt=""><span>Agregar<br>archivos</span>`);f.title='Subir portafolio, brochure o PDFs para todo el equipo de '+t.name;f.onclick=()=>{openArchivos();ARV.inp.click()};d.append(f);
 }
 let COTV=null,COTCH=null,COTWATCH=false;
 function openCot(){
@@ -3912,8 +3921,12 @@ async function cartaPDF(c){
 }
 
 /* ---- Archivos del equipo Arquizo (portafolio, brochure, PDFs) ---- */
-let ARV=null,AR={list:[],busy:false};
-const AR_MAX=50*1024*1024;
+let ARV=null,AR={list:[],busy:false,team:null,fails:[]},ARCH=null;
+const AR_PART=45*1024*1024;
+const arBase=n=>String(n||'').replace(/\.[a-z0-9]{1,5}$/i,'');
+function arWatch(){if(ARCH||!sb||!sb.channel)return;try{ARCH=sb.channel('kivo-arch').on('postgres_changes',{event:'*',schema:'public',table:'cot_config'},()=>{clearTimeout(arWatch.t);arWatch.t=setTimeout(arLoad,500)}).subscribe()}catch(e){}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')arLoad()});setInterval(arLoad,3*60*1000)}
+const AR_MAX=500*1024*1024;
 function arIcon(a){const n=norm(a.nombre||''),t=a.type||'';
   const ext=(n.match(/\.([a-z0-9]{1,5})$/)||[,''])[1].toUpperCase()||'ARCH';
   const col=/pdf/.test(t)||ext==='PDF'?'#CF0100':/^(DOCX?|ODT)$/.test(ext)?'#2b5797':/^(XLSX?|CSV)$/.test(ext)?'#1e7145':/^(PPTX?)$/.test(ext)?'#c43e1c':t.startsWith('image/')?'#7a4fd6':'#02192E';
@@ -3941,12 +3954,13 @@ async function arLoad(){
   const t=cotTeam();if(!t||!sb)return;
   const {data,error}=await sb.from('cot_config').select('key,data').eq('team',t.id).like('key','archivo/%');
   if(error){AR.err=error;arRender();return}
-  AR.err=null;AR.list=(data||[]).map(r=>r.data).filter(x=>x&&!x.borrado).sort((a,b)=>(b.subido||0)-(a.subido||0));arRender();
+  AR.err=null;const sig=JSON.stringify(AR.list.map(x=>x.id));AR.list=(data||[]).map(r=>r.data).filter(x=>x&&!x.borrado).sort((a,b)=>(a.subido||0)-(b.subido||0));arRender();if(sig!==JSON.stringify(AR.list.map(x=>x.id)))renderDock();
 }
 function arRender(){
   if(!ARV)return;const g=ARV.querySelector('.ar-grid');g.innerHTML='';
   if(AR.err){g.append(h('div','ar-empty','<b>No se pudieron cargar los archivos</b><span>'+esc(AR.err.message||'')+'</span>'));return}
-  if(AR.up){const u=h('div','ar-card up',`<span class="ar-ic" style="--c:#8a93a0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14"/></svg></span><div class="ar-inf"><b>${esc(AR.up)}</b><small>Subiendo…</small></div>`);g.append(u)}
+  AR.fails.forEach((m,i)=>{const e=h('div','ar-card ar-fail',`<div class="ar-inf"><b>No se subió: ${esc(m.n)}</b><small>${esc(m.why)}</small></div>`);const ok=h('button','btn sm','Entendido');ok.onclick=()=>{AR.fails.splice(i,1);arRender()};e.append(ok);g.append(e)});
+  if(AR.up){const u=h('div','ar-card up',`<span class="ar-ic" style="--c:#8a93a0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14"/></svg></span><div class="ar-inf"><b>${esc(AR.up)}</b><small>Subiendo… ${AR.pct||0}%</small></div>`);g.append(u)}
   if(!AR.list.length&&!AR.up){
     const e=h('div','ar-empty',`<img src="icons/archivos.svg" alt=""><b>Todavía no hay archivos</b><span>Sube el portafolio, el brochure o cualquier PDF. Todo el equipo podrá verlos desde su compu, tableta o celular.</span>`);
     const b=h('button','btn primary','＋ Agregar archivos');b.onclick=()=>ARV.inp.click();e.append(b);g.append(e);return}
@@ -3967,31 +3981,52 @@ async function arUpload(files){
   AR.busy=true;let ok=0;
   try{
     for(const f of files){
-      if(f.size>AR_MAX){toast('«'+f.name+'» pesa '+fmtSize(f.size)+'. El máximo es 50 MB');continue}
-      AR.up=f.name;arRender();
-      const id=uid(),path=t.id+'/'+id+'-'+safeName(f.name);
-      const up=await sb.storage.from('equipo').upload(path,f,{contentType:f.type||'application/octet-stream',upsert:false});
-      if(up.error){const m=String(up.error.message||up.error);toast(/bucket|not found|row-level|security|policy|403/i.test(m)?'Falta el paso 6 de la base de datos (archivos del equipo) en Supabase':'No se pudo subir «'+f.name+'»: '+m);continue}
-      const meta={id,nombre:f.name,path,size:f.size,type:f.type||'',autor:pname(ME),autorId:ME,subido:Date.now()};
+      if(f.size>AR_MAX){AR.fails.push({n:f.name,why:'Pesa '+fmtSize(f.size)+'. El máximo es 500 MB.'});continue}
+      AR.up=f.name;AR.pct=0;arRender();
+      const id=uid(),base=t.id+'/'+id+'-'+safeName(f.name),n=Math.max(1,Math.ceil(f.size/AR_PART)),parts=[];let bad=null;
+      for(let i=0;i<n;i++){const path=n>1?base+'.parte'+(i+1):base;
+        const up=await sb.storage.from('equipo').upload(path,n>1?f.slice(i*AR_PART,(i+1)*AR_PART,f.type||'application/octet-stream'):f,{contentType:f.type||'application/octet-stream',upsert:false});
+        if(up.error){bad=String(up.error.message||up.error);break}parts.push(path);AR.pct=Math.round((i+1)/n*100);arRender()}
+      if(bad){if(parts.length)try{await sb.storage.from('equipo').remove(parts)}catch(e){}
+        AR.fails.push({n:f.name,why:/bucket|not found|row-level|security|policy|403/i.test(bad)?'Falta el paso 6 de la base de datos en Supabase.':/exceed|too large|413|size/i.test(bad)?'Supabase no acepta un archivo tan grande ('+fmtSize(f.size)+').':'Error: '+bad});continue}
+      const path=parts[0];
+      const meta={id,nombre:f.name,path,parts:n>1?parts:undefined,size:f.size,type:f.type||'',autor:pname(ME),autorId:ME,subido:Date.now()};
       const r=await sb.from('cot_config').insert({team:t.id,key:'archivo/'+id,data:meta});
-      if(r.error){await sb.storage.from('equipo').remove([path]);toast('No se pudo guardar «'+f.name+'»');continue}
-      AR.list.unshift(meta);ok++;
+      if(r.error){await sb.storage.from('equipo').remove(parts);AR.fails.push({n:f.name,why:'No se pudo registrar: '+(r.error.message||'')});continue}
+      AR.list.push(meta);ok++;renderDock();
     }
   }finally{AR.busy=false;AR.up=null;arRender()}
-  if(ok)toast(ok>1?ok+' archivos subidos para todo el equipo':'Archivo subido para todo el equipo');
+  if(ok)toast(ok>1?ok+' archivos subidos para todo el equipo':'Archivo subido para todo el equipo');if(AR.fails.length)toast('Algunos archivos no se subieron. Mira el motivo en Archivos.');
   arLoad();
 }
 async function arOpen(a,download){
-  const {data,error}=await sb.storage.from('equipo').createSignedUrl(a.path,3600,download?{download:a.nombre}:undefined);
-  if(error||!data){toast('No se pudo abrir el archivo');return}
-  window.open(data.signedUrl,'_blank');
+  if(arOpen.busy===a.id)return;arOpen.busy=a.id;setTimeout(()=>{if(arOpen.busy===a.id)arOpen.busy=null},1500);
+  if(!a.parts){
+    const {data,error}=await sb.storage.from('equipo').createSignedUrl(a.path,3600,download?{download:a.nombre}:undefined);
+    if(error||!data){toast('No se pudo abrir el archivo');return}
+    window.open(data.signedUrl,'_blank');return}
+  if(IS_APP){toast('Este archivo es muy pesado para abrirse en la tableta. Ábrelo desde la compu o súbelo en una versión de menos de 45 MB');return}
+  toast('Abriendo «'+a.nombre+'»…');
+  try{const bl=[];for(const p of a.parts){const {data,error}=await sb.storage.from('equipo').download(p);if(error||!data)throw error||0;bl.push(data)}
+    const url=URL.createObjectURL(new Blob(bl,{type:a.type||'application/pdf'}));
+    if(download){const x=h('a');x.href=url;x.download=a.nombre;document.body.append(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);return}
+    arViewer(a,url);
+  }catch(e){toast('No se pudo abrir el archivo')}
+}
+function arViewer(a,url){
+  document.querySelectorAll('.arviewer').forEach(x=>x.remove());
+  const v=h('div','cotv arviewer');v.style.display='flex';v.style.zIndex=8100;
+  const hd=h('div','cotv-h');const bk=h('button','btn','‹ Volver');bk.onclick=()=>{v.remove();URL.revokeObjectURL(url);if(!ARV||ARV.style.display!=='flex')document.body.classList.remove('cot-open')};
+  const dl=h('button','btn','Descargar');dl.onclick=()=>{const x=h('a');x.href=url;x.download=a.nombre;document.body.append(x);x.click();x.remove()};
+  hd.append(bk,h('b','',esc(a.nombre)),h('span','grow'),dl);const fr=document.createElement('iframe');fr.src=url;fr.title=a.nombre;
+  v.append(hd,fr);document.body.append(v);document.body.classList.add('cot-open');
 }
 async function arDelete(a){
   const t=cotTeam();if(!t)return;
   const r=await sb.from('cot_config').update({data:Object.assign({},a,{borrado:true,borradoPor:pname(ME)})}).eq('team',t.id).eq('key','archivo/'+a.id);
   if(r.error){toast('No se pudo borrar');return}
-  try{await sb.storage.from('equipo').remove([a.path])}catch(e){}
-  AR.list=AR.list.filter(x=>x.id!==a.id);arRender();toast('Archivo borrado');
+  try{await sb.storage.from('equipo').remove(a.parts||[a.path])}catch(e){}
+  AR.list=AR.list.filter(x=>x.id!==a.id);arRender();renderDock();toast('Archivo borrado');
 }
 
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
