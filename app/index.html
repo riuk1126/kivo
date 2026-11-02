@@ -846,6 +846,21 @@ select.fin{cursor:pointer}
 .tpl-ai b{font-size:15px;font-weight:650;display:block}
 .tpl-ai small{font-size:12.5px;opacity:.75}
 .tpl-ai .ico{width:22px;height:22px}
+/* ---- apps del equipo (Cotizador Arquizo) ---- */
+.dock{position:fixed;left:22px;top:110px;z-index:40;display:flex;flex-direction:column;gap:16px}
+.dapp{display:flex;flex-direction:column;align-items:center;gap:7px;width:84px;padding:8px 4px;border-radius:16px;font-size:11.5px;line-height:1.2;color:var(--text);font-weight:500;text-align:center}
+.dapp:hover{background:var(--fill)}
+.dapp img{width:56px;height:56px;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,.14);transition:transform .15s}
+.dapp:hover img{transform:translateY(-2px)}
+@media (max-width:1100px){.dock{position:static;flex-direction:row;justify-content:flex-start;margin:0 auto;max-width:720px;padding:6px 16px 0}.dapp{flex-direction:row;width:auto;gap:10px;padding:6px 12px 6px 6px;background:var(--card);box-shadow:0 0 0 .5px var(--line)}.dapp img{width:34px;height:34px;border-radius:9px}.dapp br{display:none}}
+.cotv{position:fixed;inset:0;z-index:8000;background:var(--bg);display:none;flex-direction:column}
+.cotv-h{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:.5px solid var(--line);background:var(--card)}
+.cotv-h b{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:650}
+.cotv-h b img{width:24px;height:24px;border-radius:6px}
+.cotv-h .btn{border-radius:999px}
+.cotv-who{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+.cotv iframe{flex:1;border:0;width:100%;background:var(--bg)}
+body.cot-open{overflow:hidden}
 /* ---- imprimir mi semana ---- */
 .modal.wide{width:min(980px,100%)}
 .pr-ops{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:12px 0}
@@ -2301,6 +2316,7 @@ function openListEditor(l,onCreated){
     const row=h('div','lrow');const e=h('button','le',iconHTML(st.emoji||T.icon));e.title='Elegir ícono';e.onclick=()=>emojiPicker(v=>{st.emoji=v||T.icon;draw()});
     const n=h('input','field');n.type='text';n.maxLength=40;n.placeholder=T.ph||'Nombre de la lista';n.value=st.name;n.oninput=()=>{st.name=n.value};
     row.append(e,n);box.append(row);
+    if(!isNew&&(!l.owner||l.owner===ME)&&!NOMETA){box.append(h('div','lbl','Apps del equipo'));box.append(toggleRow('Cotizador Arquizo','Quienes tengan acceso a este espacio verán el cotizador al costado de Kivo.',!!metaOf(l).cotizador,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).cotizador&&v)delete x.meta.cotizador});if(v)metaOf(l).cotizador=true;else delete metaOf(l).cotizador;save();renderDock()}))}
     box.append(h('div','lbl','Color'));const sw=h('div','sw-row');
     LIST_COLORS.forEach(c=>{const b=h('button','sw'+(st.color===c?' on':''));b.style.background=c;b.onclick=()=>{st.color=c;draw()};sw.append(b)});box.append(sw);
     const f=h('div','foot');
@@ -3553,6 +3569,83 @@ function mobileBanners(b){
   if(IS_IOS&&!IS_STANDALONE&&!IS_APP&&!S.iosHintOff){const d=h('div','banner','<b>Instala Kivo en tu iPhone: toca el botón Compartir <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> y luego «Agregar a inicio».</b>');const n=h('button','btn ghost','Entendido');n.onclick=()=>{S.iosHintOff=true;save();renderBanner()};d.append(n);b.append(d)}
 }
 
+/* ================= APPS DEL EQUIPO: Cotizador Arquizo ================= */
+// El cotizador aparece solo para quienes son miembros del espacio de Arquizo (marcado con meta.cotizador)
+function cotTeam(){return S.lists.find(l=>metaOf(l).cotizador)||null}
+function cotAutoFlag(){
+  if(cotTeam()||NOMETA)return;
+  const l=S.lists.find(x=>(!x.owner||x.owner===ME)&&norm(x.name)==='arquizo');
+  if(l){metaOf(l).cotizador=true;save()}
+}
+function renderDock(){
+  let d=$('#dock');const t=cotTeam();
+  if(!t||!ME){if(d)d.remove();return}
+  if(!d){d=h('nav','dock');d.id='dock';document.body.append(d)}
+  d.innerHTML='';const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=openCot;d.append(b);
+}
+let COTV=null,COTCH=null,COTWATCH=false;
+function openCot(){
+  const t=cotTeam();if(!t){toast('El cotizador es solo para el equipo de Arquizo');return}
+  if(!COTV){
+    COTV=h('div','cotv');
+    const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCot;
+    hd.append(bk,h('b','',`<img src="icons/cotizador.svg" alt=""> Cotizador Arquizo`),h('span','grow'),h('small','cotv-who',''));
+    const fr=document.createElement('iframe');fr.src='cotizador.html';fr.title='Cotizador Arquizo';
+    COTV.append(hd,fr);document.body.append(COTV);COTV.fr=fr;
+  }
+  const who=(LMEM[t.id]||[]).map(pname).filter(Boolean);COTV.querySelector('.cotv-who').textContent=who.length>1?'Compartido con '+who.filter(n=>n!==pname(ME)).join(', '):'Solo tú (comparte el espacio «'+t.name+'» para trabajar en equipo)';
+  COTV.style.display='flex';document.body.classList.add('cot-open');cotPost({theme:isDark()?'dark':'light'});
+}
+function closeCot(){if(COTV){COTV.style.display='none';document.body.classList.remove('cot-open')}}
+function cotPost(m){try{COTV&&COTV.fr.contentWindow.postMessage(Object.assign({kcot:1},m),'*')}catch(e){}}
+async function cotSnap(){const t=cotTeam();if(!t||!sb)return;
+  const {data,error}=await sb.from('cotizaciones').select('data,actualizado').eq('team',t.id).order('actualizado',{ascending:false}).limit(300);
+  if(!error)cotPost({snap:(data||[]).map(r=>r.data)});
+}
+function cotWatch(){
+  cotSnap();if(COTWATCH||!sb||!sb.channel)return;COTWATCH=true;
+  try{COTCH=sb.channel('kivo-cot').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},()=>{clearTimeout(cotWatch.t);cotWatch.t=setTimeout(cotSnap,400)}).subscribe()}catch(e){}
+}
+async function cotRPC(d){
+  const t=cotTeam();const reply=(data,err,code)=>cotPost({reply:d.id,data,err,code});
+  if(!t)return reply(null,'Sin acceso al equipo de Arquizo');
+  const a=d.args||{},p=String(a.p||'');
+  try{
+    if(d.op==='get'){
+      if(p.startsWith('config/')){const {data,error}=await sb.from('cot_config').select('data').eq('team',t.id).eq('key',p.slice(7)).limit(1);if(error)throw error;return reply(data&&data[0]?data[0].data:null)}
+      if(p.startsWith('cotizaciones/')){const {data,error}=await sb.from('cotizaciones').select('data').eq('id',p.slice(13)).limit(1);if(error)throw error;return reply(data&&data[0]?data[0].data:null)}
+    }
+    if(d.op==='set'){
+      if(p.startsWith('config/')){const key=p.slice(7);const ex=await sb.from('cot_config').select('key').eq('team',t.id).eq('key',key).limit(1);if(ex.error)throw ex.error;
+        const r=ex.data&&ex.data.length?await sb.from('cot_config').update({data:a.v}).eq('team',t.id).eq('key',key):await sb.from('cot_config').insert({team:t.id,key,data:a.v});if(r.error)throw r.error;return reply(true)}
+      if(p.startsWith('cotizaciones/')){const id=p.slice(13);const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
+        const ex=await sb.from('cotizaciones').select('id').eq('id',id).limit(1);if(ex.error)throw ex.error;
+        const r=ex.data&&ex.data.length?await sb.from('cotizaciones').update(row).eq('id',id):await sb.from('cotizaciones').insert(Object.assign({id,team:t.id},row));if(r.error)throw r.error;cotSnap();return reply(true)}
+    }
+    if(d.op==='del'&&p.startsWith('cotizaciones/')){const r=await sb.from('cotizaciones').delete().eq('id',p.slice(13));if(r.error)throw r.error;cotSnap();return reply(true)}
+    if(d.op==='pdf')return reply(await cotPDF(a.fn,a.html,a.css));
+    reply(null,'Operación no válida');
+  }catch(e){const m=String(e&&e.message||e);reply(null,/cotizaciones|cot_config|relation|schema cache/i.test(m)?'Falta el paso de la base de datos (código 5 en Supabase)':m,/quota|too large/i.test(m)?'quota_exceeded':undefined)}
+}
+async function cotPDF(fn,html,css){
+  const area=$('#printArea');area.innerHTML='';const host=h('div');area.append(host);
+  const root=host.attachShadow({mode:'open'});
+  css=String(css||'').replace(/:root/g,':host').replace(/@media \(prefers-color-scheme: dark\)/g,'@media (max-width:0px)').replace(/:host\[data-theme="dark"\]/g,':host([data-x])');
+  root.innerHTML=`<style>${css}\n#print-area{display:block!important}#print-area .sheet{width:auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style><div id="print-area">${html}</div>`;
+  const pg=h('style');pg.id='cotPage';pg.textContent='@page{size:A4 portrait;margin:12mm 13mm}';document.head.append(pg);
+  document.body.classList.add('printing');
+  try{
+    if(window.kivo&&kivo.savePDF){const r=await kivo.savePDF(fn,{portrait:true});return r&&r.ok?{saved:true,path:r.path||''}:{saved:false,error:r&&r.error}}
+    if(IS_APP)return {saved:false,error:'en el celular los PDF se guardan desde la compu'};
+    window.print();return {saved:false};
+  }finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML='';pg.remove()},400)}
+}
+window.addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot||!COTV||e.source!==COTV.fr.contentWindow)return;
+  if(d.op==='hello'){const t=cotTeam();cotPost({theme:isDark()?'dark':'light',team:t?'Equipo de '+t.name:''});return}
+  if(d.op==='watch'){cotWatch();return}
+  if(d.id)cotRPC(d);
+});
+
 function dataToBlob(d){const i=d.indexOf(',');const mime=d.slice(5,i).split(';')[0]||'application/octet-stream';const bin=atob(d.slice(i+1));const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime})}
 function exportAll(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'kivo',v:4,data:{tasks:S.tasks,lists:S.lists,contacts:S.contacts}})],{type:'application/json'}));
@@ -3712,7 +3805,7 @@ function boot(){
 }
 
 /* ---------- arranque ---------- */
-function renderAll(){applyLook();renderHeader();renderAdd();renderList()}
+function renderAll(){applyLook();renderHeader();renderAdd();renderList();try{cotAutoFlag();renderDock()}catch(e){console.warn(e)}}
 let lastDay=today();
 function checkDay(){if(today()!==lastDay){lastDay=today();if(D.date<today())D.date=today();renderAll()}}
 $('#txt').addEventListener('input',renderAdd);

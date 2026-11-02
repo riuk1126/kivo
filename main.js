@@ -141,13 +141,15 @@ ipcMain.on('kivo:attention', (e, n) => {
 });
 ipcMain.handle('kivo:version', () => app.getVersion());
 // Guardar la semana como PDF (para imprimir)
-ipcMain.handle('kivo:save-pdf', async (e, name) => {
+ipcMain.handle('kivo:save-pdf', async (e, name, opt) => {
   try {
     const { dialog } = require('electron');
     const safe = String(name || 'Kivo-semana.pdf').replace(/[^\w.-]/g, '_');
-    const r = await dialog.showSaveDialog(win, { title: 'Guardar mi semana', defaultPath: path.join(app.getPath('documents'), safe), filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+    const r = await dialog.showSaveDialog(win, { title: opt && opt.portrait ? 'Guardar PDF' : 'Guardar mi semana', defaultPath: path.join(app.getPath('documents'), safe), filters: [{ name: 'PDF', extensions: ['pdf'] }] });
     if (r.canceled || !r.filePath) return { ok: false };
-    const data = await win.webContents.printToPDF({ landscape: true, pageSize: 'A4', printBackground: true, margins: { marginType: 'custom', top: 0.3, bottom: 0.3, left: 0.3, right: 0.3 } });
+    const data = await win.webContents.printToPDF(opt && opt.portrait
+      ? { pageSize: 'A4', printBackground: true, preferCSSPageSize: true }
+      : { landscape: true, pageSize: 'A4', printBackground: true, margins: { marginType: 'custom', top: 0.3, bottom: 0.3, left: 0.3, right: 0.3 } });
     await fs.promises.writeFile(r.filePath, data);
     shell.openPath(r.filePath);
     return { ok: true, path: r.filePath };

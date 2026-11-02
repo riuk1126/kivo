@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cotizador Arquizo</title>
+<style>
+/* Layout: plano de trabajo — columna de pasos a la izquierda, resumen económico fijo a la derecha, barra de totales abajo. */
+:root{
+  /* Marca Arquizo: rojo #CF0100 + azul marino #02192E sobre blancos y grises fríos */
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#E9ECF0; --line:#D5DAE1; --ink:#02192E; --ink-2:#4A5868; --ink-3:#7D8896;
+  --accent:#CF0100; --accent-ink:#FFFFFF; --accent-soft:#FCEBEA; --accent-line:#EFA9A8;
+  --deep:#02192E; --on-deep:#FFFFFF;
+  --ok:#1F7A45; --warn:#9A5418; --danger:#B3261E; --ok-soft:#E1F0E6; --warn-soft:#F6EAD9;
+  --sheet-bg:#FFFFFF; --sheet-ink:#02192E; --sheet-mute:#5A6675; --sheet-line:#DCE1E7; --sheet-tint:#F2F4F7; --sheet-navy:#02192E;
+  --brand:#CF0100;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px; --bar-h:68px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#03101D; --surface:#081D31; --surface-2:#0E2840; --line:#1B3753; --ink:#E8EEF5; --ink-2:#A9B7C6; --ink-3:#7489A0;
+  --accent:#EC3431; --accent-ink:#FFFFFF; --accent-soft:#2A1621; --accent-line:#7A2A2E;
+  --deep:#CF0100; --on-deep:#FFFFFF;
+  --ok:#5FC488; --warn:#E3A867; --danger:#FF8A80; --ok-soft:#10301F; --warn-soft:#33281A; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#03101D; --surface:#081D31; --surface-2:#0E2840; --line:#1B3753; --ink:#E8EEF5; --ink-2:#A9B7C6; --ink-3:#7489A0;
+  --accent:#EC3431; --accent-ink:#FFFFFF; --accent-soft:#2A1621; --accent-line:#7A2A2E;
+  --deep:#CF0100; --on-deep:#FFFFFF;
+  --ok:#5FC488; --warn:#E3A867; --danger:#FF8A80; --ok-soft:#10301F; --warn-soft:#33281A; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%}
+#print-area{display:none}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px) + 16px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--accent);flex:none}
+input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--accent)}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 13px;cursor:pointer;font-weight:500;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.wa{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
+.btn.danger{color:var(--danger)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn svg{width:16px;height:16px;flex:none}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.acc{background:var(--accent-soft);color:var(--accent)}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);border-top:3px solid var(--accent)}
+.top-in{display:flex;align-items:center;gap:14px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand img{height:34px;width:auto;max-width:140px;object-fit:contain}
+.brand .wm{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.brand .wm i{font-style:normal;color:var(--accent)}
+@media (max-width:700px){.top{position:static}.top-in{gap:8px}.top-act{margin-left:0;width:100%}.top-act .btn{padding:6px 9px;font-size:13px}}
+.brand .sep{width:1px;height:26px;background:var(--line)}
+.brand .app{font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink-2)}
+.top-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.top-meta select{width:auto;padding:5px 8px;font-size:13px}
+.qnum{display:inline-flex;align-items:center;gap:6px}
+.qnum input{width:150px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.numprev{font-family:var(--f-mono);font-size:15px;font-weight:600;color:var(--accent);padding:9px 0}
+.top-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+
+/* Main grid */
+main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;padding-block:20px;max-width:1320px;margin:0 auto}
+@media (max-width:980px){main{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 20px}
+.step-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.step-n{font-family:var(--f-mono);font-size:11px;color:var(--accent);border:1px solid var(--accent-line);border-radius:6px;padding:3px 7px;flex:none;margin-top:2px}
+.step-h h2{font-size:17px;font-weight:700}
+.step-h p{margin:2px 0 0;color:var(--ink-2);font-size:13px}
+.step-h .r{margin-left:auto}
+.example{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--warn-soft);color:var(--warn);border-radius:var(--r);padding:10px 14px;font-size:13px}
+.example b{font-weight:600}
+
+/* Form grid */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.grid .full{grid-column:1/-1}
+@media (max-width:560px){.grid{grid-template-columns:minmax(0,1fr)}}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:12px;font-weight:500;color:var(--ink-2)}
+.field .unit{position:relative}
+.field .unit input{padding-right:42px}
+.field .unit em{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.quick button{font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer}
+.quick button:hover{border-color:var(--accent)}
+.ref-img{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ref-img img{width:92px;height:62px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+
+/* IA */
+.ia{background:var(--surface-2);border-color:var(--line);border-left:4px solid var(--accent)}
+.ia textarea{min-height:92px;background:var(--surface)}
+.ia-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ia-msg{font-size:13px;color:var(--ink-2)}
+.ia-msg.ok{color:var(--ok)} .ia-msg.err{color:var(--danger)}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:13px}
+
+/* Tabs */
+.tabs{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:3px;gap:2px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:7px;cursor:pointer;font-weight:500;color:var(--ink-2)}
+.tabs button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* Packages */
+.pkg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:1180px){.pkg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.pkg-grid{grid-template-columns:minmax(0,1fr)}}
+.pkg{position:relative;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:var(--r);padding:16px 14px 14px;cursor:pointer;background:var(--surface);min-width:0}
+.pkg:hover{border-color:var(--ink-3)}
+.pkg.is-sel{border:2px solid var(--accent);padding:15px 13px 13px;background:linear-gradient(var(--accent-soft),var(--surface) 46%)}
+.pkg-flag{position:absolute;top:-10px;left:12px;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:2px 8px;border-radius:999px}
+.pkg-rate{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.pkg-rate input{width:80px;padding:4px 7px;font-family:var(--f-mono);font-size:13px;text-align:right}
+.pkg-price{font-family:var(--f-mono);font-weight:600;font-size:21px;color:var(--ink);font-variant-numeric:tabular-nums}
+.pkg.is-sel .pkg-price{color:var(--accent)}
+.pkg h4{font-size:15px;font-weight:700;line-height:1.25}
+.pkg .sub{margin:0;color:var(--ink-2);font-size:12.5px}
+.pkg ul{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink-2)}
+.pkg li{display:grid;grid-template-columns:14px 1fr;gap:6px}
+.pkg li::before{content:"";width:8px;height:8px;margin-top:6px;border:1.5px solid var(--accent);border-radius:2px}
+.pkg-foot{margin-top:auto;padding-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px dashed var(--line)}
+.pkg-foot .chip{font-size:10.5px}
+.pkg .pick{font-family:var(--f-mono);font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.pkg.is-sel .pick{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* Extras */
+.xgroup+.xgroup{margin-top:16px}
+.xgroup h4{font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+.xlist{display:flex;flex-direction:column;gap:8px}
+.xrow{border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.xrow.on{border-color:var(--accent);background:var(--accent-soft)}
+.xcheck{display:flex;gap:10px;align-items:flex-start;cursor:pointer;min-width:0}
+.xcheck b{display:block;font-weight:600;font-size:13.5px}
+.xcheck small{display:block;color:var(--ink-2);font-size:12px}
+.xprice{font-family:var(--f-mono);font-size:13px;text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.xrow.on .xprice{color:var(--ink);font-weight:600}
+.xedit{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;color:var(--ink-2);padding-left:28px}
+.xedit input{width:90px;padding:4px 7px;text-align:right;font-family:var(--f-mono);font-size:13px}
+.xedit input.q{width:64px}
+
+/* Summary */
+.sum{position:sticky;top:76px;align-self:start}
+@media (max-width:980px){.sum{position:static}}
+.sum .step{padding:18px}
+.lines{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.line b{font-size:13px;font-weight:600}
+.line small{grid-column:1/2;color:var(--ink-3);font-size:11.5px;font-family:var(--f-mono)}
+.line .num{font-size:13px;text-align:right}
+.empty{color:var(--ink-3);font-size:13px;padding:14px 0}
+.disc{margin-top:16px}
+.disc-row{display:flex;align-items:center;gap:10px}
+.disc-row input[type=number]{width:70px;padding:5px 8px;text-align:right;font-family:var(--f-mono)}
+.disc-chips{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.disc-chips button{font-family:var(--f-mono);font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.disc-chips button[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.toggle{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:13px;cursor:pointer}
+.tot{margin-top:14px;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.tot div{display:flex;justify-content:space-between;gap:10px;color:var(--ink-2)}
+.tot .neg{color:var(--danger)}
+.grand{margin-top:10px;padding:14px;border-radius:9px;background:var(--deep);color:var(--on-deep);display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.grand span{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.grand strong{font-family:var(--f-mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.plazo{margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:10px 12px;border:1px dashed var(--line);border-radius:9px;gap:10px}
+.hitos{margin-top:16px}
+.hitos-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.hito{display:grid;grid-template-columns:minmax(0,1fr) 62px auto 26px;gap:6px;align-items:center;margin-bottom:6px}
+.hito input{padding:6px 8px;font-size:13px}
+.hito input.pct{text-align:right;font-family:var(--f-mono)}
+.hito .num{font-size:12.5px;min-width:86px;text-align:right}
+.hito .x{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:16px;padding:0}
+.hito-warn{font-size:12px;color:var(--warn);margin:4px 0 0}
+
+/* Bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar-in{display:flex;align-items:center;gap:10px;min-height:var(--bar-h);padding-block:8px;max-width:1320px;margin:0 auto;flex-wrap:wrap}
+.bar .cur{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.bar .cur button{border:0;background:transparent;font-family:var(--f-mono);font-size:11px;padding:5px 8px;cursor:pointer;color:var(--ink-2)}
+.bar .cur button[aria-pressed=true]{background:var(--ink);color:var(--surface)}
+.bar-tot{display:flex;flex-direction:column;line-height:1.15}
+.bar-tot small{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.bar-tot strong{font-family:var(--f-mono);font-size:20px;font-variant-numeric:tabular-nums}
+.bar-act{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:700px){ .bar-act .btn span.t{display:none} .bar-act .btn{padding:8px 10px} :root{--bar-h:60px} }
+
+/* Modals */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(10,14,12,.55);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 24px) max(12px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 24px) max(12px,env(safe-area-inset-left,0px));overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;width:min(980px,100%);border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;min-width:0}
+.modal.sm{width:min(440px,100%)}
+.modal-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.modal-h h3{font-size:17px}
+.modal-h .r{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.modal-b{padding:18px;min-width:0}
+.modal-note{font-size:12.5px;color:var(--ink-2);margin:0 0 12px}
+.preview{background:var(--surface-2);border-radius:9px;padding:16px;overflow:hidden}
+.scaler{transform-origin:top left}
+
+/* Saved list */
+.saved-list{display:flex;flex-direction:column;gap:8px}
+.saved{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:11px 13px}
+.saved .t{font-weight:600}
+.saved .m{font-size:12px;color:var(--ink-3);font-family:var(--f-mono)}
+.saved .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.saved .total{font-family:var(--f-mono);font-weight:600}
+
+/* Settings */
+.set-tabs{margin-bottom:16px}
+.ed-card{border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:10px}
+.ed-card .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:700px){.ed-card .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ed-card .grid .w2{grid-column:span 2}
+.ed-card textarea{min-height:110px;font-size:13px}
+.ed-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ed-head b{font-family:var(--f-display);font-size:15px}
+.ed-head .r{margin-left:auto;display:flex;gap:6px}
+.logo-box{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px;border:1px dashed var(--line);border-radius:9px}
+.logo-box .pv{width:180px;height:80px;display:flex;align-items:center;justify-content:center;background:var(--sheet-bg);border-radius:6px;border:1px solid var(--line)}
+.logo-box .pv img{max-width:160px;max-height:64px;object-fit:contain}
+.logo-box .pv span{font-family:var(--f-display);font-weight:800;color:var(--sheet-navy);font-size:20px;text-transform:uppercase;letter-spacing:.04em}
+.color-row{display:flex;align-items:center;gap:10px}
+.color-row input[type=color]{width:46px;height:38px;padding:2px}
+
+/* Contract editor */
+.contrato-doc{outline:none}
+.legal-note{background:var(--warn-soft);color:var(--warn);font-size:12.5px;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+
+
+/* ===== Kivo: estilo minimalista ===== */
+:root{--bg:#f5f5f7;--surface:#fff;--surface-2:#f2f2f4;--line:rgba(0,0,0,.09);--ink:#1d1d1f;--ink-2:#6e6e73;--ink-3:#8e8e93;
+  --accent:#1d1d1f;--accent-ink:#fff;--accent-soft:#f2f2f4;--accent-line:rgba(0,0,0,.12);--deep:#1d1d1f;--on-deep:#fff;
+  --ok:#248a3d;--warn:#b25000;--danger:#d70015;--ok-soft:#e8f5ec;--warn-soft:#fff4e5;
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,Roboto,Arial,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Roboto,Arial,sans-serif;
+  --f-mono:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;--r:16px}
+:root[data-theme="dark"]{--bg:#000;--surface:#1c1c1e;--surface-2:#2c2c2e;--line:rgba(255,255,255,.12);--ink:#f5f5f7;--ink-2:#aeaeb2;--ink-3:#8e8e93;
+  --accent:#f5f5f7;--accent-ink:#1d1d1f;--accent-soft:#2c2c2e;--accent-line:rgba(255,255,255,.2);--deep:#f5f5f7;--on-deep:#1d1d1f;
+  --ok:#30d158;--warn:#ff9f0a;--danger:#ff453a;--ok-soft:#0f2e19;--warn-soft:#33240a;color-scheme:dark}
+body{font-size:14px;-webkit-font-smoothing:antialiased}
+.num,.mono{font-variant-numeric:tabular-nums}
+.top{border-top:0;border-bottom:.5px solid var(--line);background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.brand .wm{letter-spacing:-.01em;text-transform:none;font-weight:700;font-size:18px}
+.brand .sep{display:none}.brand .app{font-weight:500;color:var(--ink-3)}
+.step,.sum .step{border:0;box-shadow:0 0 0 .5px var(--line);border-radius:18px;padding:22px}
+.step-n{border:0;background:var(--surface-2);color:var(--ink-3);font-weight:600;letter-spacing:0;border-radius:999px;padding:3px 9px}
+.step-h h2{font-size:19px;font-weight:650;letter-spacing:-.02em}
+.label,.xgroup h4,.sh-k{letter-spacing:.02em}
+input,select,textarea{background:var(--surface-2);border:0;border-radius:10px;padding:10px 12px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:0}
+.btn{border:0;background:var(--surface-2);border-radius:999px;padding:8px 15px;font-weight:500}
+.btn:hover{border-color:transparent;filter:brightness(.97)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.wa{background:#25d366;color:#fff}
+.chip{font-weight:500}
+.pkg,.xrow,.saved,.ed-card{border:0;box-shadow:0 0 0 .5px var(--line);border-radius:14px}
+.pkg.is-sel{border:0;box-shadow:0 0 0 2px var(--ink);padding:16px 14px 14px;background:var(--surface)}
+.pkg.is-sel .pkg-price{color:var(--ink)}
+.pkg li::before{border-color:var(--ink-3);border-radius:50%}
+.pkg-flag{border-radius:999px;letter-spacing:0;text-transform:none;font-weight:600}
+.xrow.on{box-shadow:0 0 0 1.5px var(--ink);background:var(--surface)}
+.grand{border-radius:14px}
+.grand span{text-transform:none;letter-spacing:0;font-weight:600}
+.plazo{border-style:solid;border-color:var(--line)}
+.tabs{border-radius:10px}.tabs button{border-radius:8px}
+.bar{border-top:.5px solid var(--line);background:color-mix(in srgb,var(--surface) 85%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+.bar .cur{border:0;background:var(--surface-2);border-radius:999px;padding:2px}.bar .cur button{border-radius:999px}
+.bar-tot small{letter-spacing:.02em;text-transform:none}
+.modal{border:0;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+.modal-h{border-bottom:.5px solid var(--line)}
+.ov{background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.quick button,.disc-chips button,.pkg .pick{border:0;background:var(--surface-2);border-radius:999px}
+.disc-chips button[aria-pressed=true],.pkg.is-sel .pick{background:var(--ink);color:var(--surface)}
+.toast{border-radius:999px}
+.ia{border-left:0}
+/* ===== Hoja A4 / documentos (papel: siempre claro) ===== */
+.sheet{width:794px;background:var(--sheet-bg);color:var(--sheet-ink);font-family:var(--f-body);font-size:11.5px;line-height:1.5;padding:46px 52px 40px}
+.sheet *{box-sizing:border-box}
+.sheet h1,.sheet h2,.sheet h3{font-family:var(--f-display);color:var(--sheet-ink);margin:0}
+.sh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:16px;border-bottom:3px solid var(--brand)}
+.sh-logo img{max-height:62px;max-width:220px;object-fit:contain}
+.sh-logo .wm{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--sheet-navy);letter-spacing:.04em;text-transform:uppercase}
+.sh-logo .wm i{font-style:normal;color:var(--brand)}
+.sh-logo .lema{font-size:10.5px;color:var(--sheet-mute);margin-top:2px}
+.sh-co{text-align:right;font-size:10.5px;color:var(--sheet-mute);line-height:1.55}
+.sh-co b{color:var(--sheet-ink);font-size:11.5px}
+.sh-title{display:flex;justify-content:space-between;align-items:flex-end;margin:22px 0 16px;gap:16px}
+.sh-title h1{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.sh-title .mono{font-family:var(--f-mono);font-size:10.5px;color:var(--sheet-mute);text-align:right;line-height:1.6}
+.sh-cover{width:100%;height:230px;object-fit:cover;border-radius:4px;margin-bottom:16px;display:block}
+.sh-two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.sh-box{background:var(--sheet-tint);border-radius:4px;padding:11px 13px}
+.sh-k{font-family:var(--f-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sheet-mute);margin-bottom:5px}
+.sh-box div{display:flex;gap:8px} .sh-box div span{color:var(--sheet-mute);min-width:76px}
+.sh-pkg{border:1px solid var(--sheet-line);border-left:4px solid var(--brand);background:var(--sheet-bg);border-radius:4px;padding:12px 14px;margin-bottom:16px}
+.sh-pkg h3{font-size:14px;margin-bottom:2px}
+.sh-pkg p{margin:0 0 6px;color:var(--sheet-mute)}
+.sh-pkg ul{margin:0;padding-left:16px;columns:2;column-gap:22px}
+.sh-pkg li{margin-bottom:2px;break-inside:avoid}
+.sh-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+.sh-table th{font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--sheet-mute);text-align:left;padding:7px 8px;border-bottom:1.5px solid var(--sheet-ink);font-weight:500}
+.sh-table td{padding:8px;border-bottom:1px solid var(--sheet-line);vertical-align:top}
+.sh-table td small{display:block;color:var(--sheet-mute);font-size:10px}
+.sh-table .r{text-align:right;font-family:var(--f-mono);white-space:nowrap}
+.sh-totals{margin-left:auto;width:300px;font-size:11.5px}
+.sh-totals div{display:flex;justify-content:space-between;padding:4px 0}
+.sh-totals .g{margin-top:6px;padding:10px 12px;background:var(--sheet-navy);color:var(--sheet-bg);border-radius:4px;font-weight:700}
+.sh-totals .g span:last-child{font-family:var(--f-mono);font-size:15px}
+.sh-totals .mono{font-family:var(--f-mono)}
+.sh-sec{margin-top:18px}
+.sh-sec h2{font-size:12.5px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.sh-hitos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.sh-hito{border:1px solid var(--sheet-line);border-radius:4px;padding:9px 11px}
+.sh-hito b{display:block;font-family:var(--f-mono);font-size:15px;color:var(--brand)}
+.sh-hito span{display:block;font-size:10.5px;color:var(--sheet-mute)}
+.sh-hito .mono{font-family:var(--f-mono);color:var(--sheet-ink);font-size:11px}
+.sh-cond{margin:0;padding-left:16px;color:var(--sheet-mute);font-size:10.5px}
+.sh-cond li{margin-bottom:3px}
+.sh-notes{white-space:pre-wrap;color:var(--sheet-mute);font-size:10.5px}
+.sh-foot{margin-top:24px;padding-top:10px;border-top:1px solid var(--sheet-line);display:flex;justify-content:space-between;gap:14px;font-size:9.5px;color:var(--sheet-mute);font-family:var(--f-mono)}
+.sh-sign{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:56px}
+.sh-sign div{border-top:1px solid var(--sheet-ink);padding-top:6px;text-align:center;font-size:10.5px}
+.sh-sign small{display:block;color:var(--sheet-mute)}
+/* contrato */
+.sheet.legal{font-size:11.5px;line-height:1.65}
+.sheet.legal h1{font-size:16px;text-align:center;margin:20px 0 4px;letter-spacing:.02em}
+.sheet.legal .sub{text-align:center;font-family:var(--f-mono);font-size:10px;color:var(--sheet-mute);margin-bottom:18px}
+.sheet.legal h3{font-size:11.5px;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.03em}
+.sheet.legal p{margin:0 0 6px;text-align:justify}
+.sheet.legal ul{margin:0 0 6px;padding-left:18px}
+.sheet.legal li{margin-bottom:2px}
+@media print{
+  @page{size:A4;margin:12mm 13mm}
+  html,body{background:#fff!important;padding:0!important;margin:0}
+  body::before{display:none!important}
+  body>*:not(#print-area){display:none!important}
+  #print-area{display:block!important}
+  #print-area .sheet{width:auto;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print-area .blk,#print-area tr,#print-area li,#print-area p,#print-area h3{break-inside:avoid}
+  #print-area h3{break-after:avoid}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in wrap">
+    <div class="brand" id="brand"></div>
+    <div class="top-meta">
+      <label class="qnum" title="Número de cotización (editable)"><span class="label">N.°</span><input id="q-num" class="mono" spellcheck="false" aria-label="Número de cotización"></label>
+      <select id="q-estado" aria-label="Estado de la cotización">
+        <option value="borrador">Borrador</option><option value="enviada">Enviada</option>
+        <option value="aceptada">Aceptada</option><option value="rechazada">Rechazada</option>
+      </select>
+      <span class="chip" id="sync-chip">Conectando…</span>
+    </div>
+    <div class="top-act">
+      <button class="btn ghost" id="btn-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Nueva</button>
+      <button class="btn ghost" id="btn-saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Guardadas <span class="chip" id="saved-count">0</span></button>
+      <button class="btn" id="btn-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes y logo</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+    <div class="example" id="example-banner"><b>Cotización de ejemplo.</b> Así se ve un caso lleno. Pulsa «Nueva» para empezar la tuya. <button class="linkbtn" id="ex-new">Empezar una nueva</button></div>
+
+    <section class="step">
+      <div class="step-h"><span class="step-n">PASO 01</span><div><h2>Cliente y proyecto</h2><p>Datos que aparecen en la hoja A4 y en el contrato.</p></div></div>
+      <div class="grid">
+        <label class="field"><span>Nombre del cliente *</span><input id="f-cli-nombre" data-path="cliente.nombre" placeholder="Nombre y apellido o razón social"></label>
+        <label class="field"><span>DNI / RUC</span><input id="f-cli-doc" data-path="cliente.doc" inputmode="numeric" placeholder="45892104"></label>
+        <label class="field"><span>Teléfono / WhatsApp</span><input id="f-cli-tel" data-path="cliente.telefono" inputmode="tel" placeholder="987 654 321"></label>
+        <label class="field"><span>Correo</span><input id="f-cli-email" data-path="cliente.email" type="email" placeholder="cliente@correo.com"></label>
+        <label class="field"><span>Nombre del proyecto *</span><input id="f-pro-nombre" data-path="proyecto.nombre" placeholder="Depa Lucía – Surco"></label>
+        <label class="field"><span>Ubicación (distrito / ciudad)</span><input id="f-pro-ubic" data-path="proyecto.ubicacion" placeholder="Santiago de Surco, Lima"></label>
+        <label class="field"><span>Tipología</span><select id="f-pro-tipo" data-path="proyecto.tipologia"></select></label>
+        <label class="field"><span>Pisos / niveles</span><input id="f-pro-pisos" data-path="proyecto.pisos" type="number" min="1" inputmode="numeric"></label>
+        <div class="field full">
+          <span>Área a diseñar (metraje) *</span>
+          <div class="unit"><input id="f-pro-area" data-path="proyecto.area" type="number" min="0" step="0.5" inputmode="decimal"><em>m²</em></div>
+          <div class="quick" id="area-quick"></div>
+        </div>
+        <label class="field full"><span>Ambientes incluidos</span><input id="f-pro-amb" data-path="proyecto.ambientes" placeholder="Sala, comedor, cocina, 2 dormitorios"></label>
+        <div class="field full">
+          <span>Imagen de referencia o del proyecto (opcional, sale como portada en la hoja A4)</span>
+          <div class="ref-img"><img id="ref-pv" alt="" hidden><input type="file" id="ref-file" accept="image/*" style="width:auto;border:0;padding:0"><button class="btn ghost" id="ref-del" hidden>Quitar</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="step-n">PASO 02</span><div><h2>Paquete de servicio</h2><p>Elige el paquete. Puedes cambiar la tarifa en cada tarjeta solo para esta cotización; las tarifas base se editan en Ajustes.</p></div></div>
+      <div class="tabs" id="cat-tabs" role="group" aria-label="Categoría">
+        <button data-cat="interiores">Interiores</button><button data-cat="arquitectura">Arquitectura</button>
+      </div>
+      <div class="pkg-grid" id="pkg-grid"></div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="step-n">PASO 03</span><div><h2>Servicios adicionales y trámites</h2><p>Activa lo que el cliente necesita. El costo se puede ajustar en cada uno.</p></div><span class="r chip" id="x-count">0 activos</span></div>
+      <div id="x-wrap"></div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="step-n">PASO 04</span><div><h2>Plazo y observaciones</h2><p>El plazo se calcula según el paquete y el metraje. Puedes fijarlo a mano.</p></div></div>
+      <div class="grid">
+        <label class="field"><span>Plazo calculado</span><input id="f-plazo-auto" disabled></label>
+        <label class="field"><span>Plazo manual (días hábiles, opcional)</span><input id="f-plazo-man" data-path="plazoManual" type="number" min="1" placeholder="Usar el calculado"></label>
+        <label class="field full"><span>Observaciones para el cliente</span><textarea id="f-notas" data-path="notas" rows="3" placeholder="Ej.: Incluye 2 rondas de cambios por etapa. Visitas fuera de Lima se cotizan aparte."></textarea></label>
+      </div>
+    </section>
+  </div>
+
+  <aside class="col sum">
+    <section class="step">
+      <div class="step-h"><span class="step-n">RESUMEN</span><div><h2>Liquidación económica</h2></div></div>
+      <div class="lines" id="sum-lines"></div>
+      <div class="disc">
+        <div class="label" style="margin-bottom:6px">Descuento comercial (0 a 25 %)</div>
+        <div class="disc-row"><input type="range" id="desc-range" min="0" max="25" step="1" aria-label="Descuento"><input type="number" id="desc-num" min="0" max="25" step="0.5" aria-label="Descuento en porcentaje"><span class="mono">%</span></div>
+        <div class="disc-chips" id="disc-chips"><button data-d="0">0%</button><button data-d="5">5%</button><button data-d="10">10%</button><button data-d="15">15%</button><button data-d="20">20%</button></div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="igv-on"> <span id="igv-label">Agregar IGV (18 %)</span></label>
+      <div class="tot">
+        <div><span>Subtotal de partidas</span><span class="num" id="t-sub"></span></div>
+        <div class="neg" id="t-desc-row"><span id="t-desc-l">Descuento</span><span class="num" id="t-desc"></span></div>
+        <div id="t-igv-row"><span id="t-igv-l">IGV</span><span class="num" id="t-igv"></span></div>
+      </div>
+      <div class="grand"><span>Total</span><strong id="t-total"></strong></div>
+      <div class="plazo"><span>Entrega estimada</span><b class="mono" id="t-plazo"></b></div>
+      <div class="hitos">
+        <div class="hitos-h"><span class="label">Hitos de pago</span><button class="linkbtn" id="hito-add">+ Agregar hito</button></div>
+        <div id="hitos-list"></div>
+        <p class="hito-warn" id="hito-warn" hidden></p>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<div class="bar"><div class="bar-in wrap">
+  <div class="cur" role="group" aria-label="Moneda"><button data-cur="PEN">PEN</button><button data-cur="USD">USD</button></div>
+  <div class="bar-tot"><small id="bar-sub">Total</small><strong id="bar-total"></strong></div>
+  <div class="bar-act">
+    <button class="btn primary" id="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span class="t">Guardar</span></button>
+    <button class="btn" id="btn-sheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg><span class="t">Hoja A4</span></button>
+    <button class="btn" id="btn-contract"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="t">Contrato</span></button>
+    <a class="btn wa" id="btn-wa" href="https://wa.me/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg><span class="t">WhatsApp</span></a>
+  </div>
+</div></div>
+
+<!-- Modal: Hoja A4 -->
+<div class="ov" id="m-sheet" hidden><div class="modal">
+  <div class="modal-h"><h3>Hoja de cotización A4</h3><div class="r">
+    <button class="btn primary" id="sheet-pdf">Guardar PDF</button>
+    <button class="btn" id="sheet-copy">Copiar mensaje</button>
+    <button class="btn ghost" data-close>Cerrar</button></div></div>
+  <div class="modal-b"><p class="modal-note" id="sheet-note">Vista previa de lo que recibe el cliente, con el logo y los datos de Ajustes. Al pulsar «Guardar PDF» eliges la carpeta donde guardarlo.</p>
+    <div class="preview" id="sheet-preview"></div></div>
+</div></div>
+
+<!-- Modal: Contrato -->
+<div class="ov" id="m-contract" hidden><div class="modal">
+  <div class="modal-h"><h3>Contrato de servicios</h3><div class="r">
+    <button class="btn primary" id="contract-pdf">Guardar PDF</button>
+    <button class="btn" id="contract-regen">Regenerar desde la cotización</button>
+    <button class="btn ghost" data-close>Cerrar</button></div></div>
+  <div class="modal-b">
+    <div class="legal-note">Haz clic en el texto para editarlo. Es un modelo referencial: revísalo con un abogado antes de usarlo. Tus cambios se guardan con la cotización.</div>
+    <div class="preview" id="contract-preview"></div></div>
+</div></div>
+
+<!-- Modal: Guardadas -->
+<div class="ov" id="m-saved" hidden><div class="modal">
+  <div class="modal-h"><h3>Cotizaciones guardadas</h3><div class="r"><input id="saved-q" placeholder="Buscar cliente o proyecto" style="width:220px"><button class="btn ghost" data-close>Cerrar</button></div></div>
+  <div class="modal-b"><div class="saved-list" id="saved-list"></div></div>
+</div></div>
+
+<!-- Modal: Ajustes -->
+<div class="ov" id="m-set" hidden><div class="modal">
+  <div class="modal-h"><h3>Ajustes de Arquizo</h3><div class="r">
+    <button class="btn primary" id="set-save">Guardar ajustes</button>
+    <button class="btn ghost" data-close>Cerrar</button></div></div>
+  <div class="modal-b">
+    <div class="tabs set-tabs" id="set-tabs"><button data-st="empresa" aria-pressed="true">Empresa y logo</button><button data-st="paquetes">Paquetes y tarifas</button><button data-st="extras">Adicionales</button><button data-st="pagos">Pagos y condiciones</button><button data-st="respaldo">Respaldo</button></div>
+    <div id="set-body"></div>
+  </div>
+</div></div>
+
+<!-- Modal: Confirmar -->
+<div class="ov" id="m-confirm" hidden><div class="modal sm">
+  <div class="modal-b"><p id="confirm-msg" style="margin:0 0 16px;font-size:14px"></p>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" id="confirm-no">Cancelar</button><button class="btn primary" id="confirm-yes">Sí</button></div></div>
+</div></div>
+
+<div class="toast" id="toast" hidden></div>
+<div id="print-area"></div>
+
+<script>
+(function(){
+"use strict";
+/* ================= Datos base (tarifas sugeridas, editables en Ajustes) ================= */
+const TIPOLOGIAS=["Departamento","Casa / vivienda unifamiliar","Edificio multifamiliar","Local comercial","Restaurante / cafetería","Oficina","Consultorio / clínica","Casa de campo","Otro"];
+const DEFAULT_CFG={
+  empresa:{nombre:"Arquizo",lema:"Arquitectura e interiores",ruc:"20614468131",web:"www.arquizo.com",telefono:"+51 952 346 734",email:"",direccion:"Lima, Perú",representante:"",repDoc:"",color:"#CF0100",logo:null,pie:"Servicio de diseño — no incluye ejecución de obra salvo que se indique."},
+  paquetes:[
+    {id:"int-esencial",cat:"interiores",nombre:"Interiorismo Esencial",sub:"Concepto y distribución para decidir el estilo",modo:"m2",tarifa:25,plazoBase:8,plazoM2:0.08,recomendado:false,
+     incluye:["Visita y reunión de requerimientos","Moodboard y concepto de diseño","Plano de distribución amoblado","Paleta de materiales, colores y acabados","2 renders del ambiente principal","1 ronda de cambios"]},
+    {id:"int-integral",cat:"interiores",nombre:"Interiorismo Integral",sub:"Proyecto completo listo para ejecutar",modo:"m2",tarifa:45,plazoBase:12,plazoM2:0.12,recomendado:true,
+     incluye:["Todo lo del paquete Esencial","Planos de pisos, cielos rasos y muros","Proyecto de iluminación y tomacorrientes","Planos de muebles a medida (carpintería)","Renders de todos los ambientes","Especificaciones técnicas y lista de compras","2 rondas de cambios por etapa"]},
+    {id:"int-llave",cat:"interiores",nombre:"Diseño + Ejecución",sub:"Llave en mano con dirección de obra",modo:"m2",tarifa:60,plazoBase:15,plazoM2:0.15,recomendado:false,
+     incluye:["Todo lo del paquete Integral","Presupuesto de obra por partidas","Coordinación de proveedores y carpintería","Supervisión semanal de obra","Acta de entrega y levantamiento de observaciones","El diseño se descuenta si la obra se ejecuta con Arquizo"]},
+    {id:"arq-ante",cat:"arquitectura",nombre:"Anteproyecto Arquitectónico",sub:"Distribución funcional y fachada en 3D",modo:"m2",tarifa:15,plazoBase:10,plazoM2:0.02,recomendado:false,
+     incluye:["Zonificación y partido arquitectónico","Plantas de distribución acotadas y amobladas (1:50)","Cortes y elevaciones principales","Modelado 3D de fachada","Memoria descriptiva y cuadro de áreas"]},
+    {id:"arq-integral",cat:"arquitectura",nombre:"Proyecto Integral con Especialidades",sub:"Arquitectura completa + ingenierías",modo:"m2",tarifa:35,plazoBase:18,plazoM2:0.03,recomendado:true,
+     incluye:["Planos de arquitectura completos con detalles","Estructuras, sanitarias y eléctricas (ingenieros asociados)","Compatibilización de especialidades","Renders de fachada y ambientes principales"]},
+    {id:"arq-licencia",cat:"arquitectura",nombre:"Proyecto Ejecutivo con Licencia",sub:"Expediente municipal completo",modo:"m2",tarifa:70,plazoBase:25,plazoM2:0.03,recomendado:false,
+     incluye:["Arquitectura e ingenierías completas","Expediente FUE para licencia de edificación","Firmas de profesionales colegiados (CAP / CIP)","Metrados y presupuesto de obra","Seguimiento del trámite municipal (tasas aparte)"]}
+  ],
+  extras:[
+    {id:"render",grupo:"Visualización",nombre:"Render adicional",desc:"Imagen fotorrealista de un ambiente",modo:"unidad",tarifa:150},
+    {id:"recorrido",grupo:"Visualización",nombre:"Recorrido virtual 3D",desc:"Video animado de 60 s en Full HD",modo:"fijo",tarifa:1800},
+    {id:"tour360",grupo:"Visualización",nombre:"Tour 360° interactivo",desc:"Plataforma web / VR para el cliente",modo:"fijo",tarifa:1200},
+    {id:"levantamiento",grupo:"Técnico",nombre:"Levantamiento en sitio",desc:"Medición y planos del estado actual",modo:"m2",tarifa:5},
+    {id:"mueble",grupo:"Técnico",nombre:"Mueble a medida",desc:"Plano de fabricación por mueble",modo:"unidad",tarifa:180},
+    {id:"luminotecnia",grupo:"Técnico",nombre:"Cálculo luminotécnico",desc:"Simulación y selección de luminarias",modo:"m2",tarifa:6},
+    {id:"metrados",grupo:"Técnico",nombre:"Metrados y presupuesto de obra",desc:"Partidas, APU y cronograma",modo:"fijo",tarifa:900},
+    {id:"supervision",grupo:"Técnico",nombre:"Visita de supervisión",desc:"Por visita a obra dentro de Lima",modo:"unidad",tarifa:250},
+    {id:"itse",grupo:"Trámites",nombre:"Certificado ITSE (Defensa Civil)",desc:"Expediente y acompañamiento en la inspección",modo:"fijo",tarifa:1200},
+    {id:"declaratoria",grupo:"Trámites",nombre:"Declaratoria de fábrica",desc:"Planos, memoria y trámite municipal",modo:"fijo",tarifa:2500},
+    {id:"independizacion",grupo:"Trámites",nombre:"Independización",desc:"Por unidad inmobiliaria",modo:"unidad",tarifa:1500},
+    {id:"saneamiento",grupo:"Trámites",nombre:"Saneamiento físico legal",desc:"Diagnóstico y expediente registral",modo:"fijo",tarifa:3500},
+    {id:"viaticos",grupo:"Logística",nombre:"Viaje fuera de Lima",desc:"Pasajes, hospedaje y alimentación por día",modo:"unidad",tarifa:450}
+  ],
+  hitos:[{nombre:"Firma de contrato",pct:40},{nombre:"Aprobación del anteproyecto",pct:30},{nombre:"Entrega final",pct:30}],
+  numeracion:{prefijo:"ARZ",anio:2026,siguiente:1},
+  tipoCambio:3.75, igv:18, validez:15,
+  condiciones:"Precios en soles. No incluyen IGV salvo que se indique.\nEl plazo corre desde el pago inicial y la entrega de la información del cliente.\nIncluye las rondas de cambios indicadas en el paquete; los cambios adicionales se cotizan aparte.\nNo incluye tasas municipales, notariales ni registrales.\nNo incluye ejecución de obra, salvo el paquete Diseño + Ejecución.\nVisitas fuera de Lima: viáticos aparte."
+};
+
+/* ================= Utilidades ================= */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtN=new Intl.NumberFormat("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtI=new Intl.NumberFormat("es-PE",{maximumFractionDigits:2});
+const uid=()=>"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const num=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)?n:0};
+function money(v,cur){cur=cur||q.moneda;return cur==="USD"?"US$ "+fmtN.format(v/(cfg.tipoCambio||1)):"S/ "+fmtN.format(v)}
+const wordmark=n=>{n=String(n||"");return n.length>1?esc(n.slice(0,-1))+"<i>"+esc(n.slice(-1))+"</i>":esc(n)};
+const unitLbl=m=>m==="m2"?"/m²":m==="unidad"?"/und":"fijo";
+const fechaLarga=ts=>new Date(ts).toLocaleDateString("es-PE",{day:"numeric",month:"long",year:"numeric"});
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,3200)}
+function getPath(o,p){return p.split(".").reduce((a,k)=>a==null?a:a[k],o)}
+function setPath(o,p,v){const ks=p.split(".");let a=o;ks.slice(0,-1).forEach(k=>{a[k]=a[k]||{};a=a[k]});a[ks[ks.length-1]]=v}
+
+/* ================= Estado ================= */
+let cfg=clone(DEFAULT_CFG);
+let saved=[];       // cotizaciones guardadas
+let dirty=false;
+const caps={db:null,sample:null,downloads:null};
+/* ---- dentro de Kivo: los datos se guardan en la nube del equipo de Arquizo ---- */
+const IN_KIVO=window.parent!==window;
+if(IN_KIVO){
+  let rid=0;const pend={};let snapCb=null;
+  const call=(op,args)=>new Promise((res,rej)=>{const id=++rid;pend[id]={res,rej};parent.postMessage({kcot:1,id,op,args},'*')});
+  addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot)return;
+    if(d.reply){const p=pend[d.reply];if(!p)return;delete pend[d.reply];d.err?p.rej(Object.assign(new Error(d.err),{code:d.code})):p.res(d.data);return}
+    if(d.snap&&snapCb)snapCb(d.snap);
+    if(d.theme)document.documentElement.dataset.theme=d.theme;
+    if(d.team){const c=document.getElementById('sync-chip');if(c){c.textContent=d.team;c.className='chip ok'}}});
+  caps.db={doc:p=>({get:async()=>{const v=await call('get',{p});return {exists:v!=null,data:()=>v}},set:v=>call('set',{p,v}),delete:()=>call('del',{p})}),
+    collection:()=>({orderBy:()=>({limit:()=>({onSnapshot:cb=>{snapCb=list=>cb({docs:list.map(x=>({data:()=>x}))});parent.postMessage({kcot:1,op:'watch'},'*')}})})})};
+  window.arquizo={desktop:true,savePDF:fn=>call('pdf',{fn,html:document.getElementById('print-area').innerHTML,css:[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n')})};
+  parent.postMessage({kcot:1,op:'hello'},'*');
+}
+
+function newQuote(){
+  return {id:uid(),numero:nextNumero(),fecha:Date.now(),estado:"borrador",
+    cliente:{nombre:"",doc:"",telefono:"",email:""},
+    proyecto:{nombre:"",ubicacion:"",tipologia:"Departamento",area:"",pisos:1,ambientes:""},
+    cat:"interiores",paqueteId:"int-integral",tarifas:{},extras:{},descuento:0,igv:false,moneda:"PEN",
+    hitos:clone(cfg.hitos),plazoManual:"",notas:"",imagen:null,contratoHTML:null};
+}
+function exampleQuote(){
+  const e=newQuote();e.ejemplo=true;
+  e.cliente={nombre:"Lucía Paredes Gómez",doc:"45892104",telefono:"987654321",email:"lucia.paredes@correo.com"};
+  e.proyecto={nombre:"Depa Lucía – Surco",ubicacion:"Santiago de Surco, Lima",tipologia:"Departamento",area:85,pisos:1,ambientes:"Sala, comedor, cocina, 2 dormitorios y estudio"};
+  e.extras={render:{on:true,tarifa:150,cant:2},mueble:{on:true,tarifa:180,cant:3}};
+  e.descuento=5;return e;
+}
+function numCfg(){const n=Object.assign({prefijo:"ARZ",anio:2026,siguiente:1},cfg.numeracion||{});n.prefijo=String(n.prefijo||"ARZ").trim()||"ARZ";n.anio=String(n.anio||new Date().getFullYear()).trim();n.siguiente=Math.max(1,Math.round(num(n.siguiente))||1);return n}
+function fmtNumero(n,k){return n.prefijo+"-"+n.anio+"-"+String(k).padStart(4,"0")}
+function nextNumero(){
+  const n=numCfg();const esc2=t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");const re=new RegExp("^"+esc2(n.prefijo)+"-"+esc2(n.anio)+"-(\\d+)$");let max=0;
+  (saved||[]).forEach(s=>{const m=re.exec(s.numero||"");if(m)max=Math.max(max,+m[1])});
+  return fmtNumero(n,Math.max(n.siguiente,max+1));
+}
+let q=exampleQuote();
+
+/* ================= Cálculos ================= */
+const area=()=>Math.max(0,num(q.proyecto.area));
+const getPkg=()=>cfg.paquetes.find(p=>p.id===q.paqueteId);
+const pkgTarifa=p=>q.tarifas[p.id]!=null&&q.tarifas[p.id]!==""?num(q.tarifas[p.id]):num(p.tarifa);
+const pkgMonto=p=>p.modo==="m2"?pkgTarifa(p)*area():pkgTarifa(p);
+const xOn=x=>!!(q.extras[x.id]&&q.extras[x.id].on);
+const xTarifa=x=>{const s=q.extras[x.id];return s&&s.tarifa!=null&&s.tarifa!==""?num(s.tarifa):num(x.tarifa)};
+const xCant=x=>{const s=q.extras[x.id];return Math.max(1,s&&s.cant?num(s.cant):1)};
+const xMonto=x=>x.modo==="m2"?xTarifa(x)*area():x.modo==="unidad"?xTarifa(x)*xCant(x):xTarifa(x);
+function plazoAuto(){const p=getPkg();return p?Math.ceil(num(p.plazoBase)+num(p.plazoM2)*area()):0}
+function calc(){
+  const lines=[];const p=getPkg();
+  if(p)lines.push({concepto:p.nombre,detalle:p.sub,cant:p.modo==="m2"?fmtI.format(area())+" m²":"1",pu:pkgTarifa(p),unit:unitLbl(p.modo),monto:pkgMonto(p)});
+  cfg.extras.forEach(x=>{if(xOn(x))lines.push({concepto:x.nombre,detalle:x.desc,cant:x.modo==="m2"?fmtI.format(area())+" m²":x.modo==="unidad"?String(xCant(x)):"1",pu:xTarifa(x),unit:unitLbl(x.modo),monto:xMonto(x)})});
+  const subtotal=lines.reduce((a,l)=>a+l.monto,0);
+  const d=Math.min(25,Math.max(0,num(q.descuento)));
+  const desc=subtotal*d/100, base=subtotal-desc, igv=q.igv?base*num(cfg.igv)/100:0, total=base+igv;
+  const hitos=(q.hitos||[]).map(h=>({nombre:h.nombre,pct:num(h.pct),monto:total*num(h.pct)/100}));
+  const plazo=num(q.plazoManual)>0?Math.round(num(q.plazoManual)):plazoAuto();
+  return {lines,subtotal,d,desc,base,igv,total,hitos,plazo,pctSum:hitos.reduce((a,h)=>a+h.pct,0)};
+}
+
+/* ================= Render ================= */
+function applyBrand(){
+  document.documentElement.style.setProperty("--brand",cfg.empresa.color||"#CF0100");
+  const e=cfg.empresa;
+  $("#brand").innerHTML=(e.logo?`<img src="${e.logo}" alt="${esc(e.nombre)}">`:`<span class="wm">${wordmark(e.nombre||"Arquizo")}</span>`)+`<span class="sep"></span><span class="app">Cotizador</span>`;
+  $("#igv-label").textContent=`Agregar IGV (${fmtI.format(num(cfg.igv))} %)`;
+}
+function fillForm(){
+  $$("[data-path]").forEach(el=>{const v=getPath(q,el.dataset.path);el.value=v==null?"":v});
+  $("#q-num").value=q.numero;$("#q-estado").value=q.estado||"borrador";
+  $("#example-banner").hidden=!q.ejemplo;
+  const pv=$("#ref-pv");if(q.imagen){pv.src=q.imagen;pv.hidden=false;$("#ref-del").hidden=false}else{pv.hidden=true;pv.removeAttribute("src");$("#ref-del").hidden=true}
+  $("#ref-file").value="";
+  $("#igv-on").checked=!!q.igv;
+}
+function renderTipos(){$("#f-pro-tipo").innerHTML=TIPOLOGIAS.map(t=>`<option>${esc(t)}</option>`).join("")}
+function renderAreaQuick(){$("#area-quick").innerHTML=[30,45,60,85,120,160,250,450].map(a=>`<button type="button" data-a="${a}">${a} m²</button>`).join("")}
+function renderCats(){$$("#cat-tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.cat===q.cat)))}
+function renderPkgs(){
+  const list=cfg.paquetes.filter(p=>p.cat===q.cat);
+  $("#pkg-grid").innerHTML=list.length?list.map(p=>{
+    const sel=p.id===q.paqueteId;
+    return `<article class="pkg${sel?" is-sel":""}" data-pkg="${esc(p.id)}" tabindex="0" role="button" aria-pressed="${sel}">
+      ${p.recomendado?'<span class="pkg-flag">Más recomendado</span>':""}
+      <div class="pkg-rate">Tarifa S/ <input type="number" min="0" step="0.5" data-pt="${esc(p.id)}" value="${pkgTarifa(p)}" aria-label="Tarifa de ${esc(p.nombre)}"> ${unitLbl(p.modo)}</div>
+      <div class="pkg-price" data-pp="${esc(p.id)}">${money(pkgMonto(p))}</div>
+      <h4>${esc(p.nombre)}</h4><p class="sub">${esc(p.sub)}</p>
+      <ul>${(p.incluye||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+      <div class="pkg-foot"><span class="chip">${esc(p.plazoBase)}+ días hábiles</span><button type="button" class="pick">${sel?"Seleccionado":"Elegir"}</button></div>
+    </article>`}).join(""):`<p class="empty">No hay paquetes en esta categoría. Agrégalos en Ajustes.</p>`;
+}
+function renderExtras(){
+  const groups={};cfg.extras.forEach(x=>{(groups[x.grupo||"Otros"]=groups[x.grupo||"Otros"]||[]).push(x)});
+  $("#x-wrap").innerHTML=Object.keys(groups).map(g=>`<div class="xgroup"><h4>${esc(g)}</h4><div class="xlist">${groups[g].map(x=>{
+    const on=xOn(x);
+    return `<div class="xrow${on?" on":""}">
+      <label class="xcheck"><input type="checkbox" data-x="${esc(x.id)}"${on?" checked":""}><span><b>${esc(x.nombre)}</b><small>${esc(x.desc)} · S/ ${fmtI.format(num(x.tarifa))} ${unitLbl(x.modo)}</small></span></label>
+      <div class="xprice" data-xm="${esc(x.id)}">${on?money(xMonto(x)):money(x.modo==="m2"?num(x.tarifa)*area():num(x.tarifa))}</div>
+      ${on?`<div class="xedit">Costo S/ <input type="number" min="0" step="0.5" data-xt="${esc(x.id)}" value="${xTarifa(x)}" aria-label="Costo"> ${unitLbl(x.modo)}${x.modo==="unidad"?` × <input class="q" type="number" min="1" step="1" data-xc="${esc(x.id)}" value="${xCant(x)}" aria-label="Cantidad"> und`:""}</div>`:""}
+    </div>`}).join("")}</div></div>`).join("");
+  const n=cfg.extras.filter(xOn).length;$("#x-count").textContent=n+(n===1?" activo":" activos");$("#x-count").className="r chip"+(n?" acc":"");
+}
+function renderHitos(){
+  $("#hitos-list").innerHTML=(q.hitos||[]).map((h,i)=>`<div class="hito">
+    <input value="${esc(h.nombre)}" data-hn="${i}" aria-label="Nombre del hito">
+    <input class="pct" type="number" min="0" max="100" value="${num(h.pct)}" data-hp="${i}" aria-label="Porcentaje">
+    <span class="num" data-hm="${i}"></span>
+    <button class="x" data-hx="${i}" aria-label="Quitar hito">×</button></div>`).join("");
+}
+function renderSummary(){
+  const c=calc();
+  $("#sum-lines").innerHTML=c.lines.length?c.lines.map(l=>`<div class="line"><b>${esc(l.concepto)}</b><span class="num">${money(l.monto)}</span><small>${esc(l.cant)} × S/ ${fmtN.format(l.pu)} ${l.unit==="fijo"?"":l.unit}</small></div>`).join(""):`<p class="empty">Elige un paquete para empezar.</p>`;
+  $("#desc-range").value=c.d;if(document.activeElement!==$("#desc-num"))$("#desc-num").value=c.d;
+  $$("#disc-chips button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===c.d)));
+  $("#t-sub").textContent=money(c.subtotal);
+  $("#t-desc-row").hidden=!c.desc;$("#t-desc-l").textContent=`Descuento comercial (${fmtI.format(c.d)} %)`;$("#t-desc").textContent="− "+money(c.desc);
+  $("#t-igv-row").hidden=!q.igv;$("#t-igv-l").textContent=`IGV (${fmtI.format(num(cfg.igv))} %)`;$("#t-igv").textContent=money(c.igv);
+  $("#t-total").textContent=money(c.total);
+  $("#t-plazo").textContent=c.plazo?c.plazo+" días hábiles":"—";
+  $("#f-plazo-auto").value=plazoAuto()?plazoAuto()+" días hábiles":"Elige un paquete";
+  c.hitos.forEach((h,i)=>{const el=document.querySelector(`[data-hm="${i}"]`);if(el)el.textContent=money(h.monto)});
+  const w=$("#hito-warn");if(Math.abs(c.pctSum-100)>0.01){w.hidden=false;w.textContent=`Los hitos suman ${fmtI.format(c.pctSum)} %. Ajústalos para que sumen 100 %.`}else w.hidden=true;
+  $("#bar-total").textContent=money(c.total);
+  $("#bar-sub").textContent="Total "+(q.igv?"inc. IGV":"sin IGV")+(c.plazo?" · "+c.plazo+" días":"");
+  $$(".bar .cur button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.cur===q.moneda)));
+  // precios de tarjetas y extras
+  cfg.paquetes.forEach(p=>{const el=document.querySelector(`[data-pp="${CSS.escape(p.id)}"]`);if(el)el.textContent=money(pkgMonto(p))});
+  cfg.extras.forEach(x=>{const el=document.querySelector(`[data-xm="${CSS.escape(x.id)}"]`);if(el)el.textContent=xOn(x)?money(xMonto(x)):money(x.modo==="m2"?num(x.tarifa)*area():num(x.tarifa))});
+  $("#btn-wa").href=waLink(c);
+}
+function renderAll(){applyBrand();renderCats();renderPkgs();renderExtras();renderHitos();fillForm();renderSummary()}
+function changed(){dirty=true;if(q.ejemplo){q.ejemplo=false;$("#example-banner").hidden=true}}
+
+/* ================= Eventos del formulario ================= */
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.path){let v=t.value;if(t.type==="number")v=t.value===""?"":num(t.value);setPath(q,t.dataset.path,v);changed();
+    if(t.dataset.path==="proyecto.area"||t.dataset.path==="plazoManual")renderSummary();else renderSummary();return}
+  if(t.dataset.pt){q.tarifas[t.dataset.pt]=t.value===""?"":num(t.value);changed();renderSummary();return}
+  if(t.dataset.xt){q.extras[t.dataset.xt].tarifa=t.value===""?"":num(t.value);changed();renderSummary();return}
+  if(t.dataset.xc){q.extras[t.dataset.xc].cant=Math.max(1,Math.round(num(t.value)||1));changed();renderSummary();return}
+  if(t.dataset.hn!=null){q.hitos[+t.dataset.hn].nombre=t.value;changed();renderSummary();return}
+  if(t.dataset.hp!=null){q.hitos[+t.dataset.hp].pct=num(t.value);changed();renderSummary();return}
+  if(t.id==="q-num"){q.numero=t.value.trim();changed();renderSummary();return}
+  if(t.id==="desc-range"||t.id==="desc-num"){q.descuento=Math.min(25,Math.max(0,num(t.value)));changed();renderSummary();return}
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.x){const id=t.dataset.x;const x=cfg.extras.find(z=>z.id===id);q.extras[id]=q.extras[id]||{tarifa:x.tarifa,cant:1};q.extras[id].on=t.checked;changed();renderExtras();renderSummary();return}
+  if(t.id==="igv-on"){q.igv=t.checked;changed();renderSummary();return}
+  if(t.id==="q-estado"){q.estado=t.value;changed();return}
+  if(t.id==="ref-file"&&t.files[0]){readImage(t.files[0],1000,560,"image/jpeg",0.78).then(d=>{q.imagen=d;changed();fillForm();toast("Imagen agregada a la cotización")}).catch(()=>toast("No se pudo leer esa imagen. Prueba con un JPG o PNG."))}
+});
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const ab=t.closest("[data-a]");if(ab){q.proyecto.area=+ab.dataset.a;$("#f-pro-area").value=ab.dataset.a;changed();renderSummary();return}
+  const cb=t.closest("#cat-tabs button");if(cb){q.cat=cb.dataset.cat;const cur=getPkg();if(!cur||cur.cat!==q.cat){const l=cfg.paquetes.filter(p=>p.cat===q.cat);q.paqueteId=(l.find(p=>p.recomendado)||l[0]||{}).id||null}changed();renderCats();renderPkgs();renderSummary();return}
+  const pk=t.closest(".pkg");if(pk&&!t.closest("input")){q.paqueteId=pk.dataset.pkg;changed();renderPkgs();renderSummary();return}
+  const dc=t.closest("#disc-chips button");if(dc){q.descuento=+dc.dataset.d;changed();renderSummary();return}
+  const cur=t.closest(".bar .cur button");if(cur){q.moneda=cur.dataset.cur;renderPkgs();renderExtras();renderSummary();return}
+  const hx=t.closest("[data-hx]");if(hx){q.hitos.splice(+hx.dataset.hx,1);changed();renderHitos();renderSummary();return}
+  if(t.closest("[data-close]")){t.closest(".ov").hidden=true;return}
+  if(t.classList&&t.classList.contains("ov")&&t.id!=="m-confirm"){t.hidden=true}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){$$(".ov").forEach(o=>{if(o.id!=="m-confirm")o.hidden=true})}
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("pkg")){e.preventDefault();e.target.click()}
+});
+$("#hito-add").onclick=()=>{q.hitos.push({nombre:"Nuevo hito",pct:0});changed();renderHitos();renderSummary()};
+$("#ref-del").onclick=()=>{q.imagen=null;changed();fillForm()};
+
+/* ================= Imagen / logo ================= */
+function readImage(file,maxW,maxH,type,quality){
+  return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+    let w=img.naturalWidth,h=img.naturalHeight;const r=Math.min(1,maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);
+    const cv=document.createElement("canvas");cv.width=w;cv.height=h;const cx=cv.getContext("2d");
+    if(type==="image/jpeg"){cx.fillStyle="#ffffff";cx.fillRect(0,0,w,h)}
+    cx.drawImage(img,0,0,w,h);let d=cv.toDataURL(type,quality);
+    if(type==="image/png"&&d.length>170000)d=cv.toDataURL("image/webp",0.9);
+    res(d)};img.src=fr.result};fr.readAsDataURL(file)});
+}
+
+/* ================= WhatsApp ================= */
+function waText(c){
+  c=c||calc();const p=getPkg();const e=cfg.empresa;const nom=(q.cliente.nombre||"").split(" ")[0];
+  let s=`Hola${nom?" "+nom:""}, te saluda el equipo de ${e.nombre}. Te compartimos la cotización ${q.numero}`+(q.proyecto.nombre?` para *${q.proyecto.nombre}*`:"")+(area()?` (${fmtI.format(area())} m²${q.proyecto.ubicacion?", "+q.proyecto.ubicacion:""})`:"")+":\n\n";
+  c.lines.forEach(l=>{s+=`• ${l.concepto}: ${money(l.monto)}\n`});
+  if(c.desc)s+=`• Descuento ${fmtI.format(c.d)} %: −${money(c.desc)}\n`;
+  if(q.igv)s+=`• IGV: ${money(c.igv)}\n`;
+  s+=`\n*Total: ${money(c.total)}*${q.igv?"":" (no incluye IGV)"}\n`;
+  if(c.plazo)s+=`Plazo estimado: ${c.plazo} días hábiles\n`;
+  if(c.hitos.length)s+=`Forma de pago: ${c.hitos.map(h=>fmtI.format(h.pct)+"% "+h.nombre.toLowerCase()).join(" · ")}\n`;
+  s+=`Validez de la oferta: ${cfg.validez} días.\n\n¿Te enviamos la propuesta completa en PDF?`;
+  return s;
+}
+function waPhone(){let d=String(q.cliente.telefono||"").replace(/\D/g,"");if(d.length===9&&d[0]==="9")d="51"+d;return d}
+function waLink(c){return "https://wa.me/"+waPhone()+"?text="+encodeURIComponent(waText(c))}
+async function copyText(s){try{await navigator.clipboard.writeText(s);toast("Mensaje copiado")}catch(_){const ta=document.createElement("textarea");ta.value=s;ta.style.position="fixed";ta.style.left="-9999px";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("Mensaje copiado")}catch(__){toast("Selecciona y copia el mensaje manualmente")}ta.remove()}}
+$("#sheet-copy").onclick=()=>copyText(waText());
+
+/* ================= Hoja A4 ================= */
+function sheetHeader(){
+  const e=cfg.empresa;
+  return `<div class="sh-top blk"><div class="sh-logo">${e.logo?`<img src="${e.logo}" alt="">`:`<div class="wm">${wordmark(e.nombre)}</div>`}<div class="lema">${esc(e.lema||"")}</div></div>
+  <div class="sh-co"><b>${esc(e.nombre)}</b><br>${e.ruc?"RUC "+esc(e.ruc)+"<br>":""}${e.direccion?esc(e.direccion)+"<br>":""}${[e.telefono,e.email].filter(Boolean).map(esc).join(" · ")}${e.telefono||e.email?"<br>":""}${esc(e.web||"")}</div></div>`;
+}
+function buildSheet(){
+  const c=calc();const p=getPkg();const e=cfg.empresa;const venc=q.fecha+cfg.validez*86400000;
+  return `<div class="sheet">${sheetHeader()}
+  <div class="sh-title blk"><h1>Cotización</h1><div class="mono">${esc(q.numero)}<br>Emitida: ${fechaLarga(q.fecha)}<br>Válida hasta: ${fechaLarga(venc)}</div></div>
+  ${q.imagen?`<img class="sh-cover blk" src="${q.imagen}" alt="">`:""}
+  <div class="sh-two blk">
+    <div class="sh-box"><div class="sh-k">Cliente</div><div><span>Nombre</span><b>${esc(q.cliente.nombre||"—")}</b></div>${q.cliente.doc?`<div><span>${String(q.cliente.doc).length===11?"RUC":"DNI"}</span>${esc(q.cliente.doc)}</div>`:""}${q.cliente.telefono?`<div><span>Teléfono</span>${esc(q.cliente.telefono)}</div>`:""}${q.cliente.email?`<div><span>Correo</span>${esc(q.cliente.email)}</div>`:""}</div>
+    <div class="sh-box"><div class="sh-k">Proyecto</div><div><span>Proyecto</span><b>${esc(q.proyecto.nombre||"—")}</b></div>${q.proyecto.ubicacion?`<div><span>Ubicación</span>${esc(q.proyecto.ubicacion)}</div>`:""}<div><span>Tipología</span>${esc(q.proyecto.tipologia)}</div><div><span>Área</span>${fmtI.format(area())} m²${num(q.proyecto.pisos)>1?" · "+num(q.proyecto.pisos)+" niveles":""}</div>${q.proyecto.ambientes?`<div><span>Ambientes</span>${esc(q.proyecto.ambientes)}</div>`:""}</div>
+  </div>
+  ${p?`<div class="sh-pkg blk"><h3>${esc(p.nombre)}</h3><p>${esc(p.sub)}</p><ul>${(p.incluye||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`:""}
+  <table class="sh-table"><thead><tr class="blk"><th style="width:46%">Concepto</th><th class="r">Cant.</th><th class="r">P. unitario</th><th class="r">Importe</th></tr></thead><tbody>
+  ${c.lines.map(l=>`<tr class="blk"><td><b>${esc(l.concepto)}</b><small>${esc(l.detalle||"")}</small></td><td class="r">${esc(l.cant)}</td><td class="r">${money(l.pu)}${l.unit==="fijo"?"":" "+l.unit}</td><td class="r">${money(l.monto)}</td></tr>`).join("")}
+  </tbody></table>
+  <div class="sh-totals blk"><div><span>Subtotal</span><span class="mono">${money(c.subtotal)}</span></div>
+  ${c.desc?`<div><span>Descuento comercial (${fmtI.format(c.d)} %)</span><span class="mono">− ${money(c.desc)}</span></div>`:""}
+  ${q.igv?`<div><span>IGV (${fmtI.format(num(cfg.igv))} %)</span><span class="mono">${money(c.igv)}</span></div>`:""}
+  <div class="g"><span>TOTAL ${q.igv?"":"(sin IGV)"}</span><span>${money(c.total)}</span></div></div>
+  ${c.hitos.length?`<div class="sh-sec blk"><h2>Forma de pago</h2><div class="sh-hitos">${c.hitos.map(h=>`<div class="sh-hito"><b>${fmtI.format(h.pct)} %</b><span>${esc(h.nombre)}</span><span class="mono">${money(h.monto)}</span></div>`).join("")}</div></div>`:""}
+  <div class="sh-sec blk"><h2>Plazo de entrega</h2><div>${c.plazo?c.plazo+" días hábiles":"Por definir"} desde el pago inicial y la entrega de la información del cliente.</div></div>
+  ${q.notas?`<div class="sh-sec blk"><h2>Observaciones</h2><div class="sh-notes">${esc(q.notas)}</div></div>`:""}
+  <div class="sh-sec blk"><h2>Condiciones</h2><ul class="sh-cond">${String(cfg.condiciones||"").split("\n").filter(s=>s.trim()).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>
+  <div class="sh-foot blk"><span>${esc(e.pie||"")}</span><span>${esc(e.web||"")}${e.ruc?" · RUC "+esc(e.ruc):""}</span></div>
+  </div>`;
+}
+function showPreview(boxSel,html,editable){
+  const box=$(boxSel);box.innerHTML=`<div class="scaler">${html}</div>`;
+  const sc=box.firstElementChild;const sh=sc.firstElementChild;if(editable){sh.contentEditable="true";sh.classList.add("contrato-doc")}
+  const fit=()=>{const w=box.clientWidth-32;const s=Math.min(1,w/794);sc.style.transform=`scale(${s})`;sc.style.width="794px";box.style.height=(sh.offsetHeight*s+32)+"px"};
+  requestAnimationFrame(fit);
+  if(editable){sh.addEventListener("input",()=>{q.contratoHTML=sh.innerHTML;changed();fit()})}
+  return sh;
+}
+$("#btn-sheet").onclick=()=>{$("#m-sheet").hidden=false;showPreview("#sheet-preview",buildSheet(),false)};
+window.addEventListener("resize",()=>{if(!$("#m-sheet").hidden)showPreview("#sheet-preview",buildSheet(),false);if(!$("#m-contract").hidden)openContract()});
+
+/* ================= Contrato ================= */
+function buildContractInner(){
+  const c=calc();const p=getPkg();const e=cfg.empresa;const cli=q.cliente;const doc=String(cli.doc||"");
+  const docTxt=doc?(doc.length===11?"con RUC N.° "+esc(doc):"identificado(a) con DNI N.° "+esc(doc)):"identificado(a) con documento N.° ________";
+  const alc=[];if(p){alc.push(`<li><b>${esc(p.nombre)}</b>: ${(p.incluye||[]).map(esc).join("; ")}.</li>`)}
+  cfg.extras.filter(xOn).forEach(x=>alc.push(`<li><b>${esc(x.nombre)}</b>${x.modo==="unidad"?" ("+xCant(x)+" und)":""}: ${esc(x.desc)}.</li>`));
+  return `${sheetHeader()}
+  <h1>CONTRATO DE LOCACIÓN DE SERVICIOS PROFESIONALES</h1>
+  <div class="sub">${esc(q.numero)} · ${esc(q.proyecto.nombre||"")}</div>
+  <p>Conste por el presente documento el contrato de locación de servicios que celebran, de una parte, <b>${esc(e.nombre)}</b>${e.ruc?", con RUC N.° "+esc(e.ruc):""}, con domicilio en ${esc(e.direccion||"________")}, debidamente representada por ${e.representante?esc(e.representante):"________"}${e.repDoc?", identificado(a) con DNI N.° "+esc(e.repDoc):""}, a quien en adelante se le denominará <b>EL LOCADOR</b>; y de la otra parte, <b>${esc(cli.nombre||"________")}</b>, ${docTxt}, a quien en adelante se le denominará <b>EL CLIENTE</b>, en los términos siguientes:</p>
+  <h3>Cláusula primera: Objeto</h3>
+  <p>EL LOCADOR se obliga a prestar a EL CLIENTE los servicios profesionales de ${q.cat==="interiores"?"diseño de interiores":"diseño arquitectónico"} para el proyecto <b>${esc(q.proyecto.nombre||"")}</b>, ubicado en ${esc(q.proyecto.ubicacion||"________")}, de tipología ${esc((q.proyecto.tipologia||"").toLowerCase())}, con un área aproximada de <b>${fmtI.format(area())} m²</b>${num(q.proyecto.pisos)>1?" distribuidos en "+num(q.proyecto.pisos)+" niveles":""}${q.proyecto.ambientes?", que comprende: "+esc(q.proyecto.ambientes):""}.</p>
+  <h3>Cláusula segunda: Alcances</h3>
+  <p>Los servicios comprenden lo siguiente:</p><ul>${alc.join("")}</ul>
+  <h3>Cláusula tercera: Honorarios y forma de pago</h3>
+  <p>Las partes acuerdan como contraprestación la suma total de <b>${money(c.total)}</b> ${q.igv?"(incluye IGV)":"(no incluye IGV)"}${c.desc?", luego de aplicar un descuento comercial de "+fmtI.format(c.d)+" %":""}, que EL CLIENTE pagará de la siguiente manera:</p>
+  <ul>${c.hitos.map(h=>`<li>${fmtI.format(h.pct)} % a la ${esc(h.nombre.toLowerCase())}: ${money(h.monto)}.</li>`).join("")}</ul>
+  <h3>Cláusula cuarta: Plazo</h3>
+  <p>EL LOCADOR entregará los servicios en un plazo de <b>${c.plazo||"___"} días hábiles</b>, contados desde la recepción del primer pago y de la información necesaria proporcionada por EL CLIENTE. El tiempo que EL CLIENTE tome en revisar y aprobar cada entrega no se computa dentro del plazo.</p>
+  <h3>Cláusula quinta: Revisiones y cambios</h3>
+  <p>El servicio incluye las rondas de cambios indicadas en el paquete contratado. Los cambios posteriores a una aprobación, o los que modifiquen el alcance, se cotizarán por separado previo acuerdo entre las partes.</p>
+  <h3>Cláusula sexta: Obligaciones de EL CLIENTE</h3>
+  <p>EL CLIENTE se obliga a brindar acceso al inmueble, entregar planos o documentos existentes, responder las consultas en un plazo razonable y efectuar los pagos en las fechas acordadas.</p>
+  <h3>Cláusula séptima: Propiedad intelectual</h3>
+  <p>Conforme al Decreto Legislativo N.° 822, Ley sobre el Derecho de Autor, los diseños, planos, renders y demás material elaborado son obra de EL LOCADOR. Cancelado el monto total, EL CLIENTE podrá usarlos exclusivamente para el proyecto objeto de este contrato. EL LOCADOR podrá difundir imágenes del proyecto en su portafolio y redes sociales, salvo pacto en contrario.</p>
+  <h3>Cláusula octava: Exclusiones</h3>
+  <p>No forman parte de este contrato: tasas municipales, notariales o registrales; ejecución de obra, compra de materiales y mobiliario${q.paqueteId==="int-llave"?" (salvo la dirección de obra indicada en los alcances)":""}; ni servicios no descritos en la cláusula segunda.</p>
+  <h3>Cláusula novena: Resolución</h3>
+  <p>Cualquiera de las partes podrá resolver el contrato por incumplimiento de la otra, previa comunicación escrita con un plazo de quince (15) días calendario para subsanarlo. En caso de resolución, EL CLIENTE pagará los trabajos avanzados hasta esa fecha y los pagos efectuados por etapas ya entregadas no serán reembolsables.</p>
+  <h3>Cláusula décima: Jurisdicción</h3>
+  <p>Para cualquier controversia, las partes se someten a la competencia de los jueces y tribunales de Lima, señalando como domicilios los indicados en la introducción del presente contrato.</p>
+  <p>En señal de conformidad, las partes firman el presente contrato en la ciudad de Lima, el ${fechaLarga(Date.now())}.</p>
+  <div class="sh-sign blk"><div><b>EL LOCADOR</b><small>${esc(e.nombre)}${e.representante?" · "+esc(e.representante):""}</small></div><div><b>EL CLIENTE</b><small>${esc(cli.nombre||"")}${doc?" · "+esc(doc):""}</small></div></div>`;
+}
+function openContract(){
+  $("#m-contract").hidden=false;
+  const inner=q.contratoHTML||buildContractInner();
+  showPreview("#contract-preview",`<div class="sheet legal">${inner}</div>`,true);
+}
+$("#btn-contract").onclick=openContract;
+$("#contract-regen").onclick=async()=>{if(q.contratoHTML&&!(await askConfirm("Se reemplazará el texto del contrato con los datos actuales de la cotización y se perderán tus ediciones. ¿Continuar?","Regenerar")))return;q.contratoHTML=null;changed();openContract();toast("Contrato actualizado con la cotización")};
+
+/* ================= PDF ================= */
+async function exportPDF(sheetEl,filename){
+  if(!sheetEl)return;
+  const pa=$("#print-area");pa.innerHTML="";const el=sheetEl.cloneNode(true);el.removeAttribute("contenteditable");pa.appendChild(el);
+  if(window.arquizo&&window.arquizo.savePDF){
+    try{const r=await window.arquizo.savePDF(filename);if(r&&r.saved)toast("PDF guardado en "+r.path);else if(r&&r.error)toast("No se pudo guardar el PDF: "+r.error)}
+    catch(e){toast("No se pudo guardar el PDF.")}
+    pa.innerHTML="";return;
+  }
+  const old=document.title;document.title=filename.replace(/\.pdf$/,"");
+  setTimeout(()=>{window.print();setTimeout(()=>{document.title=old;pa.innerHTML=""},800)},60);
+}
+const slug=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
+$("#sheet-pdf").onclick=()=>exportPDF($("#sheet-preview .sheet"),`${q.numero}-${slug(q.proyecto.nombre||q.cliente.nombre)||"cotizacion"}.pdf`);
+$("#contract-pdf").onclick=()=>exportPDF($("#contract-preview .sheet"),`Contrato-${q.numero}-${slug(q.cliente.nombre)||"cliente"}.pdf`);
+
+/* ================= Confirmación en página ================= */
+function askConfirm(msg,yes){return new Promise(res=>{const m=$("#m-confirm");$("#confirm-msg").textContent=msg;$("#confirm-yes").textContent=yes||"Sí";m.hidden=false;
+  const done=v=>{m.hidden=true;$("#confirm-yes").onclick=null;$("#confirm-no").onclick=null;res(v)};$("#confirm-yes").onclick=()=>done(true);$("#confirm-no").onclick=()=>done(false)})}
+
+/* ================= Almacenamiento (nube compartida o este navegador) ================= */
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(_){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}}};
+const store={
+  async loadCfg(){
+    if(caps.db){const [a,b]=await Promise.all([caps.db.doc("config/empresa").get(),caps.db.doc("config/catalogo").get()]);return {empresa:a.exists?a.data():null,catalogo:b.exists?b.data():null}}
+    return {empresa:LS.get("arq_empresa"),catalogo:LS.get("arq_catalogo")};
+  },
+  async saveCfg(){
+    const cat={numeracion:cfg.numeracion,paquetes:cfg.paquetes,extras:cfg.extras,hitos:cfg.hitos,tipoCambio:cfg.tipoCambio,igv:cfg.igv,validez:cfg.validez,condiciones:cfg.condiciones};
+    if(caps.db){await caps.db.doc("config/empresa").set(clone(cfg.empresa));await caps.db.doc("config/catalogo").set(clone(cat));return}
+    if(!LS.set("arq_empresa",cfg.empresa)||!LS.set("arq_catalogo",cat))throw new Error("local");
+  },
+  async saveQuote(x){
+    if(caps.db){await caps.db.doc("cotizaciones/"+x.id).set(clone(x));return}
+    const all=(LS.get("arq_cots")||[]).filter(s=>s.id!==x.id);all.unshift(clone(x));if(!LS.set("arq_cots",all))throw new Error("local");saved=all;renderSavedCount();
+  },
+  async delQuote(id){
+    if(caps.db){await caps.db.doc("cotizaciones/"+id).delete();return}
+    saved=(LS.get("arq_cots")||[]).filter(s=>s.id!==id);LS.set("arq_cots",saved);renderSavedCount();renderSaved();
+  },
+  watch(){
+    if(caps.db){caps.db.collection("cotizaciones").orderBy("actualizado","desc").limit(300).onSnapshot(s=>{saved=s.docs.map(d=>d.data());renderSavedCount();if(!$("#m-saved").hidden)renderSaved();if(q.ejemplo||(!dirty&&!saved.some(z=>z.id===q.id))){q.numero=nextNumero();$("#q-num").textContent=q.numero}},()=>{})}
+    else{saved=LS.get("arq_cots")||[];renderSavedCount()}
+  }
+};
+
+$("#btn-save").onclick=async()=>{
+  const c=calc();
+  if(!q.cliente.nombre){toast("Escribe el nombre del cliente antes de guardar");$("#f-cli-nombre").focus();return}
+  if(!q.numero){toast("Escribe el número de la cotización");$("#q-num").focus();return}
+  const dup=saved.find(z=>z.id!==q.id&&z.numero===q.numero);
+  if(dup&&!(await askConfirm(`El número ${q.numero} ya lo usa la cotización de ${dup.cliente&&dup.cliente.nombre||"otro cliente"}. ¿Guardar de todos modos?`,"Guardar igual")))return;
+  q.ejemplo=false;q.actualizado=Date.now();q.total=c.total;
+  if(JSON.stringify(q).length>240000){toast("La cotización pesa demasiado. Quita o cambia la imagen de referencia.");return}
+  const b=$("#btn-save");b.disabled=true;
+  try{await store.saveQuote(q);dirty=false;
+    {const n=numCfg();const m=new RegExp("-(\\d+)$").exec(q.numero);if(m&&q.numero.indexOf(n.prefijo+"-"+n.anio+"-")===0&&+m[1]>=n.siguiente){cfg.numeracion=Object.assign({},n,{siguiente:+m[1]+1});try{await store.saveCfg()}catch(_){}}}$("#example-banner").hidden=true;toast("Cotización "+q.numero+" guardada")}
+  catch(e){toast(e&&e.code==="quota_exceeded"?"Se llenó el espacio. Elimina cotizaciones antiguas.":"No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.")}
+  b.disabled=false;
+};
+async function startNew(){
+  if(dirty&&!(await askConfirm("Hay cambios sin guardar en esta cotización. ¿Empezar una nueva de todos modos?","Empezar nueva")))return;
+  q=newQuote();dirty=false;renderAll();window.scrollTo({top:0,behavior:"smooth"});toast("Nueva cotización "+q.numero);
+}
+$("#btn-new").onclick=startNew;$("#ex-new").onclick=()=>{dirty=false;startNew()};
+
+/* ================= Guardadas ================= */
+function renderSavedCount(){$("#saved-count").textContent=saved.length}
+const estadoChip=s=>({borrador:'<span class="chip">Borrador</span>',enviada:'<span class="chip acc">Enviada</span>',aceptada:'<span class="chip ok">Aceptada</span>',rechazada:'<span class="chip warn">Rechazada</span>'}[s]||"");
+function renderSaved(){
+  const f=($("#saved-q").value||"").toLowerCase();
+  const list=saved.filter(s=>!f||[s.numero,s.cliente&&s.cliente.nombre,s.proyecto&&s.proyecto.nombre].join(" ").toLowerCase().includes(f));
+  $("#saved-list").innerHTML=list.length?list.map(s=>`<div class="saved" data-sid="${esc(s.id)}">
+    <div style="min-width:0"><div class="t">${esc(s.proyecto&&s.proyecto.nombre||"Sin nombre")} ${estadoChip(s.estado)}</div>
+    <div class="m">${esc(s.numero)} · ${esc(s.cliente&&s.cliente.nombre||"")} · ${s.actualizado?new Date(s.actualizado).toLocaleDateString("es-PE"):""}</div></div>
+    <div class="acts"><span class="total">${money(s.total||0,"PEN")}</span><button class="btn" data-open="${esc(s.id)}">Abrir</button><button class="btn ghost" data-dup="${esc(s.id)}">Duplicar</button><button class="btn ghost danger" data-del="${esc(s.id)}">Eliminar</button></div></div>`).join("")
+    :`<p class="empty">${saved.length?"No hay resultados para esa búsqueda.":"Todavía no hay cotizaciones guardadas. Llena una y pulsa «Guardar»."}</p>`;
+}
+$("#btn-saved").onclick=()=>{$("#m-saved").hidden=false;renderSaved()};
+$("#saved-q").addEventListener("input",renderSaved);
+$("#saved-list").addEventListener("click",async e=>{
+  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]"),x=e.target.closest("[data-del]");
+  if(o||d){if(dirty&&!(await askConfirm("Hay cambios sin guardar en la cotización actual. ¿Abrir otra de todos modos?","Abrir")))return;
+    const s=saved.find(z=>z.id===(o||d).dataset[o?"open":"dup"]);if(!s)return;q=clone(s);q.extras=q.extras||{};q.tarifas=q.tarifas||{};q.hitos=q.hitos||clone(cfg.hitos);
+    if(d){q.id=uid();q.numero=nextNumero();q.fecha=Date.now();q.estado="borrador";q.contratoHTML=null;dirty=true}else dirty=false;
+    q.ejemplo=false;$("#m-saved").hidden=true;renderAll();toast(d?"Copia creada como "+q.numero:"Abriste "+q.numero);return}
+  if(x){const s=saved.find(z=>z.id===x.dataset.del);if(!s)return;if(!(await askConfirm(`¿Eliminar la cotización ${s.numero} de ${s.cliente&&s.cliente.nombre||"este cliente"}? No se puede deshacer.`,"Eliminar")))return;
+    try{await store.delQuote(s.id);toast("Cotización eliminada")}catch(_){toast("No se pudo eliminar. Inténtalo de nuevo.")}}
+});
+
+/* ================= Ajustes ================= */
+let setTab="empresa";let setDraft=null;
+function openSettings(){setDraft=clone(cfg);$("#m-set").hidden=false;renderSet()}
+$("#btn-settings").onclick=openSettings;
+$("#set-tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;setTab=b.dataset.st;$$("#set-tabs button").forEach(z=>z.setAttribute("aria-pressed",String(z===b)));renderSet()});
+function fld(label,key,val,type,cls,extra){return `<label class="field ${cls||""}"><span>${label}</span><input data-s="${key}" ${type?`type="${type}"`:""} value="${esc(val==null?"":val)}" ${extra||""}></label>`}
+function renderSet(){
+  const d=setDraft,e=d.empresa,B=$("#set-body");
+  if(setTab==="empresa"){
+    B.innerHTML=`<div class="logo-box"><div class="pv">${e.logo?`<img src="${e.logo}" alt="Logo">`:`<span>${esc(e.nombre)}</span>`}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><b>Logo de la empresa</b><span style="font-size:12.5px;color:var(--ink-2)">PNG con fondo transparente, horizontal. Sale en la cabecera, la hoja A4 y el contrato.</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="width:auto;border:0;padding:0">${e.logo?'<button class="btn ghost danger" id="logo-del">Quitar logo</button>':""}</div></div></div>
+      <div class="grid" style="margin-top:16px">
+      ${fld("Nombre comercial","empresa.nombre",e.nombre)}${fld("Lema / rubro","empresa.lema",e.lema)}
+      ${fld("RUC","empresa.ruc",e.ruc,"","",'inputmode="numeric"')}${fld("Página web","empresa.web",e.web)}
+      ${fld("Teléfono","empresa.telefono",e.telefono)}${fld("Correo","empresa.email",e.email,"email")}
+      ${fld("Dirección","empresa.direccion",e.direccion,"","full")}
+      ${fld("Representante legal (para el contrato)","empresa.representante",e.representante)}${fld("DNI del representante","empresa.repDoc",e.repDoc,"","",'inputmode="numeric"')}
+      ${fld("Texto al pie de la hoja","empresa.pie",e.pie,"","full")}
+      <div class="field"><span>Color de marca (documentos)</span><div class="color-row"><input type="color" data-s="empresa.color" value="${esc(e.color)}"><span class="mono">${esc(e.color)}</span></div></div>
+      </div>`;
+    const lf=$("#logo-file");lf.onchange=()=>{if(!lf.files[0])return;readImage(lf.files[0],520,220,"image/png").then(u=>{d.empresa.logo=u;renderSet();toast("Logo cargado. Pulsa «Guardar ajustes».")}).catch(()=>toast("No se pudo leer ese archivo de logo."))};
+    const ld=$("#logo-del");if(ld)ld.onclick=()=>{d.empresa.logo=null;renderSet()};
+  }
+  if(setTab==="paquetes"){
+    B.innerHTML=`<p class="modal-note">Tarifas base sugeridas para Lima (S/ por m²). Cámbialas a tu realidad; cada cotización también permite ajustarlas.</p>`+
+    d.paquetes.map((p,i)=>`<div class="ed-card"><div class="ed-head"><b>${esc(p.nombre)}</b><span class="chip">${p.cat==="interiores"?"Interiores":"Arquitectura"}</span><div class="r"><button class="btn ghost danger" data-pdel="${i}">Eliminar</button></div></div>
+      <div class="grid">
+        ${fld("Nombre",`paquetes.${i}.nombre`,p.nombre,"","w2")}${fld("Descripción corta",`paquetes.${i}.sub`,p.sub,"","w2")}
+        <label class="field"><span>Categoría</span><select data-s="paquetes.${i}.cat"><option value="interiores"${p.cat==="interiores"?" selected":""}>Interiores</option><option value="arquitectura"${p.cat==="arquitectura"?" selected":""}>Arquitectura</option></select></label>
+        <label class="field"><span>Cobro</span><select data-s="paquetes.${i}.modo"><option value="m2"${p.modo==="m2"?" selected":""}>Por m²</option><option value="fijo"${p.modo==="fijo"?" selected":""}>Precio fijo</option></select></label>
+        ${fld("Tarifa (S/)",`paquetes.${i}.tarifa`,p.tarifa,"number","",'min="0" step="0.5"')}
+        <label class="field"><span>Más recomendado</span><select data-s="paquetes.${i}.recomendado"><option value="false"${!p.recomendado?" selected":""}>No</option><option value="true"${p.recomendado?" selected":""}>Sí</option></select></label>
+        ${fld("Plazo base (días)",`paquetes.${i}.plazoBase`,p.plazoBase,"number","",'min="0"')}${fld("Días extra por m²",`paquetes.${i}.plazoM2`,p.plazoM2,"number","",'min="0" step="0.01"')}
+        <label class="field w2" style="grid-column:1/-1"><span>Qué incluye (una línea por punto)</span><textarea data-s="paquetes.${i}.incluye">${esc((p.incluye||[]).join("\n"))}</textarea></label>
+      </div></div>`).join("")+`<button class="btn" id="padd">+ Agregar paquete</button>`;
+    $("#padd").onclick=()=>{d.paquetes.push({id:"p"+Date.now().toString(36),cat:"interiores",nombre:"Nuevo paquete",sub:"Descripción",modo:"m2",tarifa:30,plazoBase:10,plazoM2:0.1,recomendado:false,incluye:["Punto incluido"]});renderSet()};
+  }
+  if(setTab==="extras"){
+    B.innerHTML=`<p class="modal-note">Servicios que se suman a cualquier paquete. «Por m²» usa el metraje del proyecto; «Por unidad» permite indicar cantidad.</p>`+
+    d.extras.map((x,i)=>`<div class="ed-card"><div class="grid">
+      ${fld("Nombre",`extras.${i}.nombre`,x.nombre,"","w2")}${fld("Grupo",`extras.${i}.grupo`,x.grupo)}
+      <label class="field"><span>Cobro</span><select data-s="extras.${i}.modo"><option value="fijo"${x.modo==="fijo"?" selected":""}>Fijo</option><option value="m2"${x.modo==="m2"?" selected":""}>Por m²</option><option value="unidad"${x.modo==="unidad"?" selected":""}>Por unidad</option></select></label>
+      ${fld("Descripción",`extras.${i}.desc`,x.desc,"","w2")}${fld("Costo (S/)",`extras.${i}.tarifa`,x.tarifa,"number","",'min="0" step="0.5"')}
+      <div class="field"><span>&nbsp;</span><button class="btn ghost danger" data-xdel="${i}">Eliminar</button></div>
+    </div></div>`).join("")+`<button class="btn" id="xadd">+ Agregar servicio</button>`;
+    $("#xadd").onclick=()=>{d.extras.push({id:"x"+Date.now().toString(36),grupo:"Otros",nombre:"Nuevo servicio",desc:"Descripción",modo:"fijo",tarifa:500});renderSet()};
+  }
+  if(setTab==="respaldo"){
+    B.innerHTML=`<p class="modal-note">Todo se guarda en esta computadora. Haz un respaldo cada cierto tiempo, o para pasar tus tarifas, logo y cotizaciones a otra computadora del equipo.</p>
+    <div class="ed-card"><div class="ed-head"><b>Exportar respaldo</b></div><p class="modal-note">Descarga un archivo .json con ajustes, logo y las ${saved.length} cotizaciones guardadas.</p><button class="btn primary" id="bk-out">Descargar respaldo</button></div>
+    <div class="ed-card"><div class="ed-head"><b>Importar respaldo</b></div><p class="modal-note">Carga un respaldo de otra computadora. Se suman sus cotizaciones (si hay una repetida, queda la más reciente) y se reemplazan los ajustes y el logo.</p><input type="file" id="bk-in" accept=".json,application/json" style="width:auto;border:0;padding:0"></div>`;
+    $("#bk-out").onclick=exportBackup;
+    $("#bk-in").onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0])};
+  }
+  if(setTab==="pagos"){
+    const nn=Object.assign({prefijo:"ARZ",anio:2026,siguiente:1},d.numeracion||{});d.numeracion=nn;
+    B.innerHTML=`<div class="ed-card"><div class="ed-head"><b>Numeración de cotizaciones</b></div><div class="grid">
+      ${fld("Código","numeracion.prefijo",nn.prefijo,"","",'maxlength="10" spellcheck="false"')}${fld("Año","numeracion.anio",nn.anio,"","",'maxlength="6" inputmode="numeric"')}
+      ${fld("Siguiente número","numeracion.siguiente",nn.siguiente,"number","",'min="1" step="1"')}
+      <div class="field"><span>Así saldrá la próxima</span><div class="numprev" id="num-prev"></div></div></div>
+      <p class="modal-note" style="margin:8px 0 0">El número avanza solo cada vez que guardas. Cambia el año en enero y el contador si quieres continuar desde otra cifra. Cada cotización también permite editar su número arriba, junto al estado.</p></div>
+      <div class="grid">
+      ${fld("Tipo de cambio (S/ por US$)","tipoCambio",d.tipoCambio,"number","",'step="0.01" min="0.1"')}${fld("IGV (%)","igv",d.igv,"number","",'step="0.5" min="0"')}
+      ${fld("Validez de la oferta (días)","validez",d.validez,"number","",'min="1"')}<div></div>
+      <div class="field full"><span>Hitos de pago por defecto para nuevas cotizaciones</span>
+        ${d.hitos.map((h,i)=>`<div class="hito" style="grid-template-columns:minmax(0,1fr) 70px 26px"><input data-s="hitos.${i}.nombre" value="${esc(h.nombre)}" aria-label="Hito"><input class="pct" type="number" data-s="hitos.${i}.pct" value="${num(h.pct)}" aria-label="Porcentaje"><button class="x" data-hdel="${i}" aria-label="Quitar">×</button></div>`).join("")}
+        <button class="linkbtn" id="hadd" style="align-self:flex-start">+ Agregar hito</button></div>
+      <label class="field full"><span>Condiciones (una por línea; salen en la hoja A4)</span><textarea data-s="condiciones" rows="7">${esc(d.condiciones)}</textarea></label>
+      <div class="field full"><span>Restaurar</span><div><button class="btn ghost danger" id="reset-cfg">Volver a las tarifas sugeridas</button></div></div></div>`;
+    const np=()=>{const z=setDraft.numeracion;$("#num-prev").textContent=(String(z.prefijo||"ARZ").trim()||"ARZ")+"-"+String(z.anio||"").trim()+"-"+String(Math.max(1,Math.round(num(z.siguiente))||1)).padStart(4,"0")};np();
+    B.addEventListener("input",e=>{if(e.target.dataset.s&&e.target.dataset.s.indexOf("numeracion.")===0)setTimeout(np)});
+    $("#hadd").onclick=()=>{d.hitos.push({nombre:"Nuevo hito",pct:0});renderSet()};
+    $("#reset-cfg").onclick=async()=>{if(!(await askConfirm("Se restaurarán paquetes, adicionales, hitos y condiciones sugeridos. Tu logo y datos de empresa se mantienen. ¿Continuar?","Restaurar")))return;const emp=d.empresa;setDraft=clone(DEFAULT_CFG);setDraft.empresa=emp;renderSet();toast("Valores sugeridos cargados. Pulsa «Guardar ajustes».")};
+  }
+}
+$("#set-body").addEventListener("input",e=>{const t=e.target;if(!t.dataset.s)return;const k=t.dataset.s;let v=t.value;
+  if(t.type==="number")v=num(v);if(/\.recomendado$/.test(k))v=v==="true";if(/\.incluye$/.test(k))v=v.split("\n").map(s=>s.trim()).filter(Boolean);
+  const ks=k.split(".");let a=setDraft;ks.slice(0,-1).forEach(z=>a=a[z]);a[ks[ks.length-1]]=v;
+  if(k==="empresa.color"){const s=t.parentElement.querySelector(".mono");if(s)s.textContent=v}});
+$("#set-body").addEventListener("change",e=>{if(e.target.tagName==="SELECT")e.target.dispatchEvent(new Event("input",{bubbles:true}))});
+$("#set-body").addEventListener("click",e=>{const p=e.target.closest("[data-pdel]"),x=e.target.closest("[data-xdel]"),h=e.target.closest("[data-hdel]");
+  if(p){setDraft.paquetes.splice(+p.dataset.pdel,1);renderSet()}if(x){setDraft.extras.splice(+x.dataset.xdel,1);renderSet()}if(h){setDraft.hitos.splice(+h.dataset.hdel,1);renderSet()}});
+$("#set-save").onclick=async()=>{
+  const prev=cfg;cfg=setDraft;setDraft=clone(cfg);
+  if(!cfg.paquetes.some(p=>p.id===q.paqueteId)){const l=cfg.paquetes.filter(p=>p.cat===q.cat);q.paqueteId=(l.find(p=>p.recomendado)||l[0]||{}).id||null}
+  if(q.ejemplo||!dirty){q.hitos=clone(cfg.hitos)}
+  if(!saved.some(z=>z.id===q.id))q.numero=nextNumero();
+  renderAll();
+  const b=$("#set-save");b.disabled=true;
+  try{await store.saveCfg();toast("Ajustes guardados");$("#m-set").hidden=true}
+  catch(e){toast("No se pudieron guardar los ajustes. Si subiste un logo muy grande, usa uno más liviano.")}
+  b.disabled=false;
+};
+
+/* ================= Respaldo ================= */
+function catalogo(c){return {numeracion:c.numeracion,paquetes:c.paquetes,extras:c.extras,hitos:c.hitos,tipoCambio:c.tipoCambio,igv:c.igv,validez:c.validez,condiciones:c.condiciones}}
+function exportBackup(){
+  const data={app:"cotizador-arquizo",version:1,exportado:new Date().toISOString(),empresa:cfg.empresa,catalogo:catalogo(cfg),cotizaciones:caps.db?saved:(LS.get("arq_cots")||[])};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="respaldo-cotizador-arquizo-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast("Respaldo descargado");
+}
+function importBackup(file){
+  const fr=new FileReader();fr.onload=async()=>{
+    let d;try{d=JSON.parse(fr.result)}catch(_){toast("Ese archivo no es un respaldo válido.");return}
+    if(!d||d.app!=="cotizador-arquizo"){toast("Ese archivo no es un respaldo del Cotizador Arquizo.");return}
+    if(!(await askConfirm(`Importar ${(d.cotizaciones||[]).length} cotizaciones y reemplazar los ajustes actuales. ¿Continuar?`,"Importar")))return;
+    const map={};(LS.get("arq_cots")||[]).concat(d.cotizaciones||[]).forEach(c=>{if(c&&c.id&&(!map[c.id]||(c.actualizado||0)>(map[c.id].actualizado||0)))map[c.id]=c});
+    const all=Object.values(map).sort((a,b)=>(b.actualizado||0)-(a.actualizado||0));
+    if(d.empresa)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),d.empresa);
+    if(d.catalogo)Object.assign(cfg,d.catalogo);
+    let ok;
+    if(caps.db){ok=true;toast("Subiendo "+all.length+" cotizaciones al equipo…");try{await store.saveCfg();for(const c of all){if(!saved.some(z=>z.id===c.id&&(z.actualizado||0)>=(c.actualizado||0)))await store.saveQuote(c)}}catch(e){ok=false}}
+    else ok=LS.set("arq_cots",all)&&LS.set("arq_empresa",cfg.empresa)&&LS.set("arq_catalogo",catalogo(cfg));
+    saved=all;renderSavedCount();setDraft=clone(cfg);renderAll();renderSet();
+    toast(ok?"Respaldo importado":"No hay espacio suficiente para importar todo. Quita imágenes de referencia.");
+  };fr.readAsText(file);
+}
+
+/* ================= Arranque ================= */
+renderTipos();renderAreaQuick();renderAll();
+(async function boot(){
+  const chip=$("#sync-chip");chip.textContent=caps.db?"Equipo de Arquizo":"Guardado en esta computadora";chip.className="chip ok";
+  let em=LS.get("arq_empresa"),ca=LS.get("arq_catalogo");
+  if(caps.db){try{const r=await store.loadCfg();em=r.empresa;ca=r.catalogo}catch(e){em=ca=null}}
+  if(em)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),em);
+  if(ca)Object.assign(cfg,ca);
+  store.watch();
+  if(q.ejemplo){q.hitos=clone(cfg.hitos);q.numero=nextNumero()}
+  renderAll();
+})();
+})();
+</script>
+</body>
+</html>
