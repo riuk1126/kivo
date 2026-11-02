@@ -22,3 +22,11 @@ if (fs.existsSync(tdir)) {
   [path.join(tdir), path.join(nm, 'onnxruntime-web', 'dist'), path.join(nm, '@huggingface', 'transformers', 'node_modules')].forEach((d) => fs.existsSync(d) && walk(d));
   console.log('Whisper copiado en app/vendor ✓ (' + pick + ', ' + [...seen].join(', ') + ')');
 } else console.log('Transformers no encontrado (sin dictado sin internet)');
+
+// Visor de PDF dentro de Kivo (computadora, tableta y celular)
+const pdir = path.join(nm, 'pdfjs-dist', 'build');
+if (fs.existsSync(pdir)) {
+  fs.copyFileSync(path.join(pdir, 'pdf.min.js'), path.join(dir, 'pdf.min.js'));
+  fs.copyFileSync(path.join(pdir, 'pdf.worker.min.js'), path.join(dir, 'pdf.worker.min.js'));
+  console.log('Visor de PDF copiado en app/vendor ✓');
+}
