@@ -61,6 +61,7 @@ jobs:
           V=$(node -p "require('../package.json').version")
           sed -i "s/__KIVO_VERSION__/$V/" www/index.html
           npx cap add android
+          cp native/*.java android/app/src/main/java/com/arquizo/kivo/
           cp -r res/* android/app/src/main/res/
           sudo apt-get install -y -qq imagemagick >/dev/null 2>&1 || true
           for f in $(find android/app/src/main/res -name 'splash.png'); do

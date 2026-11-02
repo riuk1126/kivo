@@ -1665,7 +1665,9 @@ function updText(u){
     case 'latest':return 'Tienes la última versión ✓';
     case 'error':return 'No se pudo buscar actualizaciones. Revisa tu internet.';
     case 'dev':return 'Versión de prueba';
-    default:return 'Kivo se actualiza solo.';
+    case 'installing':return 'Actualizando a la versión '+u.version+'…';
+    case 'soon':return 'La versión '+u.version+' se está publicando; vuelve a intentar en unos minutos.';
+    default:return WEB_UPD?'Kivo se actualiza solo cada vez que lo abres.':'Kivo se actualiza solo.';
   }
 }
 function renderVersionBox(el){
@@ -1673,9 +1675,32 @@ function renderVersionBox(el){
   const img=h('img');img.src='icons/kivo.svg';img.style.cssText='width:44px;height:44px;flex:none';
   const t=h('div','',`<b>Kivo ${esc(KVER)}</b><small>${esc(updText(UPD))}</small>`);
   vb.append(img,t);
-  if(UPD.state==='ready'){const b=h('button','btn primary','🔄 Reiniciar y actualizar');b.onclick=()=>kivo.installUpdate();vb.append(b)}
-  else if(UPD.state!=='downloading'&&UPD.state!=='checking'&&UPD.state!=='dev'){const b=h('button','btn','Buscar actualizaciones');b.onclick=()=>{UPD={state:'checking'};renderVersionBox();kivo.checkUpdate()};vb.append(b)}
+  if(UPD.state==='ready'){const b=h('button','btn primary',WEB_UPD?'🔄 Actualizar ahora':'🔄 Reiniciar y actualizar');b.onclick=installUpdate;vb.append(b)}
+  else if(!['downloading','checking','dev','installing'].includes(UPD.state)){const b=h('button','btn','Buscar actualizaciones');b.onclick=()=>{if(WEB_UPD){webCheckUpdate(true);return}UPD={state:'checking'};renderVersionBox();kivo.checkUpdate()};vb.append(b)}
 }
+/* ---- actualizaciones en tableta, celular y web (Windows tiene su propio actualizador) ---- */
+const SHELL_MIN='1.0.20';
+const WEB_UPD=!(window.kivo&&kivo.desktop);
+function vNewer(a,b){const x=String(a||'').split('.').map(Number),y=String(b||'').split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)>(y[i]||0))return true;if((x[i]||0)<(y[i]||0))return false}return false}
+function busyUI(){const a=document.activeElement;return (a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))||document.body.classList.contains('cot-open')||document.body.classList.contains('printing')||(typeof MODALS!=='undefined'&&MODALS.length>0)}
+function webReload(v){try{const u=new URL(location.href);u.searchParams.set('v',v||Date.now());location.replace(u.toString())}catch(e){location.reload()}}
+async function webCheckUpdate(manual){
+  if(!WEB_UPD)return;const cur=String(window.KIVO_VERSION||'');
+  if(!/^\d/.test(cur)){if(manual){UPD={state:'dev'};renderVersionBox()}return}
+  if(manual){UPD={state:'checking'};renderVersionBox()}
+  try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases/latest',{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();const v=String(j.tag_name||'').replace(/^v/,'');
+    if(v&&vNewer(v,cur)){
+      let n=0;try{n=+sessionStorage.getItem('kivo-upd-'+v)||0}catch(e){}
+      if(n<2&&(manual||!busyUI())){try{sessionStorage.setItem('kivo-upd-'+v,n+1)}catch(e){}UPD={state:'installing',version:v};renderVersionBox();setTimeout(()=>webReload(v),500);return}
+      UPD=n<2?{state:'ready',version:v}:{state:'soon',version:v};
+    }else UPD={state:'latest'};
+  }catch(e){UPD=manual?{state:'error'}:{state:'idle'}}
+  renderVersionBox();renderBanner();
+}
+function installUpdate(){if(WEB_UPD)webReload(UPD.version);else kivo.installUpdate()}
+if(WEB_UPD){KVER=/^\d/.test(String(window.KIVO_VERSION||''))?window.KIVO_VERSION:'';
+  setTimeout(()=>webCheckUpdate(false),4000);setInterval(()=>webCheckUpdate(false),30*60*1000);
+  let lastChk=Date.now();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-lastChk>60000){lastChk=Date.now();webCheckUpdate(false)}})}
 function onUpdState(u){
   const prev=UPD.state;UPD=u||{state:'idle'};renderVersionBox();renderBanner();
   if(UPD.state==='ready'&&prev!=='ready')toast('✨ Kivo '+UPD.version+' está lista','Reiniciar y actualizar',()=>kivo.installUpdate());
@@ -2631,7 +2656,7 @@ function renderBanner(){
   if(NOCOLS){const d=h('div','banner','<b>Falta un paso para usar los espacios: actualiza tu base de datos. En Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL)}};d.append(y);b.append(d)}
   if(NOMETA&&!NOCOLS&&schedLists().length){const d=h('div','banner','<b>Para que tu horario, metas y sesiones se guarden en la nube, actualiza la base de datos: en Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL2).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL2)}};d.append(y);b.append(d)}
   mobileBanners(b);
-  if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary','Reiniciar y actualizar');y.onclick=()=>kivo.installUpdate();d.append(y);b.append(d)}
+  if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary',WEB_UPD?'Actualizar ahora':'Reiniciar y actualizar');y.onclick=installUpdate;d.append(y);b.append(d)}
   if(DEFERRED&&!S.installOff){const d=h('div','banner','<span style="font-size:22px">📲</span><b>Instala Kivo en este equipo para abrirla como un programa.</b>');const y=h('button','btn primary','Instalar');y.onclick=installApp;const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.installOff=true;save();renderBanner()};d.append(y,n);b.append(d)}
   if(!S.alerts||S.bannerOff||notifState()!=='default')return;
   const d=h('div','banner','<span style="font-size:22px">🔔</span><b>¿Quieres que te avise de tus pendientes aunque estés en otra ventana?</b>');
@@ -2800,7 +2825,7 @@ function openSettings(jump){
     const add=h('button','btn','＋ Nueva lista');add.onclick=()=>{closeModal();openListEditor()};
     ls.append(add);box.append(ls);
     // copias
-    if(window.kivo&&kivo.updateState){
+    if((window.kivo&&kivo.updateState)||WEB_UPD){
       box.append(h('div','lbl','Versión'));
       const vb=h('div','acct');vb.id='set-version';box.append(vb);renderVersionBox(vb);
     }
@@ -3561,6 +3586,10 @@ function openPrint(){
 
 /* ================= CELULAR: app de Android (Capacitor) y web instalable (iPhone) ================= */
 const IS_APP=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const KNAT=()=>IS_APP&&window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.KivoNative;
+if(KNAT()&&!window.kivo)window.kivo={app:true,show(){},attention(){},
+  async savePDF(fn,opt){try{const r=await KNAT().print({name:String(fn||'Kivo').replace(/\.pdf$/i,''),portrait:!!(opt&&opt.portrait)});
+    if(r&&r.status==='completed')return {ok:true,path:''};if(r&&r.status==='failed')return {ok:false,error:'Android no pudo crear el PDF'};return {ok:false}}catch(e){return {ok:false,error:String(e&&e.message||e)}}}};
 const IS_IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const IS_STANDALONE=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const LN=()=>IS_APP&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;
@@ -3585,14 +3614,17 @@ function scheduleNative(){clearTimeout(natT);natT=setTimeout(async()=>{
 },1500)}
 // ¿Hay una versión nueva del APK?
 async function checkApkUpdate(){
-  if(!IS_APP)return;const cur=String(window.KIVO_VERSION||'');if(!/^\d/.test(cur))return;
+  if(!IS_APP)return;
+  if(/github\.io$/.test(location.hostname)){ // la app ya carga la versión en línea: solo avisar si falta la parte nativa
+    let sv='';try{if(KNAT())sv=(await KNAT().info()).version||''}catch(e){}
+    if(!KNAT()||vNewer(SHELL_MIN,sv)){APKUPD='app';renderBanner()}return}
+  const cur=String(window.KIVO_VERSION||'');if(!/^\d/.test(cur))return;
   try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases/latest');if(!r.ok)return;const j=await r.json();const v=String(j.tag_name||'').replace(/^v/,'');
-    const newer=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)>(y[i]||0))return true;if((x[i]||0)<(y[i]||0))return false}return false};
-    if(v&&newer(v,cur)&&(j.assets||[]).some(a=>a.name==='Kivo.apk')){APKUPD=v;renderBanner()}}catch(e){}
+    if(v&&vNewer(v,cur)&&(j.assets||[]).some(a=>a.name==='Kivo.apk')){APKUPD=v;renderBanner()}}catch(e){}
 }
 let APKUPD=null;
 function mobileBanners(b){
-  if(APKUPD){const d=h('div','banner','<b>Hay una versión nueva de Kivo para el celular ('+esc(APKUPD)+').</b>');const y=h('button','btn primary','Descargar');y.onclick=()=>window.open('https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk','_blank');d.append(y);b.append(d)}
+  if(APKUPD){const d=h('div','banner',APKUPD==='app'?'<b>Instala la app de Kivo una última vez para guardar PDF y actualizarte con un clic.</b>':'<b>Hay una versión nueva de Kivo para el celular ('+esc(APKUPD)+').</b>');const y=h('button','btn primary','Descargar');y.onclick=()=>window.open('https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk','_blank');d.append(y);b.append(d)}
   if(IS_IOS&&!IS_STANDALONE&&!IS_APP&&!S.iosHintOff){const d=h('div','banner','<b>Instala Kivo en tu iPhone: toca el botón Compartir <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> y luego «Agregar a inicio».</b>');const n=h('button','btn ghost','Entendido');n.onclick=()=>{S.iosHintOff=true;save();renderBanner()};d.append(n);b.append(d)}
 }
 
@@ -3618,7 +3650,7 @@ function openCot(){
     COTV=h('div','cotv');
     const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCot;
     hd.append(bk,h('b','',`<img src="icons/cotizador.svg" alt=""> Cotizador Arquizo`),h('span','grow'),h('small','cotv-who',''));
-    const fr=document.createElement('iframe');fr.src='cotizador.html';fr.title='Cotizador Arquizo';
+    const fr=document.createElement('iframe');fr.src='cotizador.html?v='+encodeURIComponent(String(window.KIVO_VERSION||''));fr.title='Cotizador Arquizo';
     COTV.append(hd,fr);document.body.append(COTV);COTV.fr=fr;
   }
   const who=(LMEM[t.id]||[]).map(pname).filter(Boolean);COTV.querySelector('.cotv-who').textContent=who.length>1?'Compartido con '+who.filter(n=>n!==pname(ME)).join(', '):'Solo tú (comparte el espacio «'+t.name+'» para trabajar en equipo)';
@@ -3991,7 +4023,7 @@ async function start(session){
 }
 function boot(){
   $('#searchBtn').innerHTML=ICO.search;$('#statsBtn').innerHTML=ICO.chart;$('#gear').innerHTML=ICO.gear;$('#mic').innerHTML=ICO.mic;
-  if(IS_APP){$('#printBtn').style.display='none';const wo=window.open.bind(window);window.open=(u,t,f)=>{if(/^(https?|mailto|tel|whatsapp):/i.test(String(u||''))&&!/^https?:\/\/localhost/.test(u)){location.href=u;return null}return wo(u,t,f)}}
+  if(IS_APP){if(!KNAT())$('#printBtn').style.display='none';const wo=window.open.bind(window);window.open=(u,t,f)=>{if(/^(https?|mailto|tel|whatsapp):/i.test(String(u||''))&&!/^https?:\/\/localhost/.test(u)){location.href=u;return null}return wo(u,t,f)}}
   if(!IS_APP&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;if(ME)renderBanner()});
   S=defaults();applyLook();
