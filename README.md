@@ -7,7 +7,7 @@
 | Sistema | Instalador |
 |---|---|
 | 🪟 Windows | [Kivo-Setup.exe](https://github.com/riuk1126/kivo/releases/latest/download/Kivo-Setup.exe) |
-| 🍎 Mac | [Kivo.dmg](https://github.com/riuk1126/kivo/releases/latest/download/Kivo.dmg) |
+| 🤖 Android (tableta y celular) | [Kivo.apk](https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk) |
 | 🐧 Linux (Ubuntu / Zorin) | [Kivo-linux.deb](https://github.com/riuk1126/kivo/releases/latest/download/Kivo-linux.deb) |
 
 ## Sacar una versión nueva
