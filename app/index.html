@@ -1141,6 +1141,25 @@ button.cl-r:hover{background:var(--fill)}
 .vdur{font-size:12px;opacity:.7;font-variant-numeric:tabular-nums}
 /* celular: los botones de arriba bajan a su propia fila y no se salen de la pantalla */
 @media (max-width:560px){header{flex-wrap:wrap;row-gap:10px}header>div:first-child{flex:1 1 100%}header>.grow{display:none}header .hbtns{margin-left:auto;flex-wrap:wrap}.banner b{display:block;margin-bottom:4px}}
+.ls-alarm{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin-top:14px;padding:9px 10px;border-radius:12px;color:var(--text);background:var(--card);box-shadow:0 0 0 .5px var(--line)}
+.ls-alarm:hover{box-shadow:0 0 0 1px #ff9f0a}
+.ls-aic{width:28px;height:28px;border-radius:8px;background:#ff9f0a;color:#fff;display:flex;align-items:center;justify-content:center;flex:none}.ls-aic svg{width:18px;height:18px}
+.ls-alarm b{display:block;font-size:14px}.ls-alarm small{display:block;font-size:11.5px;color:var(--muted)}
+#alarmBtn svg{width:20px;height:20px}body.has-side #alarmBtn{display:none}
+.ringov{position:fixed;inset:0;z-index:9800;background:radial-gradient(circle at 50% 35%,#ff9f0a 0,#e8590c 45%,#1c1c1e 100%);display:flex;align-items:center;justify-content:center;padding:20px;animation:dqin .2s ease}
+.rg-box{color:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:420px}
+.rg-ic{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;animation:dqring 1s ease-in-out infinite}.rg-ic svg{width:56px;height:56px}
+.rg-t{font-size:64px;font-weight:800;letter-spacing:-.03em;line-height:1}.rg-l{font-size:20px;font-weight:600}
+.rg-n{font-size:14.5px;opacity:.92;background:rgba(0,0,0,.22);padding:8px 14px;border-radius:12px}
+.rg-tap{font-size:13px;background:#fff;color:#e8590c;padding:6px 12px;border-radius:999px;font-weight:700}
+.rg-b{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}.rg-b .btn{font-size:17px;padding:14px 28px;border-radius:16px}
+.rg-b .btn.primary{background:#fff;color:#e8590c}.rg-b .btn:not(.primary){background:rgba(255,255,255,.2);color:#fff}
+.al-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.al-r{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:10px 12px}.al-r.off{opacity:.55}
+.al-x{flex:1;min-width:0}.al-x b{display:block;font-size:22px;letter-spacing:-.02em}.al-x small{color:var(--muted);font-size:12.5px}
+.iconb.sm{width:32px;height:32px;font-size:14px}
+.al-form{display:flex;flex-direction:column;gap:10px;margin-top:6px}.al-f1{display:flex;gap:8px}.al-f1 .al-time{width:130px;font-size:18px;font-weight:700}.al-f1 .field:last-child{flex:1}
+.al-add{align-self:flex-start}.al-test{margin-top:10px}
 /* ---- aviso que insiste (pendientes con hora) ---- */
 .dueq{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:dqin .2s ease}
 @keyframes dqin{from{opacity:0}to{opacity:1}}
@@ -1282,7 +1301,7 @@ button.cl-r:hover{background:var(--fill)}
       <svg class="ring" viewBox="0 0 58 58"><circle class="bgc" cx="29" cy="29" r="24"/><circle class="fg" id="ringFg" cx="29" cy="29" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8" transform="rotate(-90 29 29)"/><text x="29" y="33.5" text-anchor="middle" id="ringTxt">0/0</text></svg>
       <div class="streak" id="streak"></div>
     </div>
-    <div class="hbtns"><button class="iconb" id="aiBtn" title="Pídeselo a Claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="printBtn" title="Imprimir mi semana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="chatBtn" title="Chat del equipo" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a7.5 7.5 0 0 1-11 6.6L4 20l1.1-4.2A7.5 7.5 0 1 1 20 12.5z"/></svg><span class="cbadge" hidden></span></button><button class="iconb" id="gear" title="Ajustes"></button></div>
+    <div class="hbtns"><button class="iconb" id="alarmBtn" title="Alarmas"></button><button class="iconb" id="aiBtn" title="Pídeselo a Claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9L19 9.7l-5.2 1.9L12 16.5l-1.8-4.9L5 9.7l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button><button class="iconb" id="searchBtn" title="Buscar (Ctrl + K)"></button><button class="iconb" id="printBtn" title="Imprimir mi semana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg></button><button class="iconb" id="statsBtn" title="Resumen de tu semana"></button><button class="iconb" id="chatBtn" title="Chat del equipo" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a7.5 7.5 0 0 1-11 6.6L4 20l1.1-4.2A7.5 7.5 0 1 1 20 12.5z"/></svg><span class="cbadge" hidden></span></button><button class="iconb" id="gear" title="Ajustes"></button></div>
   </header>
 
   <div class="add">
@@ -1934,6 +1953,7 @@ function addTask(){
   else if(S.view==='hechas')toast('Agregada ✓ La verás en «Hoy»');
   if(e.time&&notifState()==='default')S.bannerOff=false;
   renderAdd();renderList();$('#txt').focus();
+  if(t.date&&t.time)setTimeout(()=>{try{alarmSuggest(t.date)}catch(e){}},700);
 }
 
 /* ---------- ventanas ---------- */
@@ -3048,9 +3068,9 @@ function dueWhen(x){const mins=Math.round((dueMs(x)-Date.now())/6e4);
   return mins>0?'En '+mins+' min, a las '+fmtTime(x.time):mins>=-1?'Es ahora':'Era a las '+fmtTime(x.time)}
 function renderDueQ(due){
   let ov=$('#dueq');
-  if(!due||!due.length||!ME){if(ov)ov.remove();return}
+  if(!due||!due.length||!ME){if(ov){ov.remove();ringStop()}return}
   if(!ov){ov=h('div','dueq');ov.id='dueq';ov.setAttribute('role','alertdialog');ov.setAttribute('aria-modal','true');document.body.append(ov);
-    ov.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation()}},true)}
+    ov.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation()}},true);ov.addEventListener('pointerdown',()=>{if(!$('#ringov'))ringStop()})}
   const sig=due.map(x=>x.id+x.date+x.time).join(',');if(ov.dataset.sig===sig){ov.querySelectorAll('.dq-w').forEach((w,k)=>{if(due[k])w.textContent=dueWhen(due[k])});return}
   ov.dataset.sig=sig;ov.innerHTML='';
   const box=h('div','dq-box');
@@ -3088,7 +3108,7 @@ function tick(){
   // tareas con hora cuyo aviso ya llegó: salen en un aviso que no se va hasta que las marques o pospongas
   const due=dueNow(),fresh=[];
   due.forEach(x=>{const key=x.date+'|'+x.time+'|'+x.remind+'|'+(x.snooze||'');if(x.alerted!==key){x.alerted=key;fresh.push(x)}});
-  if(fresh.length){save();sfx('alert');fresh.slice(0,3).forEach(x=>{const l=listOf(x.list);sysNotify(x.text,dueWhen(x)+(l?' · '+l.name:''),()=>openDetail(x),x.id)});if(document.hidden){unseen+=fresh.length;document.title='('+unseen+') ⏰ Kivo'}if(window.kivo)kivo.attention(unseen||fresh.length)}
+  if(fresh.length){save();if(S.loud!==false)ringStart(90*1000);else sfx('alert');fresh.slice(0,3).forEach(x=>{const l=listOf(x.list);sysNotify(x.text,dueWhen(x)+(l?' · '+l.name:''),()=>openDetail(x),x.id)});if(document.hidden){unseen+=fresh.length;document.title='('+unseen+') ⏰ Kivo'}if(window.kivo)kivo.attention(unseen||fresh.length)}
   renderDueQ(due);
   if(S.lastMorning!==t&&hm>=S.morning){
     S.lastMorning=t;save();const op=open().filter(mineOrFree),td=op.filter(x=>x.date===t),late=op.filter(x=>x.date&&x.date<t);
@@ -3096,6 +3116,7 @@ function tick(){
   }
   if(S.lastEvening!==t&&hm>=S.evening){
     S.lastEvening=t;save();const tm=open().filter(mineOrFree).filter(x=>x.date===plus(1));
+    setTimeout(()=>{try{alarmSuggest(plus(1),true)}catch(e){}},4000);
     if(tm.length)fireSummary('🌙 Para mañana tienes '+tm.length+' pendiente'+(tm.length>1?'s':''),listTxt(tm),'prox');
   }
   const dow=d.getDay();let wk=null,off=0;
@@ -3189,6 +3210,7 @@ function openSettings(jump){
     const sws=(label,on,fn)=>{const r=h('div','switch');r.append(h('span','',label));const t=h('button','tog'+(on?' on':''));t.onclick=()=>{fn();draw()};r.append(t);al.append(r)};
     sws('Avisarme de mis pendientes',S.alerts,()=>{S.alerts=!S.alerts;save();renderList()});
     sws('Sonido',S.sound,()=>{S.sound=!S.sound;save();if(S.sound)sfx('alert')});
+    sws('Sonar como alarma cuando llega la hora',S.loud!==false,()=>{S.loud=S.loud===false;save();if(S.loud)ringStart(2500)});
     sws('Avisarme lo que hace mi equipo',S.teamAlerts,()=>{S.teamAlerts=!S.teamAlerts;save()});
     const ns=notifState();const nr=h('div','switch');
     nr.append(h('span','','Avisos del sistema (fuera de la app)'));
@@ -4010,6 +4032,7 @@ function scheduleNative(){clearTimeout(natT);natT=setTimeout(async()=>{
   const now=Date.now(),lim=now+10*864e5,out=[];
   if(S.alerts)open().filter(mineOrFree).forEach(x=>{if(!x.date||!x.time||x.remind==='none')return;const at=dueMs(x)-Number(x.remind||0)*6e4;if(at>now+3e4&&at<lim){const l=listOf(x.list);out.push({id:nid(x.id+'|'+x.date+x.time),title:noEmo(x.text),body:(Number(x.remind)?'En '+(Number(x.remind)>=60?Number(x.remind)/60+' h':x.remind+' min')+', a las ':'Ahora, ')+fmtTime(x.time)+(l?' · '+l.name:''),schedule:{at:new Date(at),allowWhileIdle:true},extra:{task:x.id}})}});
   if(S.alerts)for(let i=0;i<8;i++){const ds=plus(i),dow=pd(ds).getDay();schedLists().forEach(l=>slotsOf(l).forEach(s=>{if(!(s.d||[]).includes(dow))return;const at=atMs(ds,s.s)-6e5;if(at>now+3e4&&at<lim)out.push({id:nid(l.id+s.id+ds),title:noEmo((TPL[l.kind].sched==='class'?'Clase en 10 min: ':'En 10 min: ')+s.label),body:fmtTime(s.s)+(s.room?' · '+s.room:'')+' · '+l.name,schedule:{at:new Date(at),allowWhileIdle:true}})}))}
+  try{alarmArr().filter(a=>a.on).forEach(a=>{for(let i=0;i<8;i++){const ds=plus(i);if(a.date?a.date!==ds:!(a.d||[]).includes(pd(ds).getDay()))continue;const at=atMs(ds,a.t);if(at>now+3e4&&at<lim)out.push({id:nid('al'+a.id+ds),title:'⏰ '+(a.label||'Alarma'),body:'Son las '+fmtTime(a.t)+' · abre Kivo para detenerla',schedule:{at:new Date(at),allowWhileIdle:true},extra:{alarm:a.id}})}})}catch(e){}
   out.sort((a,b)=>a.schedule.at-b.schedule.at);
   try{const pend=await P.getPending();if(pend.notifications&&pend.notifications.length)await P.cancel({notifications:pend.notifications.map(n=>({id:n.id}))});if(out.length)await P.schedule({notifications:out.slice(0,60)})}catch(e){console.warn('avisos',e)}
 },1500)}
@@ -4712,6 +4735,9 @@ function renderSide(){
     if(!closed)ls.forEach(l=>sd.append(row(l)));
   });
   const nb=h('button','ls-new','<span>+</span>Nueva lista');nb.onclick=()=>openListEditor();sd.append(nb);
+  {const on=alarmArr().filter(a=>a.on);const nx=on.map(a=>alarmNext(a)).filter(Boolean).sort((a,b)=>a-b)[0];
+   const ab=h('button','ls-alarm',`<span class="ls-aic">${IC_ALARM}</span><span><b>Crear alarma</b>${nx?`<small>Próxima: ${esc(whenTxt(iso(new Date(nx))))} ${esc(fmtTime(pad(new Date(nx).getHours())+':'+pad(new Date(nx).getMinutes())))}</small>`:on.length?'':'<small>Para levantarte o alistarte</small>'}</span>`);
+   ab.onclick=()=>openAlarms(alarmArr().length?null:'new');sd.append(ab)}
   SIDEFRESH=null;
 }
 let SIDEFRESH=null;
@@ -4767,6 +4793,103 @@ function fixedEditor(){
 }
 function openFixed(){const box=h('div','mpad');mhead('Mi horario fijo',box);box.append(h('p','small-note','Lo que no se mueve: clases, Arquizo, comidas, el live del domingo…'));box.append(fixedEditor());
   const f=h('div','foot');f.append(h('div','grow'));const ok=h('button','btn primary','Listo');ok.onclick=closeModal;f.append(ok);box.append(f);openModal(box,{onClose:()=>{fixedSave();renderAll()}})}
+
+/* ---- Alarmas (tipo despertador) y sonido fuerte en los avisos ---- */
+const IC_ALARM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 2"/><path d="M5 3.5 2.5 6M19 3.5 21.5 6"/></svg>';
+function alarmArr(){if(!Array.isArray(S.alarms))S.alarms=[];return S.alarms}
+function alarmSync(){const hm=fixedHome();if(!hm)return;const m=metaOf(hm);if(Array.isArray(m.alarms)&&(m.alarmsAt||0)>(S.alarmsAt||0)){S.alarms=JSON.parse(JSON.stringify(m.alarms));S.alarmsAt=m.alarmsAt}}
+function alarmSave(){alarmArr().forEach(a=>{a.id=a.id||uid()});S.alarmsAt=Date.now();const hm=fixedHome();if(hm&&!NOMETA){const m=metaOf(hm);m.alarms=JSON.parse(JSON.stringify(S.alarms));m.alarmsAt=S.alarmsAt}save();try{renderSide()}catch(e){}try{scheduleNative()}catch(e){}}
+const alarmWhen=a=>a.date?cap(whenTxt(a.date)):(a.d&&a.d.length===7?'Todos los días':(a.d||[]).length?WEEK.filter(d=>a.d.includes(d)).map(d=>DAYS[d]).join(', '):'Sin días');
+// próxima vez que suena (ms) a partir de «desde»
+function alarmNext(a,from){if(!a.on||!a.t)return null;from=from||Date.now();
+  if(a.date){const t=atMs(a.date,a.t);return t>=from-6e5?t:null}
+  for(let i=0;i<9;i++){const ds=plus(i);if(!(a.d||[]).includes(pd(ds).getDay()))continue;const t=atMs(ds,a.t);if(t>=from-6e5)return t}return null}
+let RUNG={};try{RUNG=JSON.parse(localStorage.getItem('kivo-rung')||'{}')||{}}catch(e){RUNG={}}
+function rungSave(){const lim=Date.now()-3*864e5;Object.keys(RUNG).forEach(k=>{if(RUNG[k]<lim)delete RUNG[k]});try{localStorage.setItem('kivo-rung',JSON.stringify(RUNG))}catch(e){}}
+let ALSNZ={};
+function alarmTick(){
+  if(!ME||!S.onboarded)return;const now=Date.now();
+  alarmArr().forEach(a=>{
+    if(ALSNZ[a.id]&&now>=ALSNZ[a.id]){delete ALSNZ[a.id];ringAlarm(a);return}
+    const t=alarmNext(a,now);if(!t||now<t||now-t>10*6e4)return;
+    const key=a.id+'|'+new Date(t).toISOString().slice(0,16);if(RUNG[key])return;RUNG[key]=now;rungSave();
+    if(a.date){a.on=false;alarmSave()}
+    ringAlarm(a);
+  });
+}
+/* sonido de alarma: pitidos fuertes que se repiten hasta que lo detengas */
+let RING=null;
+function ringStart(maxMs,soft){
+  ringStop();const c=ac();if(!c)return;
+  const beep=()=>{if(!S.sound)return;const t=c.currentTime;[0,.18,.36].forEach((dl,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.setValueAtTime(i===2?1320:988,t+dl);g.gain.setValueAtTime(0,t+dl);g.gain.linearRampToValueAtTime(soft?.09:.22,t+dl+.01);g.gain.setValueAtTime(soft?.09:.22,t+dl+.12);g.gain.linearRampToValueAtTime(0,t+dl+.15);o.connect(g);g.connect(c.destination);o.start(t+dl);o.stop(t+dl+.17)})};
+  beep();const iv=setInterval(beep,1100);RING={iv,end:setTimeout(ringStop,maxMs||10*6e4)};
+  try{if(navigator.vibrate)navigator.vibrate([400,200,400,200,400])}catch(e){}
+}
+function ringStop(){if(!RING)return;clearInterval(RING.iv);clearTimeout(RING.end);RING=null;try{if(navigator.vibrate)navigator.vibrate(0)}catch(e){}}
+function ringAlarm(a){
+  const now=new Date();sysNotify('⏰ '+(a.label||'Alarma'),'Son las '+fmtTime(pad(now.getHours())+':'+pad(now.getMinutes())),null,'alarma-'+a.id);
+  try{if(window.kivo&&kivo.show)kivo.show();if(window.kivo)kivo.attention(1)}catch(e){}
+  let ov=$('#ringov');if(ov)ov.remove();ov=h('div','ringov');ov.id='ringov';
+  const box=h('div','rg-box');
+  box.innerHTML=`<div class="rg-ic">${IC_ALARM}</div><div class="rg-t">${esc(fmtTime(pad(now.getHours())+':'+pad(now.getMinutes())))}</div><div class="rg-l">${esc(a.label||'Alarma')}</div>`;
+  const nx=open().filter(mineOrFree).filter(x=>x.date===today()&&x.time&&x.time>=pad(now.getHours())+':'+pad(now.getMinutes())).sort(sortT)[0];
+  if(nx)box.append(h('div','rg-n',`Lo primero de hoy: <b>${esc(nx.text)}</b> a las ${esc(fmtTime(nx.time))}`));
+  if(AC&&AC.state!=='running')box.append(h('div','rg-tap','Toca la pantalla para que suene'));
+  const bt=h('div','rg-b');const st=h('button','btn primary','Detener');const sn=h('button','btn','Posponer 5 min');
+  st.onclick=()=>{ringStop();ov.remove()};sn.onclick=()=>{ringStop();ov.remove();ALSNZ[a.id]=Date.now()+5*6e4;toast('Vuelve a sonar en 5 minutos ⏰')};
+  bt.append(st,sn);box.append(bt);ov.append(box);document.body.append(ov);
+  ov.addEventListener('pointerdown',()=>{const c=ac();if(c&&c.state!=='running')c.resume();const tp=ov.querySelector('.rg-tap');if(tp)tp.remove()});
+  ringStart(10*6e4);
+}
+function openAlarms(edit){
+  const box=h('div','mpad');mhead('Alarmas',box);
+  box.append(h('p','small-note','Suenan fuerte en esta compu, tu tableta y tu celular (con Kivo abierto) hasta que las detengas.'));
+  const ls=h('div','al-list');
+  const draw=()=>{ls.innerHTML='';const arr=alarmArr().slice().sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+    if(!arr.length)ls.append(h('div','small-note al-empty','Aún no tienes alarmas.'));
+    arr.forEach(a=>{const r=h('div','al-r'+(a.on?'':' off'));
+      r.append(h('div','al-x',`<b>${esc(fmtTime(a.t))}</b><small>${esc(a.label||'Alarma')} · ${esc(alarmWhen(a))}</small>`));
+      const tg=h('button','tog'+(a.on?' on':''));tg.title=a.on?'Apagar':'Encender';tg.onclick=()=>{a.on=!a.on;if(a.on&&a.date&&atMs(a.date,a.t)<Date.now())a.date=atMs(today(),a.t)>Date.now()?today():plus(1);alarmSave();draw()};
+      const ed=h('button','iconb sm','✎');ed.title='Editar';ed.onclick=()=>form(a);
+      const del=h('button','iconb sm','🗑');del.title='Borrar';del.onclick=()=>{S.alarms=alarmArr().filter(z=>z!==a);alarmSave();draw()};
+      r.append(tg,ed,del);ls.append(r)})};
+  const fm=h('div','al-form');
+  const form=(a)=>{fm.innerHTML='';const isNew=!a;a=a?JSON.parse(JSON.stringify(a)):{id:uid(),t:'07:00',label:'',on:true,d:[],date:plus(1)};
+    let mode=a.date?'once':'rep';
+    const tm=h('input','field al-time');tm.type='time';tm.value=a.t;
+    const lb=h('input','field');lb.placeholder='Nombre (ej. Levantarme, Alistarme)';lb.value=a.label||'';
+    const sg=h('div','seg');const rows=h('div');
+    const drawMode=()=>{sg.innerHTML='';[['once','Una vez'],['rep','Se repite']].forEach(([k,l])=>{const b=h('button',mode===k?'on':'',l);b.onclick=()=>{mode=k;drawMode()};sg.append(b)});
+      rows.innerHTML='';if(mode==='once'){const di=h('input','field');di.type='date';di.value=a.date||plus(1);di.onchange=()=>{a.date=di.value};rows.append(di)}
+      else{const dd=h('div','dchips');a.d=a.d&&a.d.length?a.d:[1,2,3,4,5];WEEK.forEach(d=>{const b=h('button',a.d.includes(d)?'on':'',DAYS[d][0]+(d===3?'i':''));b.title=cap(DAYL[d]);b.onclick=()=>{a.d=a.d.includes(d)?a.d.filter(z=>z!==d):a.d.concat(d);b.classList.toggle('on')};dd.append(b)});rows.append(dd)}};
+    drawMode();
+    const ok=h('button','btn primary',isNew?'Crear alarma':'Guardar');ok.onclick=()=>{a.t=tm.value||a.t;a.label=lb.value.trim();a.on=true;
+      if(mode==='once'){a.date=a.date||plus(1);a.d=[]}else{a.date='';if(!a.d.length){toast('Elige al menos un día');return}}
+      const i=alarmArr().findIndex(z=>z.id===a.id);if(i>=0)S.alarms[i]=a;else S.alarms.push(a);alarmSave();fm.innerHTML='';fm.append(addB);draw();
+      const nt=alarmNext(a);toast('Alarma lista'+(nt?' · suena '+whenTxt(iso(new Date(nt))).toLowerCase()+' a las '+fmtTime(a.t):''))};
+    const cn=h('button','btn ghost','Cancelar');cn.onclick=()=>{fm.innerHTML='';fm.append(addB)};
+    const r1=h('div','al-f1');r1.append(tm,lb);const f=h('div','foot');f.append(cn,h('div','grow'),ok);
+    fm.append(r1,sg,rows,f);setTimeout(()=>tm.focus(),50)};
+  const addB=h('button','btn primary al-add','＋ Nueva alarma');addB.onclick=()=>form();fm.append(addB);
+  draw();box.append(ls,fm);
+  const tst=h('button','btn ghost al-test','🔊 Probar el sonido');tst.onclick=()=>{if(RING){ringStop();tst.textContent='🔊 Probar el sonido'}else{ringStart(4000);tst.textContent='■ Detener prueba';setTimeout(()=>tst.textContent='🔊 Probar el sonido',4000)}};box.append(tst);
+  openModal(box,{onClose:()=>{ringStop();renderAll()}});
+  if(edit==='new')form();else if(edit)form(edit);
+}
+// ¿Pongo una alarma una hora antes de lo primero del día?
+function alarmSuggest(ds,auto){
+  if(!ds||!S.alerts)return;S.alSug=S.alSug||{};if(S.alSug[ds])return;
+  const first=open().filter(mineOrFree).filter(x=>x.date===ds&&x.time).sort(sortT)[0];if(!first||first.time>'12:00')return;
+  const dow=pd(ds).getDay();if(alarmArr().some(a=>a.on&&a.t<=first.time&&(a.date===ds||(!a.date&&(a.d||[]).includes(dow)))))return;
+  const at=atMs(ds,first.time)-36e5;if(at<Date.now()+10*6e4)return;
+  S.alSug[ds]=1;save();const t=fromMin(Math.max(0,toMin(first.time)-60));
+  const dia=ds===plus(1)?'Mañana':ds===today()?'Hoy':cap(whenTxt(ds));
+  inAppAlert('⏰ '+dia+' empiezas a las '+fmtTime(first.time),'Lo primero: «'+first.text+'». ¿Te pongo una alarma a las '+fmtTime(t)+' para que te alistes?',[
+    ['Poner alarma '+fmtTime(t),()=>{alarmArr().push({id:uid(),t,label:'Alistarme · '+first.text,on:true,d:[],date:ds});alarmSave();sfx('done');toast('Alarma lista para las '+fmtTime(t)+' ⏰')},true],
+    ['Otra hora',()=>{openAlarms({id:uid(),t,label:'Alistarme · '+first.text,on:true,d:[],date:ds})}],
+    ['No, gracias',()=>{}]],auto?60000:30000);
+}
+setInterval(()=>{try{alarmTick()}catch(e){}},5000);
 
 /* ---- Seguimiento automático de cotizaciones ---- */
 function cotFollow(q){
@@ -5095,7 +5218,7 @@ function fmtDur(s){s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+St
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&CHAT.open)chatMarkRead(CHAT.open)});
 
-function renderAll(){try{fixedSync()}catch(e){}applyLook();renderHeader();renderAdd();renderList();try{cotAutoFlag();renderDock()}catch(e){console.warn(e)}try{if(!CHAT.ready)chatInit();chatBadges();if(CHAT.open)chatHeader()}catch(e){}}
+function renderAll(){try{fixedSync()}catch(e){}try{alarmSync()}catch(e){}applyLook();renderHeader();renderAdd();renderList();try{cotAutoFlag();renderDock()}catch(e){console.warn(e)}try{if(!CHAT.ready)chatInit();chatBadges();if(CHAT.open)chatHeader()}catch(e){}}
 let lastDay=today();
 function checkDay(){if(today()!==lastDay){lastDay=today();if(D.date<today())D.date=today();renderAll()}}
 $('#txt').addEventListener('input',renderAdd);
@@ -5104,6 +5227,7 @@ $('#go').onclick=addTask;
 $('#emoBtn').onclick=()=>emojiPicker(e=>{D.emoji=e;renderAdd();$('#txt').focus()},true);
 $('#gear').onclick=()=>openSettings();
 $('#searchBtn').onclick=openSearch;
+$('#alarmBtn').innerHTML=IC_ALARM;$('#alarmBtn').onclick=()=>openAlarms(alarmArr().length?null:'new');
 $('#aiBtn').onclick=openAI;
 $('#printBtn').onclick=openPrint;
 $('#statsBtn').onclick=()=>{statsOff=0;openStats()};
