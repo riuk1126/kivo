@@ -1,5 +1,5 @@
 // Kivo · programa de escritorio
-const { app, BrowserWindow, Tray, Menu, shell, nativeImage, ipcMain, session, Notification, protocol } = require('electron');
+const { app, BrowserWindow, Tray, Menu, shell, nativeImage, ipcMain, session, Notification, protocol, globalShortcut, screen } = require('electron');
 const fs = require('fs');
 
 // Archivos grandes de la app (modelo de voz) servidos por un protocolo propio
@@ -45,6 +45,7 @@ if (!app.requestSingleInstanceLock()) {
     });
     createWin();
     createTray();
+    setupQuick();
     setupUpdates();
   });
 }
@@ -274,4 +275,36 @@ function checkUpdates(manual) {
 
 app.on('activate', showWin); // Mac: clic en el ícono del Dock
 app.on('before-quit', () => { quitting = true; });
+app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch (e) {} });
+
+// ---------- Agregar rápido desde cualquier programa (Ctrl + Shift + Espacio) ----------
+const QUICK_KEY = 'CommandOrControl+Shift+Space';
+let quick = null;
+function showQuick() {
+  if (!quick || quick.isDestroyed()) {
+    quick = new BrowserWindow({
+      width: 560, height: 132, frame: false, resizable: false, movable: true, alwaysOnTop: true, skipTaskbar: true,
+      show: false, fullscreenable: false, minimizable: false, maximizable: false, transparent: true, hasShadow: true,
+      webPreferences: { preload: path.join(__dirname, 'quick-preload.js'), contextIsolation: true, sandbox: true }
+    });
+    quick.loadFile(path.join(__dirname, 'app', 'quick.html'));
+    quick.on('blur', () => { if (quick && !quick.isDestroyed()) quick.hide(); });
+  }
+  const pt = screen.getCursorScreenPoint();
+  const wa = screen.getDisplayNearestPoint(pt).workArea;
+  quick.setBounds({ x: Math.round(wa.x + (wa.width - 560) / 2), y: Math.round(wa.y + wa.height * 0.22), width: 560, height: 132 });
+  quick.show(); quick.focus();
+  quick.webContents.send('kq:open');
+}
+function setupQuick() {
+  try { globalShortcut.register(QUICK_KEY, showQuick); } catch (e) {}
+}
+ipcMain.on('kq:add', (e, text) => {
+  text = String(text || '').trim().slice(0, 300);
+  if (quick && !quick.isDestroyed()) quick.hide();
+  if (!text) return;
+  if (win && !win.isDestroyed()) win.webContents.send('kivo:quick', text);
+});
+ipcMain.on('kq:close', () => { if (quick && !quick.isDestroyed()) quick.hide(); });
+ipcMain.handle('kivo:quick-key', () => ({ key: QUICK_KEY, ok: globalShortcut.isRegistered(QUICK_KEY) }));
 app.on('window-all-closed', () => { /* sigue en segundo plano */ });

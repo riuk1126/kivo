@@ -16,5 +16,7 @@ contextBridge.exposeInMainWorld('kivo', {
   updateState: () => ipcRenderer.invoke('kivo:update-state'),
   checkUpdate: () => ipcRenderer.invoke('kivo:check-update'),
   installUpdate: () => ipcRenderer.send('kivo:install-update'),
-  onUpdate: (cb) => ipcRenderer.on('kivo:update', (e, s) => cb(s))
+  onUpdate: (cb) => ipcRenderer.on('kivo:update', (e, s) => cb(s)),
+  onQuick: (cb) => ipcRenderer.on('kivo:quick', (e, t) => cb(t)),
+  quickKey: () => ipcRenderer.invoke('kivo:quick-key')
 });
