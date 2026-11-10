@@ -1226,6 +1226,10 @@ button.cl-r:hover{background:var(--fill)}
 @media (max-width:1000px){.crm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-low{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:560px){.crm-kpi .v{font-size:21px}.crm-fields{grid-template-columns:minmax(0,1fr)}.crm-fields dt{margin-bottom:-6px}.crm-form{grid-template-columns:minmax(0,1fr)}.crmv .cotv-h{flex-wrap:wrap;row-gap:6px}.crmv .cotv-h .grow{flex-basis:100%;height:0}}
 @media (prefers-reduced-motion:reduce){.crm-dr,.crm-scrim,.crm-col{transition:none}}
+/* ---- más fluido en tableta y celular: sin desenfoques ni fondo fijo ---- */
+@media (hover:none){body{background-attachment:scroll!important}*,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.ov{background:rgba(0,0,0,.4)!important}}
+.crm-low,.wk-wrap{content-visibility:auto;contain-intrinsic-size:auto 420px}
+.dq-snd{display:block;width:100%;background:#ff9f0a;color:#fff;font-weight:700;font-size:14px;padding:10px;text-align:center}
 /* ---- aviso que insiste (pendientes con hora) ---- */
 .dueq{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:dqin .2s ease}
 @keyframes dqin{from{opacity:0}to{opacity:1}}
@@ -2979,7 +2983,7 @@ function setDone(x,done){
   if(done){
     x.status='done';x.doneAt=Date.now();x.doneOn=today();x.snooze=null;x.doneBy=ME;x.progress=100;
     {const T=tplOf(listOf(x.list));if(T)x.stage=T.stages[T.stages.length-1]}
-    if(x.repeat&&!x.spawned){x.spawned=true;const n=fixTask(JSON.parse(JSON.stringify(x)));Object.assign(n,{id:uid(),owner:ME,progress:0,doneBy:null,stage:null,status:'todo',doneAt:null,doneOn:null,doneNote:'',mood:'',alerted:'',spawned:false,date:nextDate(x.date,x.repeat),at:Date.now()});n.subtasks.forEach(s=>{s.done=false;s.id=uid()});S.tasks.push(n)}
+    if(x.repeat&&!x.spawned){x.spawned=true;const n=fixTask(JSON.parse(JSON.stringify(x)));Object.assign(n,{id:uid(),owner:ME,progress:0,doneBy:null,stage:null,status:'todo',doneAt:null,doneOn:null,doneNote:'',mood:'',alerted:'',spawned:false,date:nextDate(x.date,x.repeat),at:Date.now()});{let g=0;while(n.time&&n.date===today()&&atMs(n.date,n.time)<=Date.now()&&g++<3)n.date=nextDate(n.date,x.repeat)}n.subtasks.forEach(s=>{s.done=false;s.id=uid()});S.tasks.push(n)}
   }else{x.status='todo';x.doneAt=null;x.doneOn=null;x.doneBy=null;if(x.progress===100)x.progress=0;const T=tplOf(listOf(x.list));if(T&&x.stage===T.stages[T.stages.length-1])x.stage=T.stages[T.stages.length-2]}
   save();
 }
@@ -3140,13 +3144,14 @@ function renderDueQ(due){
   const sig=due.map(x=>x.id+x.date+x.time).join(',');if(ov.dataset.sig===sig){ov.querySelectorAll('.dq-w').forEach((w,k)=>{if(due[k])w.textContent=dueWhen(due[k])});return}
   ov.dataset.sig=sig;ov.innerHTML='';
   const box=h('div','dq-box');
+  if(S.sound&&S.loud!==false&&(!AC||AC.state!=='running'))box.append(h('button','dq-snd','🔇 Toca aquí para que suenen las alertas'));
   box.append(h('div','dq-h',`<span class="dq-ic">⏰</span><div><b>${due.length===1?'Tienes un pendiente por atender':'Tienes '+due.length+' pendientes por atender'}</b><small>Márcalo como hecho o pospónlo. Este aviso vuelve hasta que lo hagas.</small></div>`));
   const ls=h('div','dq-list');
-  const act=(x,fn)=>()=>{fn();x.alerted='';save();renderList();renderDueQ(dueNow())};
+  const act=(x,fn)=>()=>{try{fn()}catch(e){console.warn('aviso',e)}x.alerted='';save();try{renderList()}catch(e){}renderDueQ(dueNow());try{scheduleNative()}catch(e){}};
   due.forEach(x=>{const l=listOf(x.list);const r=h('div','dq-r'+(x.date<today()?' late':''));
     const tx=h('button','dq-t',`<b>${esc(x.text)}</b><small><span class="dq-w">${esc(dueWhen(x))}</span>${l?' · '+esc(l.name):''}</small>`);tx.title='Ver la tarea';
     tx.onclick=act(x,()=>{x.snooze=Date.now()+5*6e4;setTimeout(()=>openDetail(x),50)});
-    const ok=h('button','btn primary dq-ok','✓ Hecha');ok.onclick=()=>{const b=ok.getBoundingClientRect();act(x,()=>{x.snooze=null;setDone(x,true);sfx('done');burst(b.left+b.width/2,b.top,24,6)})()};
+    const ok=h('button','btn primary dq-ok','✓ Hecha');ok.onclick=()=>{const b=ok.getBoundingClientRect();ringStop();act(x,()=>{x.snooze=null;setDone(x,true)})();try{sfx('done');burst(b.left+b.width/2,b.top,24,6)}catch(e){}};
     const s10=h('button','btn','10 min');s10.onclick=act(x,()=>{x.snooze=Date.now()+6e5;toast('Te aviso en 10 minutos ⏳')});
     const s60=h('button','btn','1 hora');s60.onclick=act(x,()=>{x.snooze=Date.now()+36e5;toast('Te aviso en 1 hora ⏳')});
     const tm=h('button','btn','Mañana');tm.onclick=act(x,()=>{x.date=plus(1);x.snooze=null;toast('Movida para mañana a las '+fmtTime(x.time))});
@@ -3172,8 +3177,9 @@ function tick(){
   if(!S.alerts||!S.onboarded)return;
   const now=Date.now(),t=today(),d=new Date(),hm=pad(d.getHours())+':'+pad(d.getMinutes());
   // tareas con hora cuyo aviso ya llegó: salen en un aviso que no se va hasta que las marques o pospongas
-  const due=dueNow(),fresh=[];
+  const due=dueNow(),fresh=[];const boot=!tick.ran;tick.ran=true;
   due.forEach(x=>{const key=x.date+'|'+x.time+'|'+x.remind+'|'+(x.snooze||'');if(x.alerted!==key){x.alerted=key;fresh.push(x)}});
+  if(!fresh.length&&boot&&due.length){if(S.loud!==false)ringStart(60*1000);else sfx('alert')}
   if(fresh.length){save();if(S.loud!==false)ringStart(90*1000);else sfx('alert');fresh.slice(0,3).forEach(x=>{const l=listOf(x.list);sysNotify(x.text,dueWhen(x)+(l?' · '+l.name:''),()=>openDetail(x),x.id)});if(document.hidden){unseen+=fresh.length;document.title='('+unseen+') ⏰ Kivo'}if(window.kivo)kivo.attention(unseen||fresh.length)}
   renderDueQ(due);
   if(S.lastMorning!==t&&hm>=S.morning){
@@ -3200,7 +3206,10 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){unseen=0;
 /* ---------- sonidos ---------- */
 let AC=null;
 function ac(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
-document.addEventListener('pointerdown',()=>ac(),{once:true});
+function audioUnlock(){try{const c=ac();if(!c)return;if(c.state!=='running')c.resume();if(!audioUnlock.done){const b=c.createBuffer(1,1,22050),src=c.createBufferSource();src.buffer=b;src.connect(c.destination);src.start(0);audioUnlock.done=true}
+  const hint=document.querySelector('.dq-snd');if(hint&&c.state==='running')hint.remove()}catch(e){}}
+['pointerup','touchend','keydown','click'].forEach(ev=>document.addEventListener(ev,audioUnlock,{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&AC&&AC.state!=='running')try{AC.resume()}catch(e){}});
 function sfx(kind){
   if(!S.sound)return;const c=ac();if(!c)return;const t=c.currentTime;
   if(kind==='chat'||kind==='chatsoft'||kind==='sent'){const N=kind==='chat'?[[988,0,.16],[1319,.11,.14]]:kind==='chatsoft'?[[1175,0,.07]]:[[740,0,.06],[1100,.05,.05]];
@@ -4100,6 +4109,7 @@ function scheduleNative(){clearTimeout(natT);natT=setTimeout(async()=>{
   if(S.alerts)for(let i=0;i<8;i++){const ds=plus(i),dow=pd(ds).getDay();schedLists().forEach(l=>slotsOf(l).forEach(s=>{if(!(s.d||[]).includes(dow))return;const at=atMs(ds,s.s)-6e5;if(at>now+3e4&&at<lim)out.push({id:nid(l.id+s.id+ds),title:noEmo((TPL[l.kind].sched==='class'?'Clase en 10 min: ':'En 10 min: ')+s.label),body:fmtTime(s.s)+(s.room?' · '+s.room:'')+' · '+l.name,schedule:{at:new Date(at),allowWhileIdle:true}})}))}
   try{alarmArr().filter(a=>a.on).forEach(a=>{for(let i=0;i<8;i++){const ds=plus(i);if(a.date?a.date!==ds:!(a.d||[]).includes(pd(ds).getDay()))continue;const at=atMs(ds,a.t);if(at>now+3e4&&at<lim)out.push({id:nid('al'+a.id+ds),title:'⏰ '+(a.label||'Alarma'),body:'Son las '+fmtTime(a.t)+' · abre Kivo para detenerla',schedule:{at:new Date(at),allowWhileIdle:true},extra:{alarm:a.id}})}})}catch(e){}
   out.sort((a,b)=>a.schedule.at-b.schedule.at);
+  const sig=JSON.stringify(out.slice(0,60).map(n=>[n.id,+n.schedule.at,n.title]));if(sig===scheduleNative.sig)return;scheduleNative.sig=sig;
   try{const pend=await P.getPending();if(pend.notifications&&pend.notifications.length)await P.cancel({notifications:pend.notifications.map(n=>({id:n.id}))});if(out.length)await P.schedule({notifications:out.slice(0,60)})}catch(e){console.warn('avisos',e)}
 },1500)}
 // ¿Hay una versión nueva del APK?
@@ -4210,7 +4220,7 @@ async function cotRPC(d){
     if(d.op==='set'){
       if(p.startsWith('config/')){const key=p.slice(7);const ex=await sb.from('cot_config').select('key').eq('team',t.id).eq('key',key).limit(1);if(ex.error)throw ex.error;
         const r=ex.data&&ex.data.length?await sb.from('cot_config').update({data:a.v}).eq('team',t.id).eq('key',key):await sb.from('cot_config').insert({team:t.id,key,data:a.v});if(r.error)throw r.error;return reply(true)}
-      if(p.startsWith('cotizaciones/')){const id=p.slice(13);if(a.v&&typeof a.v==='object'){if(!a.v.autor){a.v.autor=pname(ME);a.v.autorId=ME}a.v.editadoPor=pname(ME)}const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
+      if(p.startsWith('cotizaciones/')){const id=p.slice(13);if(a.v&&typeof a.v==='object'){if(!a.v.autor){a.v.autor=pname(ME);a.v.autorId=ME}a.v.editadoPor=pname(ME);a.v.editadoPorId=ME}const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
         const ex=await sb.from('cotizaciones').select('id').eq('id',id).limit(1);if(ex.error)throw ex.error;
         const r=ex.data&&ex.data.length?await sb.from('cotizaciones').update(row).eq('id',id):await sb.from('cotizaciones').insert(Object.assign({id,team:t.id},row));if(r.error)throw r.error;cotSnap();try{cotFollow(a.v)}catch(e){console.warn(e)}return reply(true)}
     }
@@ -5044,7 +5054,7 @@ const crmDays=ms=>Math.floor((Date.now()-ms)/864e5);
 const crmMonth=ms=>{const d=new Date(ms);return d.getFullYear()*12+d.getMonth()};
 const crmAgo=ms=>{if(!ms)return '—';const t=new Date();t.setHours(0,0,0,0);const d=new Date(ms);d.setHours(0,0,0,0);const k=Math.round((t-d)/864e5);return k<=0?'Hoy':k===1?'Ayer':'Hace '+k+' días'};
 const crmMembers=()=>{const t=cotTeam();return t?(LMEM[t.id]||[ME]):[ME]};
-function crmOwnerOf(q){if(!q||!q.autor)return null;const n=norm(q.autor);return crmMembers().find(id=>{const m=MEMBERS[id]||{};return n&&(norm(m.name||'')===n||norm(firstName(m.name||''))===norm(firstName(q.autor)))})||null}
+function crmOwnerOf(q){if(q&&q.autorId&&crmMembers().includes(q.autorId))return q.autorId;if(!q||!q.autor)return null;const n=norm(q.autor);return crmMembers().find(id=>{const m=MEMBERS[id]||{};return n&&(norm(m.name||'')===n||norm(firstName(m.name||''))===norm(firstName(q.autor)))})||null}
 function crmSvcOf(q){if(!q)return '';const c=String(q.cat||'').toLowerCase();if(/interior/.test(c))return (q.paqueteId||'').includes('ejec')?'Interiores + ejecución':'Diseño de interiores';if(/defensa/.test(c))return 'Defensa Civil';if(/sanea/.test(c))return 'Saneamiento';if(/ante|arqui/.test(c))return 'Anteproyecto';return c?cap(c):''}
 function crmAutoStage(row){if(!row)return 'new';const q=row.cot[0];if(!q)return 'contact';return {aceptada:'won',rechazada:'lost',enviada:'quoted'}[q.estado]||'contact'}
 function crmTasksOf(name){const k=cliKey(name);if(!k)return [];const k2=k.split(' ').slice(0,2).join(' ');
@@ -5124,6 +5134,22 @@ function crmCotizar(c){
   toast('Nueva cotización con los datos de '+c.name);
 }
 let COT_PREFILL=null;
+/* aviso cuando alguien del equipo hace o cambia una cotización (ya entra sola al CRM) */
+const COTN={on:false,seen:{}};
+async function cotNotifyInit(){const t=cotTeam();if(COTN.on||!t||!sb||!sb.channel||!isShared(t.id))return;COTN.on=true;
+  try{const {data}=await sb.from('cotizaciones').select('data').eq('team',t.id);(data||[]).forEach(r=>{const q=r.data;if(q&&q.id)COTN.seen[q.id]=q.estado||'borrador'})}catch(e){}
+  try{sb.channel('kivo-cotn').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},async pl=>{try{let q=pl.new&&pl.new.data;
+    if(!q&&pl.new&&pl.new.id){const r=await sb.from('cotizaciones').select('data').eq('id',pl.new.id).limit(1);q=r.data&&r.data[0]&&r.data[0].data}cotNotifyEvt(q)}catch(e){}}).subscribe()}catch(e){}}
+function cotNotifyEvt(q){
+  if(!q||!q.id||q.ejemplo)return;const prev=COTN.seen[q.id],est=q.estado||'borrador';COTN.seen[q.id]=est;if(prev===est)return;
+  if(CRMV&&CRMV.style.display!=='none')crmRefresh();
+  const who=String(q.editadoPor||q.autor||'').trim(),mine=(MEMBERS[ME]||{}).name||'';
+  if(!who||(q.editadoPorId||q.autorId)===ME||(!q.editadoPorId&&norm(firstName(who))===norm(firstName(mine)))||S.teamAlerts===false)return;
+  const cli=(q.cliente&&q.cliente.nombre)||'un cliente';
+  const msg=prev===undefined?firstName(who)+' hizo la cotización '+q.numero+' para '+cli:firstName(who)+' marcó la cotización '+q.numero+' de '+cli+' como «'+((ESTN[est]||[0,est])[1]).toLowerCase()+'»';
+  sfx('chat');try{sysNotify('Arquizo · Cotización',msg,()=>openCRM(),'cot-'+q.id)}catch(e){}
+  inAppAlert('Cotización en Arquizo',msg+(q.total?' · '+money(q.total):'')+'. Ya está en el CRM con '+firstName(who)+' como encargado.',[['Ver en el CRM',()=>openCRM(),true],['Ok',()=>{}]],25000);
+}
 
 /* ---- pantalla ---- */
 function openCRM(){
@@ -5197,7 +5223,7 @@ function crmCardEl(c){
   const b=h('button','crm-card');b.dataset.id=c.id;b.style.setProperty('--c',st.c);
   b.innerHTML=`${m?`<span class="crm-av">${avatarHTML(m)}</span>`:''}<span class="t">${esc(c.name)}</span>
     <span class="s">${esc([c.svc,(c.place||'').split(',')[0]].filter(Boolean).join(' · ')||'Sin datos aún')}</span>
-    <span class="r">${c.val?`<b>${esc(money(c.val))}</b>`:''}${c.src?`<span class="tag" style="--c2:${CRM_SRCC[c.src]||'#8e8e93'}">${esc(c.src.split(' ')[0])}</span>`:''}${c.cot[0]?`<span class="tag" style="--c2:#8e8e93">${esc(c.cot[0].numero)}</span>`:''}</span>
+    <span class="r">${c.val?`<b>${esc(money(c.val))}</b>`:''}${c.src?`<span class="tag" style="--c2:${CRM_SRCC[c.src]||'#8e8e93'}">${esc(c.src.split(' ')[0])}</span>`:''}${c.cot[0]?`<span class="tag" style="--c2:#8e8e93" title="${esc(c.cot[0].autor?'Cotizó '+c.cot[0].autor:'')}">${esc(c.cot[0].numero)}${c.cot[0].autor?' · '+esc(firstName(c.cot[0].autor)):''}</span>`:''}</span>
     ${nx?`<span class="nx${late?' late':''}">${late?'⚠':'→'} ${esc(nx.text)} · ${esc(nx.date?whenTxt(nx.date):'sin fecha')}</span>`:''}`;
   b.onclick=()=>{if(b._dragged)return;crmOpen(c.id)};
   return b;
@@ -5266,7 +5292,7 @@ function crmDrawer(){
   if(!CRM.edit){dl.append(h('dt','','Último contacto'),h('dd','',esc(crmAgo(c.last))))}
   b.append(dl);
   if(c.cot.length||c.car.length){const dc=h('div','crm-docs');
-    c.cot.forEach(q2=>{const r=h('button','cl-r',`<img src="icons/cotizador.svg" alt=""><span><b>${esc(q2.numero)}</b> ${esc((q2.proyecto&&q2.proyecto.nombre)||'')}</span><small>${q2.total?esc(money(q2.total))+' · ':''}${esc((ESTN[q2.estado]||ESTN.borrador)[1])}</small>`);r.onclick=()=>{closeCRM();openCot();toast('Busca '+q2.numero+' en «Anteriores» del Cotizador')};dc.append(r)});
+    c.cot.forEach(q2=>{const r=h('button','cl-r',`<img src="icons/cotizador.svg" alt=""><span><b>${esc(q2.numero)}</b> ${esc((q2.proyecto&&q2.proyecto.nombre)||'')}</span><small>${q2.total?esc(money(q2.total))+' · ':''}${esc((ESTN[q2.estado]||ESTN.borrador)[1])}${q2.autor?' · hizo '+esc(firstName(q2.autor)):''}</small>`);r.onclick=()=>{closeCRM();openCot();toast('Busca '+q2.numero+' en «Anteriores» del Cotizador')};dc.append(r)});
     c.car.forEach(x2=>{const r=h('button','cl-r',`<img src="icons/carta.svg" alt=""><span><b>${esc(x2.num)}</b> Carta de presentación</span>`);r.onclick=()=>{closeCRM();openCarta();CP.c=JSON.parse(JSON.stringify(x2));cpForm();cpPrev();cpHist()};dc.append(r)});
     b.append(h('div','lb','Cotizaciones y cartas'),dc)}
   // historial
@@ -5572,7 +5598,7 @@ function fmtDur(s){s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+St
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&CHAT.open)chatMarkRead(CHAT.open)});
 
-function renderAll(){try{fixedSync()}catch(e){}try{alarmSync()}catch(e){}applyLook();renderHeader();renderAdd();renderList();try{cotAutoFlag();renderDock()}catch(e){console.warn(e)}try{if(!CHAT.ready)chatInit();chatBadges();if(CHAT.open)chatHeader()}catch(e){}}
+function renderAll(){try{fixedSync()}catch(e){}try{alarmSync()}catch(e){}applyLook();renderHeader();renderAdd();renderList();try{cotAutoFlag();renderDock()}catch(e){console.warn(e)}try{if(!CHAT.ready)chatInit();chatBadges();if(CHAT.open)chatHeader()}catch(e){}try{cotNotifyInit()}catch(e){}}
 let lastDay=today();
 function checkDay(){if(today()!==lastDay){lastDay=today();if(D.date<today())D.date=today();renderAll()}}
 $('#txt').addEventListener('input',renderAdd);
