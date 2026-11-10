@@ -1160,6 +1160,72 @@ button.cl-r:hover{background:var(--fill)}
 .iconb.sm{width:32px;height:32px;font-size:14px}
 .al-form{display:flex;flex-direction:column;gap:10px;margin-top:6px}.al-f1{display:flex;gap:8px}.al-f1 .al-time{width:130px;font-size:18px;font-weight:700}.al-f1 .field:last-child{flex:1}
 .al-add{align-self:flex-start}.al-test{margin-top:10px}
+/* ---- CRM de clientes ---- */
+.crmv{--arq:#d7262e}
+.crm-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.crm-wrap{max-width:1320px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.crm-who{margin:0}.crm-who:empty{display:none}
+.crm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.crm-kpi{background:var(--card);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0;box-shadow:0 0 0 .5px var(--line)}
+.crm-kpi .l{font-size:12.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}.crm-kpi .l i{width:8px;height:8px;border-radius:50%}
+.crm-kpi .v{font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-kpi .d{font-size:12px;color:var(--muted)}.crm-kpi .up{color:var(--ok);font-weight:700}.crm-kpi .dn{color:var(--late);font-weight:700}
+.crm-cold{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:color-mix(in srgb,#ff9f0a 13%,var(--card));border-radius:14px;padding:10px 14px}
+.crm-cold .ic{width:28px;height:28px;border-radius:50%;background:#ff9f0a;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.crm-cold p{margin:0;font-size:14px;flex:1;min-width:200px}
+.crm-chip{display:inline-flex;gap:6px;align-items:center;padding:5px 10px;border-radius:999px;background:var(--card);font-size:13px;font-weight:600;box-shadow:0 0 0 .5px var(--line)}.crm-chip small{color:var(--late);font-weight:700}
+.crm-sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:4px}.crm-sh h2{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.crm-sh span{font-size:12.5px;color:var(--soft)}
+.crm-bw{overflow-x:auto;margin:-4px -4px 0;padding:4px 4px 10px;-webkit-overflow-scrolling:touch}
+.crm-board{display:grid;grid-template-columns:repeat(6,minmax(170px,1fr));gap:8px;min-width:1050px}
+.crm-col{background:var(--card2);border-radius:16px;padding:9px;display:flex;flex-direction:column;gap:8px;min-height:240px;transition:background .12s,box-shadow .12s}
+.crm-col.over{box-shadow:inset 0 0 0 2px var(--c);background:color-mix(in srgb,var(--c) 9%,var(--card2))}
+.crm-ch{display:flex;align-items:center;gap:7px;padding:2px 4px}.crm-ch i{width:9px;height:9px;border-radius:50%;background:var(--c)}.crm-ch b{font-size:14px}.crm-ch .cnt{font-size:12px;color:var(--muted);background:var(--fill);border-radius:999px;padding:1px 7px}
+.crm-cs{font-size:12.5px;color:var(--muted);padding:0 4px 2px;font-weight:600;font-variant-numeric:tabular-nums}
+.crm-card{background:var(--card);border-radius:12px;padding:10px 11px;box-shadow:0 0 0 .5px var(--line),0 2px 6px rgba(0,0,0,.04);display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;position:relative;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.crm-card:hover{box-shadow:0 0 0 1.5px var(--c),0 6px 16px rgba(0,0,0,.08)}.crm-card.drag{opacity:.35}
+.crm-card .t{font-weight:700;font-size:14px;line-height:1.25;padding-right:26px}.crm-card .s{font-size:12.5px;color:var(--muted)}
+.crm-card .r{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:13px}.crm-card .r b{font-variant-numeric:tabular-nums}
+.crm-card .tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--c2) 14%,transparent);color:var(--c2)}
+.crm-av{position:absolute;top:8px;right:8px}.crm-av .av{width:22px;height:22px;font-size:10px}
+.crmv .nx{display:flex;align-items:center;gap:6px;font-size:12px;background:var(--fill);border-radius:8px;padding:4px 7px}
+.crmv .nx.late{background:color-mix(in srgb,var(--late) 12%,transparent);color:var(--late);font-weight:600}
+.crm-add{font-size:13px;color:var(--muted);padding:6px;border-radius:10px;text-align:left}.crm-add:hover{background:var(--fill);color:var(--text)}
+.crm-low{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px}
+.crm-p{background:var(--card);border-radius:16px;padding:16px;min-width:0;box-shadow:0 0 0 .5px var(--line)}.crm-p h3{margin:0;font-size:15px}.crm-p>small{color:var(--muted);font-size:12.5px}
+.crm-chart{width:100%;height:auto;display:block;margin-top:8px}.crm-chart text{fill:var(--muted);font-size:11px}.crm-chart .lbl{fill:var(--text);font-weight:700}
+.crm-act{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:11px}
+.crm-act li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px}.crm-act li>span{flex:1;min-width:0}.crm-act li em{font-style:normal;color:var(--soft);font-size:12px;white-space:nowrap}
+.crm-act .av{flex:none;width:24px;height:24px;font-size:10px}
+.crm-act a{font-weight:700;cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.crm-scrim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:3}
+.crm-dr{position:absolute;top:0;right:0;bottom:0;width:min(450px,100%);background:var(--card);z-index:4;transform:translateX(104%);transition:transform .25s cubic-bezier(.2,.9,.3,1);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.16);padding-bottom:env(safe-area-inset-bottom,0px)}
+.crmv{position:fixed}.crmv.dr-on .crm-scrim{opacity:1;pointer-events:auto}.crmv.dr-on .crm-dr{transform:none}
+.crm-dr .dr-h{display:flex;gap:12px;align-items:flex-start;padding:16px 18px 12px;border-bottom:.5px solid var(--line);padding-top:calc(16px + env(safe-area-inset-top,0px))}
+.crm-dr .big{width:44px;height:44px;border-radius:14px;color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;flex:none;text-transform:uppercase}
+.crm-dr .dr-tt{min-width:0;flex:1}.crm-dr h2{margin:0;font-size:19px;letter-spacing:-.01em;overflow-wrap:anywhere}.crm-dr .dr-tt small{color:var(--muted);font-size:13.5px}
+.crm-dr .x{width:32px;height:32px;border-radius:50%;background:var(--fill);flex:none}
+.crm-dr .dr-b{overflow-y:auto;padding:14px 18px 30px;display:flex;flex-direction:column;gap:12px}
+.crm-stg{display:flex;gap:4px;flex-wrap:wrap}.crm-stg button{font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--fill);color:var(--muted)}.crm-stg button.on{background:var(--c);color:#fff}
+.crm-acts{display:flex;gap:8px;flex-wrap:wrap}.crm-wa{background:#25d366!important;color:#fff!important}
+.crm-next{display:flex;flex-direction:column;gap:6px}.crm-next .nx{font-size:13px;padding:7px 8px 7px 10px}.crm-next .nx span{flex:1;min-width:0}.crm-next em{font-style:normal;color:var(--muted);font-size:12px;white-space:nowrap}
+.crm-ok{width:26px;height:26px;border-radius:50%;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:13px;flex:none}.crm-ok:hover{background:var(--ok);color:#fff}
+.crmv .lb{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:4px 0 -4px;display:flex;align-items:center}
+.crm-edit{margin-left:auto;font-size:13px;font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0}
+.crm-fields{display:grid;grid-template-columns:118px minmax(0,1fr);gap:8px 12px;font-size:14px;background:var(--card2);border-radius:14px;padding:12px 14px;margin:0}
+.crm-fields dt{color:var(--muted);align-self:center}.crm-fields dd{margin:0;font-weight:500;overflow-wrap:anywhere}.crm-fields .none{color:var(--soft)}
+.crm-fields.edit .field{width:100%;padding:7px 10px;font-size:14px}
+.crm-docs{display:flex;flex-direction:column;gap:4px}
+.crm-tl{list-style:none;margin:0;padding:0 0 0 18px;position:relative;display:flex;flex-direction:column;gap:12px}
+.crm-tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.crm-tl li{position:relative;font-size:14px}.crm-tl li::before{content:"";position:absolute;left:-17px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--c,var(--soft));box-shadow:0 0 0 3px var(--card)}
+.crm-tl small{display:block;color:var(--muted);font-size:12px}
+.crm-note{display:flex;gap:8px}.crm-note .field{flex:1;min-width:0}
+.crm-tf{display:flex;flex-direction:column;gap:8px;background:var(--card2);border-radius:14px;padding:10px}.crm-tfr{display:flex;gap:6px;flex-wrap:wrap}.crm-tfr .field{flex:1;min-width:110px}
+.crm-del{align-self:flex-start;color:var(--late);margin-top:10px}
+.crm-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.crm-form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600;min-width:0}.crm-form label.full{grid-column:1/-1}
+@media (max-width:1000px){.crm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-low{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.crm-kpi .v{font-size:21px}.crm-fields{grid-template-columns:minmax(0,1fr)}.crm-fields dt{margin-bottom:-6px}.crm-form{grid-template-columns:minmax(0,1fr)}.crmv .cotv-h{flex-wrap:wrap;row-gap:6px}.crmv .cotv-h .grow{flex-basis:100%;height:0}}
+@media (prefers-reduced-motion:reduce){.crm-dr,.crm-scrim,.crm-col{transition:none}}
 /* ---- aviso que insiste (pendientes con hora) ---- */
 .dueq{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.38);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;animation:dqin .2s ease}
 @keyframes dqin{from{opacity:0}to{opacity:1}}
@@ -4103,7 +4169,7 @@ function renderDock(){
   d.append(ah);
   const row=h('div','arq-row');d.append(row);
   const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=openCot;row.append(b);
-  const cl=h('button','dapp',`<img src="icons/clientes.svg" alt=""><span>Clientes</span>`);cl.title='Fichas de clientes: cotizaciones, cartas, tareas y WhatsApp';cl.onclick=openClientes;row.append(cl);
+  const cl=h('button','dapp',`<img src="icons/clientes.svg" alt=""><span>Clientes</span>`);cl.title='CRM: embudo de ventas, fichas, historial y números de los clientes';cl.onclick=openCRM;row.append(cl);
   const c=h('button','dapp',`<img src="icons/carta.svg" alt=""><span>Carta de<br>presentación</span>`);c.title='Carta de presentación · equipo de '+t.name;c.onclick=openCarta;row.append(c);
   if(AR.team!==t.id){AR.team=t.id;AR.list=[];arLoad();arWatch()}
   AR.list.forEach(a=>{const b2=h('button','dapp dfile',arIcon(a)+`<span>${esc(arBase(a.nombre))}</span>`);b2.title=a.nombre+' · subido por '+(a.autor||'')+' — tócalo para abrirlo';b2.onclick=()=>arOpen(a,false);row.append(b2)});
@@ -4130,7 +4196,7 @@ async function cotSnap(){const t=cotTeam();if(!t||!sb)return;
 }
 function cotWatch(){
   cotSnap();if(COTWATCH||!sb||!sb.channel)return;COTWATCH=true;
-  try{COTCH=sb.channel('kivo-cot').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},()=>{clearTimeout(cotWatch.t);cotWatch.t=setTimeout(cotSnap,400)}).subscribe()}catch(e){}
+  try{COTCH=sb.channel('kivo-cot').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},()=>{clearTimeout(cotWatch.t);cotWatch.t=setTimeout(()=>{cotSnap();if(CRMV&&CRMV.style.display!=='none')crmRefresh()},400)}).subscribe()}catch(e){}
 }
 async function cotRPC(d){
   const t=cotTeam();const reply=(data,err,code)=>cotPost({reply:d.id,data,err,code});
@@ -4167,7 +4233,7 @@ async function cotPDF(fn,html,css){
   }finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML='';pg.remove()},400)}
 }
 window.addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot||!COTV||e.source!==COTV.fr.contentWindow)return;
-  if(d.op==='hello'){const t=cotTeam();cotPost({theme:isDark()?'dark':'light',team:t?'Equipo de '+t.name:''});return}
+  if(d.op==='hello'){const t=cotTeam();cotPost({theme:isDark()?'dark':'light',team:t?'Equipo de '+t.name:''});if(COT_PREFILL){const pf=COT_PREFILL;COT_PREFILL=null;setTimeout(()=>cotPost({prefill:pf}),400)}return}
   if(d.op==='watch'){cotWatch();return}
   if(d.id)cotRPC(d);
 });
@@ -4359,7 +4425,7 @@ async function cartaPDF(c){
 let ARV=null,AR={list:[],busy:false,team:null,fails:[]},ARCH=null;
 const AR_PART=45*1024*1024;
 const arBase=n=>String(n||'').replace(/\.[a-z0-9]{1,5}$/i,'');
-function arWatch(){if(ARCH||!sb||!sb.channel)return;try{ARCH=sb.channel('kivo-arch').on('postgres_changes',{event:'*',schema:'public',table:'cot_config'},()=>{clearTimeout(arWatch.t);arWatch.t=setTimeout(arLoad,500)}).subscribe()}catch(e){}
+function arWatch(){if(ARCH||!sb||!sb.channel)return;try{ARCH=sb.channel('kivo-arch').on('postgres_changes',{event:'*',schema:'public',table:'cot_config'},()=>{clearTimeout(arWatch.t);arWatch.t=setTimeout(()=>{arLoad();if(CRMV&&CRMV.style.display!=='none')crmRefresh()},500)}).subscribe()}catch(e){}
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')arLoad()});setInterval(arLoad,3*60*1000)}
 const AR_MAX=500*1024*1024;
 function arIcon(a){const n=norm(a.nombre||''),t=a.type||'';
@@ -4958,6 +5024,294 @@ function cliDraw(){
   C.querySelectorAll('[data-cot]').forEach(b=>b.onclick=()=>{closeClientes();openCot();toast('Busca '+b.querySelector('b').textContent+' en «Anteriores» del Cotizador')});
   C.querySelectorAll('[data-car]').forEach(b=>b.onclick=()=>{const x=r.car.find(c=>c.num===b.dataset.car);closeClientes();openCarta();if(x){CP.c=JSON.parse(JSON.stringify(x));cpForm();cpPrev();cpHist()}});
   C.querySelector('#clWa').onclick=()=>waOpen(r.tel,msg);const cp=C.querySelector('#clCp');if(cp)cp.onclick=()=>waOpen('',msg);
+}
+
+/* ================= Kivo 1.5: CRM de clientes de Arquizo (embudo, ficha, historial, números) ================= */
+const CRM_ST=[
+  {id:'new',n:'Nuevo',c:'#8e8e93',r:0},
+  {id:'contact',n:'Contactado',c:'#0a84ff',r:1},
+  {id:'quoted',n:'Cotizado',c:'#8a46c8',r:2},
+  {id:'nego',n:'Negociación',c:'#ff9f0a',r:3},
+  {id:'won',n:'Ganado',c:'#30a14e',r:4},
+  {id:'lost',n:'Perdido',c:'#ff3b30',r:4}];
+const CRM_SRC=['Facebook / Instagram','TikTok','Recomendado','Web arquizo.com','WhatsApp','Otro'];
+const CRM_SRCC={'Facebook / Instagram':'#0a84ff','TikTok':'#5e5ce6','Recomendado':'#30a14e','Web arquizo.com':'#d7262e','WhatsApp':'#25a35a','Otro':'#8e8e93'};
+const CRM_SVC=['Diseño de interiores','Interiores + ejecución','Defensa Civil','Anteproyecto','Saneamiento','Otro'];
+const CRM={cards:[],recs:{},open:null,who:'all',loading:false,err:null};
+let CRMV=null;
+const crmSt=id=>CRM_ST.find(s=>s.id===id)||CRM_ST[0];
+const crmDays=ms=>Math.floor((Date.now()-ms)/864e5);
+const crmMonth=ms=>{const d=new Date(ms);return d.getFullYear()*12+d.getMonth()};
+const crmAgo=ms=>{if(!ms)return '—';const t=new Date();t.setHours(0,0,0,0);const d=new Date(ms);d.setHours(0,0,0,0);const k=Math.round((t-d)/864e5);return k<=0?'Hoy':k===1?'Ayer':'Hace '+k+' días'};
+const crmMembers=()=>{const t=cotTeam();return t?(LMEM[t.id]||[ME]):[ME]};
+function crmOwnerOf(q){if(!q||!q.autor)return null;const n=norm(q.autor);return crmMembers().find(id=>{const m=MEMBERS[id]||{};return n&&(norm(m.name||'')===n||norm(firstName(m.name||''))===norm(firstName(q.autor)))})||null}
+function crmSvcOf(q){if(!q)return '';const c=String(q.cat||'').toLowerCase();if(/interior/.test(c))return (q.paqueteId||'').includes('ejec')?'Interiores + ejecución':'Diseño de interiores';if(/defensa/.test(c))return 'Defensa Civil';if(/sanea/.test(c))return 'Saneamiento';if(/ante|arqui/.test(c))return 'Anteproyecto';return c?cap(c):''}
+function crmAutoStage(row){if(!row)return 'new';const q=row.cot[0];if(!q)return 'contact';return {aceptada:'won',rechazada:'lost',enviada:'quoted'}[q.estado]||'contact'}
+function crmTasksOf(name){const k=cliKey(name);if(!k)return [];const k2=k.split(' ').slice(0,2).join(' ');
+  return S.tasks.filter(x=>x.status!=='done'&&((x.fields&&x.fields.cli&&(cliKey(x.fields.cli)===k||cliKey(x.fields.cli).startsWith(k2)||k.startsWith(cliKey(x.fields.cli))))||(k2.length>4&&norm(x.text).includes(k2)))).sort(sortT)}
+async function crmLoad(){
+  const t=cotTeam();if(!t||!sb)return;
+  const [_,r]=await Promise.all([cliLoad(),sb.from('cot_config').select('key,data').eq('team',t.id).like('key','crm/%')]);
+  if(r.error)throw r.error;
+  CRM.recs={};(r.data||[]).map(x=>x.data).filter(x=>x&&x.id&&!x.borrado).forEach(x=>CRM.recs[x.id]=x);
+  const recs=Object.values(CRM.recs),used=new Set(),cards=[];
+  const match=k=>{const k2=k.split(' ').slice(0,2).join(' ');return recs.find(x=>!used.has(x.id)&&(x.k===k||(k2.length>4&&(x.k||'').startsWith(k2))||(x.k&&x.k.length>4&&k.startsWith(x.k))))};
+  (CLD.rows||[]).forEach(row=>{const rec=match(row.k);if(rec)used.add(rec.id);cards.push(crmCard(rec,row))});
+  recs.filter(x=>!used.has(x.id)).forEach(rec=>cards.push(crmCard(rec,null)));
+  CRM.cards=cards;
+}
+function crmCard(rec,row){
+  const q=row&&row.cot[0];const auto=crmAutoStage(row);
+  let stage=rec?rec.stage:auto,stageAt=rec?(rec.stageAt||0):0;
+  const qAt=q?(q.actualizado||q.fecha||0):0;
+  if(rec&&q&&qAt>stageAt){const a=crmSt(auto),s=crmSt(stage);if(auto==='won'||auto==='lost'||(a.r>s.r&&s.id!=='lost'&&s.id!=='won')){stage=auto;stageAt=qAt}}
+  if(!rec)stageAt=qAt;
+  const name=(rec&&rec.name)||(row&&row.n)||'Cliente';
+  const hist=[];
+  if(row){row.cot.forEach(x=>{hist.push({t:'Cotización '+x.numero+(x.total?' · '+money(x.total):''),at:x.fecha||0,st:'quoted',by:crmOwnerOf(x)});
+      if(x.estado==='aceptada')hist.push({t:'Aceptó la cotización '+x.numero,at:x.actualizado||x.fecha,st:'won'});
+      if(x.estado==='rechazada')hist.push({t:'Rechazó la cotización '+x.numero,at:x.actualizado||x.fecha,st:'lost'})});
+    row.car.forEach(x=>hist.push({t:'Carta de presentación '+x.num,at:x.actualizado||x.creado||Date.parse(x.fecha)||0,st:'contact'}))}
+  if(rec)(rec.hist||[]).forEach(h2=>hist.push(h2));
+  hist.sort((a,b)=>(a.at||0)-(b.at||0));
+  const created=(rec&&rec.created)||Math.min(...hist.map(x=>x.at||Infinity).concat([Date.now()]));
+  const last=Math.max((rec&&rec.last)||0,row?row.last||0:0,...hist.map(x=>x.at||0));
+  const tasks=crmTasksOf(name);
+  const wonAt=stage==='won'?((rec&&rec.wonAt&&rec.stage==='won')?rec.wonAt:(q&&q.estado==='aceptada'?qAt:stageAt)):0;
+  return {id:rec?rec.id:'v-'+(row?row.k:uid()),rec,row,name,stage,stageAt,wonAt,hist,created,last,tasks,
+    contact:(rec&&rec.contact)||'',phone:(rec&&rec.phone)||(row&&row.tel)||'',email:(rec&&rec.email)||(q&&q.cliente&&q.cliente.email)||'',
+    place:(rec&&rec.place)||(row&&row.zona)||'',svc:(rec&&rec.svc)||crmSvcOf(q),val:Number((rec&&rec.val)||(q&&q.total)||0),
+    src:(rec&&rec.src)||'',own:(rec&&rec.own)||crmOwnerOf(q)||null,cot:row?row.cot:[],car:row?row.car:[]};
+}
+// guarda (crea si hace falta) el registro del cliente en el equipo
+async function crmSave(c,patch,histText,histSt){
+  const t=cotTeam();if(!t)return;
+  let rec=c.rec?JSON.parse(JSON.stringify(c.rec)):null,isNew=!rec;
+  if(!rec)rec={id:uid(),k:cliKey(c.name),name:c.name,created:c.created||Date.now(),hist:[],contact:c.contact,phone:c.phone,email:c.email,place:c.place,svc:c.svc,val:c.val,src:c.src,own:c.own,stage:c.stage,stageAt:c.stageAt||Date.now()};
+  Object.assign(rec,patch||{});if(patch&&patch.name)rec.k=cliKey(patch.name);
+  if(histText){rec.hist=(rec.hist||[]).concat([{t:histText,at:Date.now(),by:ME,st:histSt||rec.stage}]).slice(-80)}
+  rec.actualizado=Date.now();rec.por=ME;
+  try{
+    const r=isNew?await sb.from('cot_config').insert({team:t.id,key:'crm/'+rec.id,data:rec}):await sb.from('cot_config').update({data:rec}).eq('team',t.id).eq('key','crm/'+rec.id);
+    if(r.error)throw r.error;
+  }catch(e){toast(/cot_config|relation|schema/i.test(String(e&&e.message))?'Falta el paso de la base de datos (código 5 en Supabase)':'No se pudo guardar. Revisa tu internet');throw e}
+  CRM.recs[rec.id]=rec;const i=CRM.cards.indexOf(c);const nc=crmCard(rec,c.row);if(i>=0)CRM.cards[i]=nc;else CRM.cards.push(nc);
+  if(CRM.open===c.id)CRM.open=nc.id;return nc;
+}
+function crmTask(c,text,days,time){
+  const t=cotTeam();if(!t)return null;const date=plus(days);
+  if(S.tasks.some(x=>x.status!=='done'&&x.fields&&x.fields.cli===c.name&&x.text===text))return null;
+  const as=c.own&&c.own!==ME&&isShared(t.id)?c.own:null;
+  const tk=fixTask({text,list:t.id,date,time:time||'10:00',owner:ME,assignee:as});tk.fields=Object.assign({},tk.fields,{cli:c.name});
+  S.tasks.push(tk);save();try{renderList()}catch(e){}return tk;
+}
+const CRM_NEXT={new:['Contactar a %',1],contact:['Enviar propuesta a %',2],quoted:['Seguimiento a la cotización de %',3],nego:['Llamar a % para cerrar',1],won:['Coordinar inicio y adelanto con %',1]};
+async function crmMove(c,to){
+  if(!c||c.stage===to)return;const st=crmSt(to);
+  const patch={stage:to,stageAt:Date.now(),last:Date.now()};if(to==='won')patch.wonAt=Date.now();
+  let nc;try{nc=await crmSave(c,patch,to==='won'?'Venta cerrada'+(c.val?' · '+money(c.val):''):to==='lost'?'Se perdió':'Pasó a '+st.n,to)}catch(e){return}
+  const nx=CRM_NEXT[to];
+  if(to==='lost'){S.tasks.filter(x=>x.status!=='done'&&x.fields&&x.fields.cli===c.name).forEach(x=>setDone(x,true));save();toast(c.name+' pasó a Perdido. Cerré sus pendientes')}
+  else if(nx&&!(to==='quoted'&&S.tasks.some(x=>x.status!=='done'&&x.fields&&x.fields.cot&&c.cot.some(q=>q.numero===x.fields.cot)))){const tk=crmTask(nc,nx[0].replace('%',c.name),nx[1]);
+    if(to==='won')sfx('done');toast((to==='won'?'¡Venta cerrada! ':'')+(tk?'Te recuerdo «'+tk.text+'» '+whenTxt(tk.date).toLowerCase():'Movido a '+st.n))}
+  else toast('Movido a '+st.n);
+  if(to==='quoted'&&!c.cot.length){crmCotizar(nc);return}
+  crmDraw();
+}
+function crmCotizar(c){
+  COT_PREFILL={nombre:c.name,telefono:c.phone,email:c.email,ubicacion:c.place};const had=!!COTV;
+  closeCRM();openCot();if(had){cotPost({prefill:COT_PREFILL});COT_PREFILL=null}
+  toast('Nueva cotización con los datos de '+c.name);
+}
+let COT_PREFILL=null;
+
+/* ---- pantalla ---- */
+function openCRM(){
+  const t=cotTeam();if(!t){toast('El CRM es del equipo de Arquizo');return}
+  if(!CRMV){
+    CRMV=h('div','cotv crmv');
+    const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCRM;
+    const seg=h('div','seg crm-who');
+    const nw=h('button','btn primary','＋ Nuevo cliente');nw.onclick=()=>crmForm();
+    hd.append(bk,h('b','',`<img src="icons/clientes.svg" alt=""> Clientes · CRM`),h('span','grow'),seg,nw);
+    const bd=h('div','crm-body');const sc=h('div','crm-scrim');sc.onclick=crmClose;const dr=h('aside','crm-dr');dr.setAttribute('aria-label','Ficha del cliente');
+    CRMV.append(hd,bd,sc,dr);document.body.append(CRMV);
+    CRMV.addEventListener('keydown',e=>{if(e.key==='Escape'&&CRMV.classList.contains('dr-on')){e.stopPropagation();crmClose()}});
+  }
+  CRMV.style.display='flex';document.body.classList.add('cot-open');
+  const bd=CRMV.querySelector('.crm-body');if(!CRM.cards.length)bd.innerHTML='<div class="cl-empty">Cargando clientes…</div>';
+  crmRefresh();
+}
+function closeCRM(){if(CRMV){CRMV.style.display='none';CRMV.classList.remove('dr-on');CRM.open=null;document.body.classList.remove('cot-open')}}
+async function crmRefresh(){if(CRM.loading)return;CRM.loading=true;try{await crmLoad();CRM.err=null}catch(e){CRM.err=e;console.warn('crm',e)}CRM.loading=false;if(CRMV&&CRMV.style.display!=='none'){crmDraw();if(CRM.open)crmDrawer()}}
+const crmVis=()=>CRM.cards.filter(c=>CRM.who==='all'||c.own===CRM.who);
+function crmDraw(){
+  if(!CRMV)return;const bd=CRMV.querySelector('.crm-body');
+  if(CRM.err&&!CRM.cards.length){bd.innerHTML=`<div class="cl-empty"><b>No se pudo cargar el CRM</b><span>${/cot_config|relation|schema/i.test(String(CRM.err.message))?'Falta el paso de la base de datos (código 5 en Supabase).':'Revisa tu internet y vuelve a abrirlo.'}</span></div>`;return}
+  // filtro de quién
+  const seg=CRMV.querySelector('.crm-who');seg.innerHTML='';const mem=crmMembers();
+  if(mem.length>1){[['all','Todos']].concat(mem.map(id=>[id,id===ME?'Yo':pname(id)||'Equipo'])).forEach(([k,l])=>{const b=h('button',CRM.who===k?'on':'',esc(l));b.onclick=()=>{CRM.who=k;crmDraw()};seg.append(b)})}
+  const sy=bd.scrollTop;bd.innerHTML='';const wrap=h('div','crm-wrap');bd.append(wrap);
+  CRM.cards.forEach(c=>c.tasks=crmTasksOf(c.name));
+  const v=crmVis(),now=Date.now(),m0=crmMonth(now);
+  // números
+  const openC=v.filter(c=>!['won','lost'].includes(c.stage));
+  const leads=k=>v.filter(c=>crmMonth(c.created)===k).length;
+  const quotes=k=>v.reduce((a,c)=>a+c.cot.filter(q=>q.estado!=='borrador'&&crmMonth(q.fecha||0)===k).length,0);
+  const sales=k=>v.filter(c=>c.stage==='won'&&c.wonAt&&crmMonth(c.wonAt)===k).reduce((a,c)=>a+c.val,0);
+  const cmp=(a,b,pct)=>{if(!b&&!a)return '';if(!b)return '<span class="up">nuevo</span> vs. mes pasado';const d=pct?Math.round((a-b)/b*100):a-b;return `<span class="${d>=0?'up':'dn'}">${d>=0?'+':''}${d}${pct?'%':''}</span> vs. mes pasado`};
+  const mes=new Date().toLocaleDateString('es-PE',{month:'long'});
+  const kp=h('div','crm-kpis');
+  [['Leads nuevos','#0a84ff',leads(m0),'en '+mes,cmp(leads(m0),leads(m0-1))],
+   ['Oportunidades abiertas','#8a46c8',openC.length,money(openC.reduce((a,c)=>a+c.val,0))+' en juego',''],
+   ['Cotizaciones enviadas','#ff9f0a',quotes(m0),'en '+mes,cmp(quotes(m0),quotes(m0-1))],
+   ['Ventas cerradas','#30a14e',money(sales(m0)),'en '+mes,cmp(sales(m0),sales(m0-1),true)]]
+   .forEach(([l,c,val,d,x])=>kp.append(h('div','crm-kpi',`<span class="l"><i style="background:${c}"></i>${l}</span><span class="v">${esc(String(val))}</span><span class="d">${esc(d)}${x?' · '+x:''}</span>`)));
+  wrap.append(kp);
+  // sin seguimiento
+  const cold=openC.filter(c=>crmDays(c.last)>=5).sort((a,b)=>a.last-b.last);
+  if(cold.length){const cd=h('div','crm-cold',`<span class="ic">!</span><p><b>${cold.length===1?'1 cliente lleva':cold.length+' clientes llevan'} 5 días o más sin seguimiento.</b> Escríbeles antes de que se enfríen.</p>`);
+    cold.slice(0,6).forEach(c=>{const b=h('button','crm-chip',`${esc(c.name)} <small>${crmDays(c.last)} d</small>`);b.onclick=()=>crmOpen(c.id);cd.append(b)});wrap.append(cd)}
+  // embudo
+  wrap.append(h('div','crm-sh','<h2>Embudo de ventas</h2><span>Arrastra un cliente a otra etapa'+(matchMedia('(hover:none)').matches?' (mantén presionado)':'')+'</span>'));
+  const bw=h('div','crm-bw'),board=h('div','crm-board');bw.append(board);wrap.append(bw);
+  if(!CRM.cards.length)wrap.append(h('p','small-note','Aún no hay clientes. Toca «＋ Nuevo cliente», o guarda una cotización o carta con el nombre del cliente y aparece aquí sola.'));
+  CRM_ST.forEach(s=>{const cs=v.filter(c=>c.stage===s.id).sort((a,b)=>(b.stageAt||0)-(a.stageAt||0));
+    const col=h('div','crm-col');col.dataset.stage=s.id;col.style.setProperty('--c',s.c);
+    col.append(h('div','crm-ch',`<i></i><b>${s.n}</b><span class="cnt">${cs.length}</span>`),h('div','crm-cs',esc(money(cs.reduce((a,c)=>a+c.val,0)))));
+    cs.forEach(c=>col.append(crmCardEl(c)));
+    if(s.id==='new'){const ad=h('button','crm-add','＋ Agregar cliente');ad.onclick=()=>crmForm();col.append(ad)}
+    board.append(col)});
+  // abajo: ventas y actividad
+  const low=h('div','crm-low');
+  const p1=h('section','crm-p','<h3>Ventas cerradas por mes</h3><small>En soles, de los clientes ganados</small>');p1.append(crmChart(v));
+  const p2=h('section','crm-p','<h3>Actividad reciente</h3><small>Lo que se movió en el equipo</small>');
+  const acts=[];CRM.cards.forEach(c=>c.hist.forEach(x=>{if(x.by)acts.push(Object.assign({c},x))}));acts.sort((a,b)=>b.at-a.at);
+  const ul=h('ul','crm-act');acts.slice(0,7).forEach(a=>{const m=MEMBERS[a.by]||{};const li=h('li','',`${avatarHTML(m)}<span><b>${esc(a.by===ME?'Tú':pname(a.by)||'Equipo')}</b> · ${esc(a.t)} — <a>${esc(a.c.name)}</a></span><em>${esc(crmAgo(a.at))}</em>`);li.querySelector('a').onclick=()=>crmOpen(a.c.id);ul.append(li)});
+  if(!acts.length)ul.append(h('li','small-note','Cuando muevas clientes o anotes algo, aparece aquí.'));
+  p2.append(ul);low.append(p1,p2);wrap.append(low);
+  bd.scrollTop=sy;crmDnD(board);
+}
+function crmCardEl(c){
+  const st=crmSt(c.stage),nx=c.tasks[0];const late=nx&&nx.date&&nx.date<today();const m=MEMBERS[c.own];
+  const b=h('button','crm-card');b.dataset.id=c.id;b.style.setProperty('--c',st.c);
+  b.innerHTML=`${m?`<span class="crm-av">${avatarHTML(m)}</span>`:''}<span class="t">${esc(c.name)}</span>
+    <span class="s">${esc([c.svc,(c.place||'').split(',')[0]].filter(Boolean).join(' · ')||'Sin datos aún')}</span>
+    <span class="r">${c.val?`<b>${esc(money(c.val))}</b>`:''}${c.src?`<span class="tag" style="--c2:${CRM_SRCC[c.src]||'#8e8e93'}">${esc(c.src.split(' ')[0])}</span>`:''}${c.cot[0]?`<span class="tag" style="--c2:#8e8e93">${esc(c.cot[0].numero)}</span>`:''}</span>
+    ${nx?`<span class="nx${late?' late':''}">${late?'⚠':'→'} ${esc(nx.text)} · ${esc(nx.date?whenTxt(nx.date):'sin fecha')}</span>`:''}`;
+  b.onclick=()=>{if(b._dragged)return;crmOpen(c.id)};
+  return b;
+}
+function crmChart(v){
+  const now=new Date(),m0=crmMonth(Date.now());const data=[];for(let i=5;i>=0;i--){const k=m0-i;const d=new Date(Math.floor(k/12),k%12,1);data.push([d.toLocaleDateString('es-PE',{month:'short'}).replace('.',''),v.filter(c=>c.stage==='won'&&c.wonAt&&crmMonth(c.wonAt)===k).reduce((a,c)=>a+c.val,0)])}
+  const W=560,H=210,L=46,B=26,T=22,R=8;const mx=Math.max(...data.map(d=>d[1]));const stp=[500,1000,2000,2500,5000,10000,20000,25000,50000,100000].find(x=>x*4>=mx)||Math.ceil(mx/4/1e5)*1e5;const max=mx?stp*4:10000;const bw=(W-L-R)/data.length;
+  let g='';for(let i=0;i<=4;i++){const val=max*i/4,y=H-B-(H-B-T)*i/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${L-8}" y="${y+4}" text-anchor="end">${val?(val>=1000?Math.round(val/1000)+'k':val):'0'}</text>`}
+  data.forEach(([m,val],i)=>{const hh=(H-B-T)*val/max,x=L+i*bw+bw*.22,w=bw*.56,y=H-B-hh,cur=i===data.length-1;
+    g+=`<rect x="${x}" y="${y}" width="${w}" height="${Math.max(hh,1.5)}" rx="6" fill="${cur?'#30a14e':'color-mix(in srgb,#30a14e 35%,var(--card2))'}"/><text x="${x+w/2}" y="${H-B+16}" text-anchor="middle">${esc(m)}</text>${val&&(cur||val===mx)?`<text class="lbl" x="${x+w/2}" y="${y-6}" text-anchor="middle">${esc(money(val))}</text>`:''}`});
+  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox',`0 0 ${W} ${H}`);s.setAttribute('class','crm-chart');s.setAttribute('role','img');s.setAttribute('aria-label','Ventas por mes');s.innerHTML=g;return s;
+}
+/* arrastrar con mouse o con el dedo (mantener presionado) */
+function crmDnD(board){
+  board.querySelectorAll('.crm-card').forEach(el=>{
+    let sx,sy,drag=null,timer=null,pid=null;
+    const start=(e)=>{drag={ghost:el.cloneNode(true),ox:e.clientX-el.getBoundingClientRect().left,oy:e.clientY-el.getBoundingClientRect().top};
+      const r=el.getBoundingClientRect();Object.assign(drag.ghost.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',zIndex:9100,pointerEvents:'none',transform:'rotate(2deg)',boxShadow:'0 12px 30px rgba(0,0,0,.2)'});
+      document.body.append(drag.ghost);el.classList.add('drag');try{el.setPointerCapture(pid)}catch(_){}if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}};
+    el.addEventListener('pointerdown',e=>{if(e.button!==0)return;sx=e.clientX;sy=e.clientY;pid=e.pointerId;el._dragged=false;
+      if(e.pointerType!=='mouse')timer=setTimeout(()=>{start(e)},320)});
+    el.addEventListener('pointermove',e=>{
+      if(!drag){if(timer&&Math.hypot(e.clientX-sx,e.clientY-sy)>8){clearTimeout(timer);timer=null}
+        if(e.pointerType==='mouse'&&e.buttons===1&&Math.hypot(e.clientX-sx,e.clientY-sy)>6)start(e);return}
+      e.preventDefault();drag.ghost.style.left=(e.clientX-drag.ox)+'px';drag.ghost.style.top=(e.clientY-drag.oy)+'px';
+      const col=document.elementFromPoint(e.clientX,e.clientY);const c2=col&&col.closest('.crm-col');
+      board.querySelectorAll('.crm-col.over').forEach(x=>x!==c2&&x.classList.remove('over'));if(c2)c2.classList.add('over');
+      const bw=board.parentElement,br=bw.getBoundingClientRect();if(e.clientX>br.right-40)bw.scrollLeft+=14;else if(e.clientX<br.left+40)bw.scrollLeft-=14});
+    const end=e=>{clearTimeout(timer);timer=null;if(!drag)return;const col=document.elementFromPoint(e.clientX,e.clientY);const c2=col&&col.closest('.crm-col');
+      drag.ghost.remove();el.classList.remove('drag');board.querySelectorAll('.crm-col.over').forEach(x=>x.classList.remove('over'));drag=null;el._dragged=true;setTimeout(()=>el._dragged=false,50);
+      if(c2){const c=CRM.cards.find(x=>x.id===el.dataset.id);if(c&&c.stage!==c2.dataset.stage)crmMove(c,c2.dataset.stage)}};
+    el.addEventListener('pointerup',end);el.addEventListener('pointercancel',e=>{clearTimeout(timer);timer=null;if(drag){drag.ghost.remove();el.classList.remove('drag');drag=null}});
+    el.addEventListener('contextmenu',e=>{if(drag||timer)e.preventDefault()});
+    el.addEventListener('touchmove',e=>{if(drag)e.preventDefault()},{passive:false});
+  });
+}
+/* ---- ficha del cliente ---- */
+function crmOpen(id){CRM.open=id;CRM.edit=false;crmDrawer();CRMV.classList.add('dr-on');setTimeout(()=>{const x=CRMV.querySelector('.crm-dr .x');x&&x.focus()},60)}
+function crmClose(){CRM.open=null;if(CRMV)CRMV.classList.remove('dr-on')}
+function crmDrawer(){
+  const dr=CRMV.querySelector('.crm-dr');const c=CRM.cards.find(x=>x.id===CRM.open);if(!c){crmClose();return}
+  c.tasks=crmTasksOf(c.name);  const st=crmSt(c.stage);dr.innerHTML='';
+  const hd=h('div','dr-h',`<span class="big" style="background:${st.c}">${esc(initials(cliKey(c.name)||c.name))}</span><div class="dr-tt"><h2>${esc(c.name)}</h2><small>${esc([c.svc,c.val?money(c.val):''].filter(Boolean).join(' · ')||'Sin datos aún')}</small></div>`);
+  const x=h('button','x','✕');x.title='Cerrar';x.onclick=crmClose;hd.append(x);dr.append(hd);
+  const b=h('div','dr-b');dr.append(b);
+  const sg=h('div','crm-stg');CRM_ST.forEach(s=>{const bt=h('button',s.id===c.stage?'on':'',s.n);bt.style.setProperty('--c',s.c);bt.onclick=()=>crmMove(c,s.id).then(()=>crmDrawer());sg.append(bt)});b.append(sg);
+  const ac=h('div','crm-acts');
+  const q=c.cot[0];const msg=waText(c.name,q&&q.estado==='enviada'?q.numero:'');
+  const wa=h('button','btn crm-wa',c.phone?'WhatsApp':'Copiar mensaje');wa.onclick=()=>{waOpen(c.phone,msg);crmSave(c,{last:Date.now()},c.phone?'Le escribió por WhatsApp':null).then(()=>crmDraw()).catch(()=>{})};
+  const co=h('button','btn',q?'Nueva cotización':'Cotizar');co.onclick=()=>crmCotizar(c);
+  const tk=h('button','btn','＋ Agendar tarea');tk.onclick=()=>crmTaskForm(c,b,tk);
+  ac.append(wa,co,tk);b.append(ac);
+  if(c.tasks.length){const tl=h('div','crm-next');c.tasks.slice(0,3).forEach(x2=>{const late=x2.date&&x2.date<today();const r=h('div','nx'+(late?' late':''),`${late?'⚠':'→'} <span>${esc(x2.text)}</span><em>${esc(x2.date?whenTxt(x2.date)+(x2.time?' '+fmtTime(x2.time):''):'')}</em>`);
+    const ok=h('button','crm-ok','✓');ok.title='Hecha';ok.onclick=()=>{setDone(x2,true);sfx('done');save();try{renderList()}catch(e){}crmSave(c,{last:Date.now()},'Hizo: '+x2.text).then(nc=>{crmDraw();crmDrawer()}).catch(()=>{})};r.append(ok);tl.append(r)});b.append(h('div','lb','Próximo'),tl)}
+  // ficha
+  const fh=h('div','lb lbr','Ficha');const ed=h('button','crm-edit',CRM.edit?'Listo':'Editar');ed.onclick=()=>{if(CRM.edit){crmSaveForm(c,b)}else{CRM.edit=true;crmDrawer()}};fh.append(ed);b.append(fh);
+  const mem=crmMembers();
+  const F=[['contact','Contacto','text'],['phone','Teléfono','tel'],['email','Correo','email'],['place','Lugar','text'],['svc','Servicio','svc'],['val','Valor estimado (S/)','num'],['src','Llegó por','src'],['own','Encargado','own']];
+  const dl=h('dl','crm-fields'+(CRM.edit?' edit':''));
+  F.forEach(([k,l,tp])=>{dl.append(h('dt','',l));const dd=h('dd');
+    if(CRM.edit){let inp;if(tp==='svc'||tp==='src'||tp==='own'){inp=h('select','field');const opts=tp==='svc'?CRM_SVC:tp==='src'?CRM_SRC:mem;inp.append(h('option','','—'));opts.forEach(o=>{const op=h('option','',esc(tp==='own'?(o===ME?pname(o)+' (yo)':pname(o)):o));op.value=o;if(String(c[k]||'')===String(o))op.selected=true;inp.append(op)});if(tp!=='own'&&c[k]&&!opts.includes(c[k])){const op=h('option','',esc(c[k]));op.value=c[k];op.selected=true;inp.append(op)}}
+      else{inp=h('input','field');inp.type=tp==='num'?'text':tp;if(tp==='num')inp.inputMode='numeric';inp.value=k==='val'?(c.val||''):(c[k]||'')}
+      inp.dataset.k=k;inp.id='crm-f-'+k;dd.append(inp)}
+    else{const val=k==='own'?(c.own?(c.own===ME?pname(ME)+' (tú)':pname(c.own)):''):k==='val'?(c.val?money(c.val):''):c[k];dd.innerHTML=val?esc(val):'<span class="none">—</span>'}
+    dl.append(dd)});
+  if(!CRM.edit){dl.append(h('dt','','Último contacto'),h('dd','',esc(crmAgo(c.last))))}
+  b.append(dl);
+  if(c.cot.length||c.car.length){const dc=h('div','crm-docs');
+    c.cot.forEach(q2=>{const r=h('button','cl-r',`<img src="icons/cotizador.svg" alt=""><span><b>${esc(q2.numero)}</b> ${esc((q2.proyecto&&q2.proyecto.nombre)||'')}</span><small>${q2.total?esc(money(q2.total))+' · ':''}${esc((ESTN[q2.estado]||ESTN.borrador)[1])}</small>`);r.onclick=()=>{closeCRM();openCot();toast('Busca '+q2.numero+' en «Anteriores» del Cotizador')};dc.append(r)});
+    c.car.forEach(x2=>{const r=h('button','cl-r',`<img src="icons/carta.svg" alt=""><span><b>${esc(x2.num)}</b> Carta de presentación</span>`);r.onclick=()=>{closeCRM();openCarta();CP.c=JSON.parse(JSON.stringify(x2));cpForm();cpPrev();cpHist()};dc.append(r)});
+    b.append(h('div','lb','Cotizaciones y cartas'),dc)}
+  // historial
+  b.append(h('div','lb','Historial'));const tl=h('ul','crm-tl');
+  c.hist.slice().reverse().slice(0,40).forEach(x2=>{const li=h('li','',`${esc(x2.t)}<small>${esc(crmAgo(x2.at))}${x2.by?' · '+esc(x2.by===ME?'tú':pname(x2.by)):''}</small>`);li.style.setProperty('--c',crmSt(x2.st).c);tl.append(li)});
+  if(!c.hist.length)tl.append(h('li','','Aún no hay historial'));b.append(tl);
+  const nf=h('form','crm-note');const ni=h('input','field');ni.placeholder='Anotar algo (llamada, pedido, idea…)';ni.id='crm-note';const nb=h('button','btn primary','Anotar');nf.append(ni,nb);
+  nf.onsubmit=e=>{e.preventDefault();const v=ni.value.trim();if(!v)return;nb.disabled=true;crmSave(c,{last:Date.now()},v).then(()=>{crmDraw();crmDrawer();toast('Anotado')}).catch(()=>{nb.disabled=false})};b.append(nf);
+  // borrar
+  if(c.rec){const del=h('button','btn ghost crm-del','Quitar del CRM');del.onclick=()=>{if(del.dataset.k){crmSave(c,{borrado:true},null).then(()=>{CRM.cards=CRM.cards.filter(z=>z.rec&&z.rec.id!==c.rec.id||!z.rec);crmClose();crmRefresh();toast('Quitado del CRM')}).catch(()=>{})}else{del.dataset.k=1;del.textContent='Toca otra vez para quitar';setTimeout(()=>{del.dataset.k='';del.textContent='Quitar del CRM'},3000)}};b.append(del)}
+}
+function crmSaveForm(c,b){
+  const p={};b.querySelectorAll('[data-k]').forEach(i=>{let v=i.value;if(i.dataset.k==='val')v=Number(String(v).replace(/[^\d.]/g,''))||0;else v=v==='—'?'':String(v).trim();p[i.dataset.k]=v});
+  if(!p.own)p.own=null;CRM.edit=false;crmSave(c,p,'Actualizó la ficha').then(()=>{crmDraw();crmDrawer();toast('Ficha guardada')}).catch(()=>{CRM.edit=true})}
+function crmTaskForm(c,b,btn){
+  if(b.querySelector('.crm-tf'))return;const f=h('form','crm-tf');
+  const tx=h('input','field');tx.placeholder='¿Qué hay que hacer? (ej. Llamar para la visita)';tx.id='crm-tt';
+  const dt=h('input','field');dt.type='date';dt.value=plus(1);dt.id='crm-td';const tm=h('input','field');tm.type='time';tm.value='10:00';tm.id='crm-th';
+  const ok=h('button','btn primary','Agendar');const cn=h('button','btn ghost','Cancelar');cn.type='button';cn.onclick=()=>f.remove();
+  const r=h('div','crm-tfr');r.append(dt,tm,cn,ok);f.append(tx,r);btn.parentElement.after(f);setTimeout(()=>tx.focus(),40);
+  f.onsubmit=e=>{e.preventDefault();const v=tx.value.trim();if(!v){tx.focus();return}const t=cotTeam();
+    const as=c.own&&c.own!==ME&&isShared(t.id)?c.own:null;const k=fixTask({text:v,list:t.id,date:dt.value||plus(1),time:tm.value||'',owner:ME,assignee:as});k.fields=Object.assign({},k.fields,{cli:c.name});
+    S.tasks.push(k);save();try{renderList()}catch(_){}
+    c.tasks=crmTasksOf(c.name);crmSave(c,{},'Agendó: '+v+' · '+whenTxt(k.date).toLowerCase()).then(()=>{crmDraw();crmDrawer()}).catch(()=>{});toast('Agendado en Arquizo '+whenTxt(k.date).toLowerCase())};
+}
+/* ---- nuevo cliente ---- */
+function crmForm(){
+  const box=h('div','mpad');mhead('Nuevo cliente',box);
+  box.append(h('p','small-note','Entra al embudo como «Nuevo». Kivo te recuerda contactarlo mañana.'));
+  const g=h('div','crm-form');const mem=crmMembers();
+  const fld=(id,l,el,full)=>{const w=h('label',full?'full':'');w.append(h('span','',l),el);el.id=id;g.append(w);return el};
+  const inp=(ph,tp)=>{const i=h('input','field');i.placeholder=ph||'';if(tp)i.type=tp;return i};
+  const sel=(opts,lab)=>{const s=h('select','field');opts.forEach(o=>{const op=h('option','',esc(lab?lab(o):o));op.value=o;s.append(op)});return s};
+  const nm=fld('crm-n','Nombre o empresa',inp('Ej. Familia Quispe'),true);
+  const ct=fld('crm-c','Contacto',inp('Ej. Rosa Quispe'));const ph=fld('crm-p','Teléfono / WhatsApp',inp('987 654 321','tel'));
+  const sv=fld('crm-s','Servicio',sel(CRM_SVC));const vl=fld('crm-v','Valor estimado (S/)',inp('8500'));vl.inputMode='numeric';
+  const sr=fld('crm-o','¿Cómo llegó?',sel(CRM_SRC));const pl=fld('crm-l','Lugar',inp('Ej. Surco'));
+  const ow=fld('crm-w','Encargado',sel(mem,id=>id===ME?pname(id)+' (yo)':pname(id)||'Equipo'));
+  box.append(g);
+  const f=h('div','foot');f.append(h('div','grow'));const cn=h('button','btn ghost','Cancelar');cn.onclick=closeModal;const ok=h('button','btn primary','Agregar al embudo');f.append(cn,ok);box.append(f);
+  ok.onclick=async()=>{const name=nm.value.trim();if(!name){nm.focus();toast('Escribe el nombre del cliente');return}
+    if(CRM.cards.some(c=>cliKey(c.name)===cliKey(name))){toast('Ya está en el CRM: '+name);return}
+    ok.disabled=true;const c={id:'v-new',rec:null,row:null,name,stage:'new',stageAt:Date.now(),created:Date.now(),hist:[],tasks:[],cot:[],car:[],contact:ct.value.trim(),phone:ph.value.trim(),email:'',place:pl.value.trim(),svc:sv.value,val:Number(vl.value.replace(/[^\d.]/g,''))||0,src:sr.value,own:ow.value||ME};
+    try{const nc=await crmSave(c,{last:Date.now()},'Entró por '+sr.value,'new');crmTask(nc,'Contactar a '+name,1);closeModal();crmDraw();toast('Agregado. Mañana te recuerdo contactarlo')}catch(e){ok.disabled=false}};
+  const m=openModal(box);m.parentElement.style.zIndex=8600;setTimeout(()=>nm.focus(),60);
 }
 
 /* ================= Kivo 1.3: chat del equipo en tiempo real ================= */

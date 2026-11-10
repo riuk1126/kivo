@@ -588,6 +588,7 @@ if(IN_KIVO){
     if(d.reply){const p=pend[d.reply];if(!p)return;delete pend[d.reply];d.err?p.rej(Object.assign(new Error(d.err),{code:d.code})):p.res(d.data);return}
     if(d.snap&&snapCb)snapCb(d.snap);
     if(d.theme)document.documentElement.dataset.theme=d.theme;
+    if(d.prefill)setTimeout(()=>kivoPrefill(d.prefill),0);
     if(d.team){const c=document.getElementById('sync-chip');if(c){c.textContent=d.team;c.className='chip ok'}}});
   caps.db={doc:p=>({get:async()=>{const v=await call('get',{p});return {exists:v!=null,data:()=>v}},set:v=>call('set',{p,v}),delete:()=>call('del',{p})}),
     collection:()=>({orderBy:()=>({limit:()=>({onSnapshot:cb=>{snapCb=list=>cb({docs:list.map(x=>({data:()=>x}))});parent.postMessage({kcot:1,op:'watch'},'*')}})})})};
@@ -595,6 +596,10 @@ if(IN_KIVO){
   parent.postMessage({kcot:1,op:'hello'},'*');
 }
 
+async function kivoPrefill(p){
+  if(dirty&&!(await askConfirm("Hay cambios sin guardar en la cotización actual. ¿Empezar una nueva para "+(p.nombre||"este cliente")+"?","Empezar nueva")))return;
+  q=newQuote();q.cliente.nombre=p.nombre||"";q.cliente.telefono=p.telefono||"";q.cliente.email=p.email||"";q.proyecto.ubicacion=p.ubicacion||"";q.ejemplo=false;dirty=true;renderAll();toast("Nueva cotización para "+(q.cliente.nombre||"el cliente"));
+}
 function newQuote(){
   return {id:uid(),numero:nextNumero(),fecha:Date.now(),estado:"borrador",
     cliente:{nombre:"",doc:"",telefono:"",email:""},
