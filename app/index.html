@@ -311,6 +311,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .auth-card h1{font-size:26px;margin:0 0 4px}
 .muted2{color:var(--muted);margin:0 0 18px;font-size:15px}
 .auth-card .seg{margin-top:0}
+.raiki-tag{margin:6px 0 16px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#8a8a8f)}.raiki-tag b{font-weight:800;color:inherit;opacity:1}
 .auth-form{display:flex;flex-direction:column;gap:10px;margin-top:16px;text-align:left}
 .auth-form .field{padding:12px 14px;font-size:16px}
 .auth-form .btn{padding:12px;font-size:16px;margin-top:4px}
@@ -4635,7 +4636,7 @@ function authErr(e){const m=String((e&&e.message)||e||'');
 function showAuth(mode,msg){
   mode=mode||'in';const a=$('#auth');a.style.display='flex';a.innerHTML='';$('#app').style.display='none';
   const card=h('div','auth-card');
-  card.innerHTML='<img class="auth-logo-img" src="icons/kivo.svg" alt="Kivo"><h1>Kivo</h1><p class="muted2">Tus tareas y las de tu equipo, siempre al día.</p>';
+  card.innerHTML='<img class="auth-logo-img" src="icons/kivo.svg" alt="Kivo"><h1>Kivo</h1><p class="muted2">Tus tareas y las de tu equipo, siempre al día.</p><p class="raiki-tag">Cuenta <b>RAIKI</b> · la misma para Kivo y OXEN PRO</p>';
   if(mode==='in'||mode==='up'){const tabs=h('div','seg');[['in','Entrar'],['up','Crear cuenta']].forEach(([k,l])=>{const b=h('button',mode===k?'on':'',l);b.type='button';b.onclick=()=>showAuth(k);tabs.append(b)});card.append(tabs)}
   if(mode==='reset')card.append(h('p','small-note','Escribe tu correo y te enviamos un enlace para crear una contraseña nueva.'));
   const f=h('form','auth-form');
