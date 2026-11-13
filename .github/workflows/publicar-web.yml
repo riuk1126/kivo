@@ -1,0 +1,34 @@
+# Publica solo la versión web de Kivo (la que carga la tableta) sin armar instaladores.
+# Se ejecuta al subir a "main" un cambio cuyo mensaje incluya [web].
+name: Publicar Kivo web
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  web:
+    if: ${{ contains(github.event.head_commit.message, '[web]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install && node scripts/vendor.js
+      - name: Publicar en GitHub Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rm -rf site && mkdir site && cp -r app/* site/
+          rm -f site/vendor/transformers.min.js site/vendor/ort-wasm*
+          V=$(node -p "require('./package.json').version")
+          sed -i "s/__KIVO_VERSION__/$V/" site/index.html
+          sed -i "s/const C = 'kivo-v1'/const C = 'kivo-$V'/" site/sw.js
+          touch site/.nojekyll
+          cd site && git init -q && git checkout -q -b gh-pages && git add -A
+          git -c user.name="Kivo" -c user.email="kivo@users.noreply.github.com" commit -qm "Kivo web $V"
+          git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages
