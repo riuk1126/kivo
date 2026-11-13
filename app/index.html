@@ -1390,6 +1390,7 @@ button.cl-r:hover{background:var(--fill)}
     <div class="clash" id="clash" hidden></div>
   </div>
 
+  <div id="rinvKivo"></div>
   <div id="banner"></div>
   <div class="tabs" id="tabs">
     <button class="tab" data-v="hoy">Hoy<span class="n"></span></button>
@@ -1875,6 +1876,7 @@ Deno.serve(handler);
 </script>
 <script>window.KIVO_VERSION='__KIVO_VERSION__'</script>
 <script src="config.js"></script>
+<script src="raiki-invitar.js"></script>
 <script src="vendor/supabase.js" onerror="this.remove()"></script>
 <script>if(!window.supabase)document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
 <script>if(!window.supabase)document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>')</script>
@@ -3110,7 +3112,6 @@ function renderBanner(){
   if(NOMETA&&!NOCOLS&&schedLists().length){const d=h('div','banner','<b>Para que tu horario, metas y sesiones se guarden en la nube, actualiza la base de datos: en Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL2).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL2)}};d.append(y);b.append(d)}
   mobileBanners(b);
   if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary',WEB_UPD?'Actualizar ahora':'Reiniciar y actualizar');y.onclick=installUpdate;d.append(y);b.append(d)}
-  if(!S.flexioOff)b.append(flexioBanner());
   if(DEFERRED&&!S.installOff){const d=h('div','banner','<span style="font-size:22px">📲</span><b>Instala Kivo en este equipo para abrirla como un programa.</b>');const y=h('button','btn primary','Instalar');y.onclick=installApp;const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.installOff=true;save();renderBanner()};d.append(y,n);b.append(d)}
   if(!S.alerts||S.bannerOff||notifState()!=='default')return;
   const d=h('div','banner','<span style="font-size:22px">🔔</span><b>¿Quieres que te avise de tus pendientes aunque estés en otra ventana?</b>');
@@ -4149,6 +4150,14 @@ async function bajarFlexio(btn){
   catch(e){toast('No se pudo descargar Flexio. Revisa tu internet')}
   finally{btn.disabled=false;btn.textContent='Descargar';try{lis&&lis.remove()}catch(e){}}
 }
+/* Invitaciones a las otras apps RAIKI (OXEN PRO y Flexio) que esta cuenta aún no tiene en Android */
+let INV_HECHO=false;
+function invitarApps(){
+  if(INV_HECHO||!window.RaikiInvitar||!sb||!ME)return;INV_HECHO=true;
+  let d='';try{d=localStorage.getItem('raiki-kivo-dispositivo')||''}catch(e){}
+  if(!d){d=(crypto.randomUUID?crypto.randomUUID():'k'+Date.now().toString(36)+Math.random().toString(36).slice(2));try{localStorage.setItem('raiki-kivo-dispositivo',d)}catch(e){}}
+  RaikiInvitar.iniciar({app:'kivo',rpc:async(n,x)=>{const r=await sb.rpc(n,x||{});if(r.error)throw r.error;return r.data},contenedor:()=>document.getElementById('rinvKivo'),dispositivo:d,version:String(window.KIVO_VERSION||''),nativo:KNAT,avisar:t=>toast(t),email:()=>MYEMAIL});
+}
 let APKUPD=null;
 // enlace al APK más reciente que ya esté publicado (evita el 404 mientras se arma una versión nueva)
 async function apkUrl(){try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases?per_page=8',{cache:'no-store'});const j=await r.json();for(const rel of j){const a=(rel.assets||[]).find(x=>x.name==='Kivo.apk');if(a&&!rel.draft)return a.browser_download_url}}catch(e){}return 'https://github.com/riuk1126/kivo/releases/latest/download/Kivo.apk'}
@@ -4743,7 +4752,7 @@ async function start(session){
   MEMBERS[ME]={id:ME,name:S.name,email:MYEMAIL,color:S.accent};
   $('#auth').style.display='none';$('#app').style.display='';
   resetDraft();fillDL();renderAll();lastJ=snapJ();setSync('busy');
-  try{await fetchAll();READY=true;renderAll();subscribe();await flush();
+  try{setTimeout(invitarApps,2500);await fetchAll();READY=true;renderAll();subscribe();await flush();
     if(!S.seeded){if(S.lists.some(l=>l.owner===ME))S.seeded=true;else firstRun()}
   }catch(e){console.warn(e);READY=true;setSync('err');setTimeout(()=>fetchAll().then(()=>{renderAll();if(!CH)subscribe();flush()}).catch(()=>{}),15000)}
   if(!IS_APP)$('#txt').focus();setTimeout(tick,1500);
