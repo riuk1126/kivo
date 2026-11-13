@@ -24,6 +24,19 @@
     if (/Linux/.test(ua)) return 'linux';
     return 'web';
   }
+  // mismo nombre de equipo que usa OXEN PRO, para reconocer la misma tableta en las tres apps
+  function nombreEquipo() {
+    const ua = navigator.userAgent;
+    const m = ua.match(/Android [\d.]+;\s*([^;)]+)/);
+    if (m && m[1] && !/^(K|wv)$/.test(m[1].trim())) return 'Android · ' + m[1].replace(/Build.*/, '').trim();
+    if (/Android/.test(ua)) return 'Android';
+    if (/iPad|iPhone/.test(ua)) return 'iPad / iPhone';
+    const esc = /Electron/.test(ua) ? '' : ' (navegador)';
+    if (/Windows/.test(ua)) return 'Windows' + esc;
+    if (/Mac/.test(ua)) return 'Mac' + esc;
+    if (/Linux/.test(ua)) return 'Linux' + esc;
+    return 'Navegador';
+  }
   function estilos() {
     if (document.getElementById('rinv-css')) return;
     const s = document.createElement('style'); s.id = 'rinv-css';
@@ -42,7 +55,7 @@
   // o: { app, rpc(nombre, args) → Promise, contenedor: Element o función que lo devuelve, dispositivo, version, nativo() → plugin con installUpdate, avisar(texto) }
   async function iniciar(o) {
     const avisar = o.avisar || (t => console.log(t));
-    try { await o.rpc('registrar_app', { p_app: o.app, p_device: o.dispositivo, p_plataforma: plataforma(), p_version: o.version || null }); } catch (e) { /* sin internet: no pasa nada */ }
+    try { await o.rpc('registrar_app', { p_app: o.app, p_device: o.dispositivo, p_plataforma: plataforma(), p_version: o.version || null, p_nombre: nombreEquipo() }); } catch (e) { /* sin internet: no pasa nada */ }
     let r = null;
     try { r = await o.rpc('mis_apps'); } catch (e) { r = leer('raiki-mis-apps'); }
     if (!r) return;
