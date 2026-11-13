@@ -1359,6 +1359,7 @@ button.cl-r:hover{background:var(--fill)}
   body.printing #printArea{display:block}
   body.printing .pg{padding:0}
 }
+.flexio-b{background:linear-gradient(100deg,rgba(102,102,255,.16),rgba(102,102,255,.05))!important;box-shadow:0 0 0 1px rgba(102,102,255,.4)!important}.flexio-ico{width:40px;height:40px;background:#fff;border-radius:10px;padding:5px;box-sizing:border-box;flex:none}.flexio-t{flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px}.flexio-t small{opacity:.7;font-size:13px}.flexio-btn{background:#6666ff!important;border-color:#6666ff!important;color:#fff!important}
 </style>
 </head>
 <body>
@@ -3109,6 +3110,7 @@ function renderBanner(){
   if(NOMETA&&!NOCOLS&&schedLists().length){const d=h('div','banner','<b>Para que tu horario, metas y sesiones se guarden en la nube, actualiza la base de datos: en Supabase → SQL Editor pega el código y dale «Run».</b>');const y=h('button','btn primary','Copiar código');y.onclick=()=>{try{navigator.clipboard.writeText(UPG_SQL2).then(()=>toast('Código copiado. Pégalo en Supabase → SQL Editor → Run'))}catch(e){prompt('Copia este código:',UPG_SQL2)}};d.append(y);b.append(d)}
   mobileBanners(b);
   if(typeof UPD!=='undefined'&&UPD.state==='ready'){const d=h('div','banner','<span style="font-size:22px">✨</span><b>Hay una versión nueva de Kivo ('+esc(UPD.version)+') lista para instalar.</b>');const y=h('button','btn primary',WEB_UPD?'Actualizar ahora':'Reiniciar y actualizar');y.onclick=installUpdate;d.append(y);b.append(d)}
+  if(!S.flexioOff)b.append(flexioBanner());
   if(DEFERRED&&!S.installOff){const d=h('div','banner','<span style="font-size:22px">📲</span><b>Instala Kivo en este equipo para abrirla como un programa.</b>');const y=h('button','btn primary','Instalar');y.onclick=installApp;const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.installOff=true;save();renderBanner()};d.append(y,n);b.append(d)}
   if(!S.alerts||S.bannerOff||notifState()!=='default')return;
   const d=h('div','banner','<span style="font-size:22px">🔔</span><b>¿Quieres que te avise de tus pendientes aunque estés en otra ventana?</b>');
@@ -4124,6 +4126,28 @@ async function checkApkUpdate(){
   const cur=String(window.KIVO_VERSION||'');if(!/^\d/.test(cur))return;
   try{const r=await fetch('https://api.github.com/repos/riuk1126/kivo/releases/latest');if(!r.ok)return;const j=await r.json();const v=String(j.tag_name||'').replace(/^v/,'');
     if(v&&vNewer(v,cur)&&(j.assets||[]).some(a=>a.name==='Kivo.apk')){APKUPD=v;renderBanner()}}catch(e){}
+}
+/* Flexio: la nueva app 3D de RAIKI. Se descarga desde aquí y se entra con la misma cuenta RAIKI */
+const FLEXIO_APK='https://github.com/riuk1126/oxenpro/releases/download/flexio-v1.0.0/Flexio.apk';
+function flexioBanner(){
+  const d=h('div','banner flexio-b','<img src="icons/flexio.svg" alt="Flexio" class="flexio-ico"><span class="flexio-t"><b>Prueba el nuevo aplicativo: Flexio</b><small>Modelado 3D para arquitectos. Entras con tu misma cuenta RAIKI.</small></span>');
+  const y=h('button','btn primary flexio-btn','Descargar');y.onclick=()=>bajarFlexio(y);
+  const n=h('button','btn ghost','Ahora no');n.onclick=()=>{S.flexioOff=true;save();renderBanner();toast('Puedes bajar Flexio cuando quieras desde la tableta: riuk1126.github.io/oxenpro/flexio')};
+  d.append(y,n);return d;
+}
+async function bajarFlexio(btn){
+  const P=KNAT();
+  if(!P||!P.installUpdate){ // navegador o computadora
+    if(/Android/i.test(navigator.userAgent))location.href=FLEXIO_APK;
+    else{window.open('https://riuk1126.github.io/oxenpro/flexio/','_blank');toast('Flexio es para tableta y celular Android. Aquí puedes probarla en el navegador')}
+    return}
+  btn.disabled=true;btn.textContent='Descargando…';let lis=null;
+  try{lis=await P.addListener('updProgress',d=>{btn.textContent='Descargando '+d.p+'%'})}catch(e){}
+  try{const r=await P.installUpdate({url:FLEXIO_APK});
+    if(r&&r.status==='permission')toast('Activa «Permitir de esta fuente» para Kivo, vuelve y toca Descargar otra vez');
+    else toast('Toca «Instalar» y abre Flexio con tu cuenta RAIKI')}
+  catch(e){toast('No se pudo descargar Flexio. Revisa tu internet')}
+  finally{btn.disabled=false;btn.textContent='Descargar';try{lis&&lis.remove()}catch(e){}}
 }
 let APKUPD=null;
 // enlace al APK más reciente que ya esté publicado (evita el 404 mientras se arma una versión nueva)
