@@ -1,6 +1,10 @@
 # Prueba el dictado sin internet (Whisper en español) dentro del programa
 name: Probar dictado
 on: workflow_dispatch
+# el dictado no usa la tarjeta gráfica: no descargar la versión CUDA (Microsoft la quitó y falla la instalación)
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   probar:
     runs-on: ubuntu-latest
