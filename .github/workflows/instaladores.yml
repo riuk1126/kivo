@@ -16,6 +16,10 @@ on:
 permissions:
   contents: write
 
+# el dictado no usa la tarjeta gráfica: no descargar la versión CUDA (Microsoft la quitó y falla la instalación)
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   build:
     if: ${{ !inputs.solo_android }}
