@@ -4761,7 +4761,8 @@ async function start(session){
 function boot(){
   $('#searchBtn').innerHTML=ICO.search;$('#statsBtn').innerHTML=ICO.chart;$('#gear').innerHTML=ICO.gear;$('#mic').innerHTML=ICO.mic;
   if(IS_APP){if(!KNAT())$('#printBtn').style.display='none';const wo=window.open.bind(window);window.open=(u,t,f)=>{if(/^(https?|mailto|tel|whatsapp):/i.test(String(u||''))&&!/^https?:\/\/localhost/.test(u)){location.href=u;return null}return wo(u,t,f)}}
-  if(!IS_APP&&'serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+  // copia guardada en el equipo: Kivo abre y funciona sin internet (también en la app de Android)
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();DEFERRED=e;if(ME)renderBanner()});
   S=defaults();applyLook();
   if(window.__PENDIENTES_MOCK__)sb=window.__PENDIENTES_MOCK__;
@@ -4778,7 +4779,11 @@ function boot(){
     },0);
   });
   if(window.kivo){const v=document.createElement('style');v.textContent='.hint{display:none}';document.head.append(v)}
-  sb.auth.getSession().then(({data})=>{if(data&&data.session)start(data.session);else if(!ME)showAuth('in')}).catch(()=>showAuth('in'));
+  // Sin internet (en obra, sin señal) la sesión no se puede renovar: se entra igual con la última sesión guardada
+  // y todo lo que hagas se sincroniza solo al volver la conexión.
+  const sesionGuardada=()=>{try{const k=Object.keys(localStorage).find(x=>/^sb-.*-auth-token$/.test(x));const v=k&&JSON.parse(localStorage.getItem(k));const s=v&&(v.currentSession||v);return s&&s.user&&s.user.id?s:null}catch(e){return null}};
+  const sinSesion=err=>{const g=sesionGuardada();if(g&&(err||!navigator.onLine)){start(g);setSync('err')}else if(!ME)showAuth('in')};
+  sb.auth.getSession().then(({data,error})=>{if(data&&data.session)start(data.session);else sinSesion(error)}).catch(e=>sinSesion(e||true));
   window.addEventListener('online',()=>{if(ME&&READY){fetchAll().then(renderAll).catch(()=>{});flush()}});
   setTimeout(()=>{if(ME)try{tick()}catch(e){}},2500);
   setInterval(()=>{if(!ME)return;checkDay();tick();try{schedTick()}catch(e){console.warn(e)}renderHeader()},20000);
