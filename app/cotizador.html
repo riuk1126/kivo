@@ -606,7 +606,7 @@ const DEFAULT_CFG={
     {id:"int-integral",cat:"interiores",nombre:"Interiorismo Integral",sub:"Proyecto completo listo para ejecutar",modo:"m2",tarifa:45,plazoBase:12,plazoM2:0.12,recomendado:true,
      incluye:["Todo lo del paquete Esencial","Planos de pisos, cielos rasos y muros","Proyecto de iluminación y tomacorrientes","Planos de muebles a medida (carpintería)","Renders de todos los ambientes","Especificaciones técnicas y lista de compras","2 rondas de cambios por etapa"]},
     {id:"int-llave",cat:"interiores",nombre:"Diseño + Ejecución",sub:"Llave en mano con dirección de obra",modo:"m2",tarifa:60,plazoBase:15,plazoM2:0.15,recomendado:false,
-     incluye:["Todo lo del paquete Integral","Presupuesto de obra por partidas","Coordinación de proveedores y carpintería","Supervisión semanal de obra","Acta de entrega y levantamiento de observaciones","El diseño se descuenta si la obra se ejecuta con Arquizo"]},
+     incluye:["Reunión de requerimientos y visita técnica","Moodboard y concepto de diseño","Plano de distribución amoblado","Paleta de materiales, colores y acabados","Planos de pisos, cielos rasos y muros","Proyecto de iluminación y tomacorrientes","Planos de muebles a medida (carpintería)","Renders de todos los ambientes","Especificaciones técnicas y lista de compras","2 rondas de cambios por etapa","Presupuesto de obra por partidas","Coordinación de proveedores y carpintería","Supervisión de obra","Acta de entrega y levantamiento de observaciones","El diseño se descuenta si la obra se ejecuta con Arquizo"]},
     {id:"arq-ante",cat:"arquitectura",nombre:"Anteproyecto Arquitectónico",sub:"Distribución funcional y fachada en 3D",modo:"m2",tarifa:15,plazoBase:10,plazoM2:0.02,recomendado:false,
      incluye:["Zonificación y partido arquitectónico","Plantas de distribución acotadas y amobladas (1:50)","Cortes y elevaciones principales","Modelado 3D de fachada","Memoria descriptiva y cuadro de áreas"]},
     {id:"arq-integral",cat:"arquitectura",nombre:"Proyecto Integral con Especialidades",sub:"Arquitectura completa + ingenierías",modo:"m2",tarifa:35,plazoBase:18,plazoM2:0.03,recomendado:true,
@@ -687,6 +687,14 @@ function newQuote(){
 }
 function defObra(){return {on:false,rubro:"",acabado:"estandar",fuente:"fotos",partidas:{},gg:"",utilidad:"",rango:"",desglose:true,descontarDiseno:true,notas:""}}
 function normQ(x){x.extras=x.extras||{};x.tarifas=x.tarifas||{};x.hitos=x.hitos||clone(cfg.hitos);x.obra=Object.assign(defObra(),x.obra||{});x.obra.partidas=x.obra.partidas||{};return x}
+/* actualiza el paquete «Diseño + Ejecución» guardado por el equipo: lista completa de lo que incluye */
+function migrarPaquetes(){
+  const def=DEFAULT_CFG.paquetes.find(p=>p.id==="int-llave");
+  (cfg.paquetes||[]).forEach(p=>{
+    if(p.id==="int-llave"&&(p.incluye||[]).some(i=>/todo lo del paquete integral/i.test(i)))p.incluye=clone(def.incluye);
+    p.incluye=(p.incluye||[]).map(i=>i.replace(/supervisi[oó]n semanal de obra/i,"Supervisión de obra"));
+  });
+}
 function mergeObra(o){const d=clone(DEFAULT_OBRA);if(!o)return d;const r=Object.assign(d,o);r.acabados=Object.assign(clone(DEFAULT_OBRA.acabados),o.acabados||{});return r}
 function exampleQuote(){
   const e=newQuote();e.ejemplo=true;
@@ -736,7 +744,7 @@ function obraCalc(){
 }
 function calc(){
   const lines=[];const p=getPkg();
-  if(p)lines.push({concepto:p.nombre,detalle:p.sub,cant:p.modo==="m2"?fmtI.format(area())+" m²":"1",pu:pkgTarifa(p),unit:unitLbl(p.modo),monto:pkgMonto(p)});
+  if(p)lines.push({concepto:q.obra&&q.obra.on?"Diseño":p.nombre,detalle:p.sub,cant:p.modo==="m2"?fmtI.format(area())+" m²":"1",pu:pkgTarifa(p),unit:unitLbl(p.modo),monto:pkgMonto(p)});
   cfg.extras.forEach(x=>{if(xOn(x))lines.push({concepto:x.nombre,detalle:x.desc,cant:x.modo==="m2"?fmtI.format(area())+" m²":x.modo==="unidad"?String(xCant(x)):"1",pu:xTarifa(x),unit:unitLbl(x.modo),monto:xMonto(x)})});
   const disenoSub=lines.reduce((a,l)=>a+l.monto,0);
   const obra=obraCalc();const obraT=obra?obra.total:0;
@@ -1330,7 +1338,7 @@ function importBackup(file){
     const map={};(LS.get("arq_cots")||[]).concat(d.cotizaciones||[]).forEach(c=>{if(c&&c.id&&(!map[c.id]||(c.actualizado||0)>(map[c.id].actualizado||0)))map[c.id]=c});
     const all=Object.values(map).sort((a,b)=>(b.actualizado||0)-(a.actualizado||0));
     if(d.empresa)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),d.empresa);
-    if(d.catalogo){Object.assign(cfg,d.catalogo);cfg.obra=mergeObra(d.catalogo.obra)}
+    if(d.catalogo){Object.assign(cfg,d.catalogo);cfg.obra=mergeObra(d.catalogo.obra);migrarPaquetes()}
     let ok;
     if(caps.db){ok=true;toast("Subiendo "+all.length+" cotizaciones al equipo…");try{await store.saveCfg();for(const c of all){if(!saved.some(z=>z.id===c.id&&(z.actualizado||0)>=(c.actualizado||0)))await store.saveQuote(c)}}catch(e){ok=false}}
     else ok=LS.set("arq_cots",all)&&LS.set("arq_empresa",cfg.empresa)&&LS.set("arq_catalogo",catalogo(cfg));
@@ -1348,6 +1356,7 @@ renderTipos();renderAreaQuick();renderAll();
   if(em)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),em);
   if(ca)Object.assign(cfg,ca);
   cfg.obra=mergeObra(ca&&ca.obra);
+  migrarPaquetes();
   store.watch();
   if(q.ejemplo){q.hitos=clone(cfg.hitos);q.numero=nextNumero()}
   renderAll();
