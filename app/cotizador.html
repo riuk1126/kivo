@@ -155,6 +155,28 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;padding-blo
 .xedit{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;color:var(--ink-2);padding-left:28px}
 .xedit input{width:90px;padding:4px 7px;text-align:right;font-family:var(--f-mono);font-size:13px}
 .xedit input.q{width:64px}
+/* Obra */
+.o-switch{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2);cursor:pointer}
+.o-switch b{display:block;font-size:14px}.o-switch small{display:block;color:var(--ink-2);font-size:12.5px}
+.o-opts{margin-top:14px}
+.o-edit{grid-column:1/-1;display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink-2);padding-left:28px}
+.o-edit label{display:inline-flex;align-items:center;gap:5px}
+.o-edit input{width:76px;padding:4px 7px;text-align:right;font-size:13px}
+.o-sum{margin-top:16px;border-radius:12px;background:var(--surface-2);padding:12px 14px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.o-sum div{display:flex;justify-content:space-between;gap:10px;color:var(--ink-2)}
+.o-sum .o-big{color:var(--ink);font-weight:650;font-size:15px;border-top:1px solid var(--line);padding-top:6px;margin-top:4px}
+.o-sum .o-rng{color:var(--warn)}
+.o-pct{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--ink-2)}
+.o-pct label{display:inline-flex;align-items:center;gap:6px}
+.o-pct input{width:64px;padding:4px 7px;text-align:right}
+.o-note{font-size:12px;color:var(--ink-3);margin:10px 0 0}
+.rub-chips{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px}
+.rub-chips label{display:inline-flex;align-items:center;gap:5px}
+/* hoja: obra */
+.sh-badge{display:inline-block;font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:var(--brand);color:#fff;border-radius:3px;padding:2px 6px;margin-left:8px;vertical-align:middle}
+.sh-table tr.grp td{background:var(--sheet-tint);font-family:var(--f-mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--sheet-mute);padding:5px 8px}
+.sh-rng{border:1px dashed var(--sheet-line);border-radius:4px;padding:9px 12px;margin-bottom:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sh-rng b{font-family:var(--f-mono)}
 
 /* Summary */
 .sum{position:sticky;top:76px;align-self:start}
@@ -422,8 +444,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
       <div id="x-wrap"></div>
     </section>
 
+    <section class="step" id="obra-step">
+      <div class="step-h"><span class="step-n">PASO 04</span><div><h2>Ejecución de obra (presupuesto aproximado)</h2><p>Para clientes que quieren el precio total: diseño + obra con materiales y mano de obra. Las cantidades salen del metraje y se pueden corregir.</p></div><span class="r chip" id="o-count">Sin obra</span></div>
+      <div id="obra-wrap"></div>
+    </section>
+
     <section class="step">
-      <div class="step-h"><span class="step-n">PASO 04</span><div><h2>Plazo y observaciones</h2><p>El plazo se calcula según el paquete y el metraje. Puedes fijarlo a mano.</p></div></div>
+      <div class="step-h"><span class="step-n">PASO 05</span><div><h2>Plazo y observaciones</h2><p>El plazo se calcula según el paquete y el metraje. Puedes fijarlo a mano.</p></div></div>
       <div class="grid">
         <label class="field"><span>Plazo calculado</span><input id="f-plazo-auto" disabled></label>
         <label class="field"><span>Plazo manual (días hábiles, opcional)</span><input id="f-plazo-man" data-path="plazoManual" type="number" min="1" placeholder="Usar el calculado"></label>
@@ -502,7 +529,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
     <button class="btn primary" id="set-save">Guardar ajustes</button>
     <button class="btn ghost" data-close>Cerrar</button></div></div>
   <div class="modal-b">
-    <div class="tabs set-tabs" id="set-tabs"><button data-st="empresa" aria-pressed="true">Empresa y logo</button><button data-st="paquetes">Paquetes y tarifas</button><button data-st="extras">Adicionales</button><button data-st="pagos">Pagos y condiciones</button><button data-st="respaldo">Respaldo</button></div>
+    <div class="tabs set-tabs" id="set-tabs"><button data-st="empresa" aria-pressed="true">Empresa y logo</button><button data-st="paquetes">Paquetes y tarifas</button><button data-st="extras">Adicionales</button><button data-st="obra">Obra</button><button data-st="pagos">Pagos y condiciones</button><button data-st="respaldo">Respaldo</button></div>
     <div id="set-body"></div>
   </div>
 </div></div>
@@ -520,7 +547,49 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 (function(){
 "use strict";
 /* ================= Datos base (tarifas sugeridas, editables en Ajustes) ================= */
-const TIPOLOGIAS=["Departamento","Casa / vivienda unifamiliar","Edificio multifamiliar","Local comercial","Restaurante / cafetería","Oficina","Consultorio / clínica","Casa de campo","Otro"];
+const TIPOLOGIAS=["Departamento","Casa / vivienda unifamiliar","Edificio multifamiliar","Local comercial","Importadora / almacén","Restaurante / cafetería","Oficina","Consultorio / clínica","Casa de campo","Otro"];
+const ACABADOS=[["economico","Económico"],["estandar","Estándar"],["premium","Premium"]];
+const FUENTES=[["fotos","Fotos o videos del cliente (sin visita)"],["visita","Visita técnica y medidas en el local"],["planos","Planos que envió el cliente"]];
+const UNDS=["m²","ml","und","pto","glb"];
+/* Partidas de obra: precios referenciales para Lima (S/ por unidad, acabado estándar). Se editan en Ajustes › Obra. */
+const DEFAULT_OBRA={
+  gg:10, utilidad:20, rango:15, plazoBase:10, plazoM2:0.3,
+  acabados:{economico:0.85,estandar:1,premium:1.3},
+  hitos:[{nombre:"Firma de contrato e inicio",pct:50},{nombre:"Avance de obra al 50 %",pct:30},{nombre:"Entrega de obra",pct:20}],
+  supuestos:"Incluye materiales, mano de obra, herramientas, transporte de materiales dentro de Lima y limpieza final.\nLas cantidades son aproximadas y se calculan según el metraje del local; se ajustan después del levantamiento de medidas.\nNo incluye trámites municipales, licencia de funcionamiento ni certificado ITSE (se cotizan aparte).\nNo incluye mercadería, equipos, aire acondicionado, electrodomésticos ni mobiliario que no figure en las partidas.\nNo incluye trabajos estructurales ni cambios de fachada que requieran permiso del propietario o de la municipalidad.\nTrabajos que aparezcan durante la obra (humedad, tuberías o cableado oculto en mal estado) se cotizan aparte, previa aprobación del cliente.\nLos precios de materiales pueden variar según el mercado; se mantienen durante la validez de la oferta.\nEl horario de trabajo y el acceso al local se coordinan con el cliente y el propietario.",
+  rubros:[
+    {id:"importadora",nombre:"Importadora / almacén con showroom",partidas:["prelim","resane","pintura","pintcielo","piso","zocalo","drywall","electr","puntos","luces","data","racks","counter","exhib","escrit","letrero","seguridad","limpieza"]},
+    {id:"oficina",nombre:"Oficina",partidas:["prelim","resane","pintura","pintcielo","piso","zocalo","drywall","cielo","electr","puntos","luces","data","escrit","seguridad","limpieza"]},
+    {id:"tienda",nombre:"Tienda / local comercial",partidas:["prelim","resane","pintura","pintcielo","piso","zocalo","cielo","electr","puntos","luces","counter","exhib","letrero","seguridad","limpieza"]},
+    {id:"vivienda",nombre:"Vivienda (departamento o casa)",partidas:["prelim","resane","pintura","pintcielo","piso","zocalo","puntos","luces","cocina","closet","limpieza"]},
+    {id:"libre",nombre:"Personalizado (elijo las partidas)",partidas:[]}
+  ],
+  partidas:[
+    {id:"prelim",grupo:"Preliminares",nombre:"Trabajos preliminares y protección",desc:"Protección de pisos y puertas, desmontaje de elementos existentes",und:"m²",cantModo:"area",factor:1,mat:2,mo:6},
+    {id:"demol",grupo:"Preliminares",nombre:"Demolición y retiro de elementos",desc:"Picado de pisos o muros y retiro de lo existente",und:"m²",cantModo:"area",factor:0.3,mat:0,mo:18},
+    {id:"resane",grupo:"Muros, pisos y techos",nombre:"Resane y empaste de muros",desc:"Corrección de fisuras y empaste para pintura (muros ≈ 1,6 × área)",und:"m²",cantModo:"area",factor:1.6,mat:5,mo:8},
+    {id:"pintura",grupo:"Muros, pisos y techos",nombre:"Pintura de muros",desc:"Látex lavable, sellador + 2 manos",und:"m²",cantModo:"area",factor:1.6,mat:8,mo:7},
+    {id:"pintcielo",grupo:"Muros, pisos y techos",nombre:"Pintura de cielo raso",desc:"Látex blanco, 2 manos",und:"m²",cantModo:"area",factor:1,mat:6,mo:7},
+    {id:"piso",grupo:"Muros, pisos y techos",nombre:"Piso de porcelanato 60 × 60",desc:"Incluye pegamento, fragua, nivelación ligera y 5 % de desperdicio",und:"m²",cantModo:"area",factor:1.05,mat:70,mo:30},
+    {id:"zocalo",grupo:"Muros, pisos y techos",nombre:"Contrazócalo",desc:"Porcelanato o PVC de 10 cm",und:"ml",cantModo:"area",factor:0.55,mat:10,mo:8},
+    {id:"drywall",grupo:"Muros, pisos y techos",nombre:"Tabiquería de drywall",desc:"Divisiones de oficina o depósito, con empaste y pintura",und:"m²",cantModo:"fija",factor:15,mat:65,mo:35},
+    {id:"cielo",grupo:"Muros, pisos y techos",nombre:"Cielo raso de drywall",desc:"Junta perdida, con empaste y pintura",und:"m²",cantModo:"area",factor:0.4,mat:50,mo:30},
+    {id:"electr",grupo:"Instalaciones",nombre:"Tablero y cableado eléctrico",desc:"Tablero con llaves termomagnéticas y cableado general",und:"glb",cantModo:"fija",factor:1,mat:1200,mo:600},
+    {id:"puntos",grupo:"Instalaciones",nombre:"Puntos eléctricos",desc:"Tomacorrientes e interruptores nuevos",und:"pto",cantModo:"area",factor:0.17,mat:55,mo:45},
+    {id:"luces",grupo:"Instalaciones",nombre:"Iluminación LED",desc:"Paneles o spots LED instalados",und:"und",cantModo:"area",factor:0.25,mat:45,mo:20},
+    {id:"data",grupo:"Instalaciones",nombre:"Puntos de data y cámaras",desc:"Cableado de red y salidas para cámaras",und:"pto",cantModo:"fija",factor:4,mat:70,mo:50},
+    {id:"bano",grupo:"Instalaciones",nombre:"Remodelación de baño",desc:"Inodoro, lavatorio, grifería y enchape",und:"und",cantModo:"fija",factor:1,mat:2200,mo:1300},
+    {id:"racks",grupo:"Mobiliario y equipamiento",nombre:"Estantería metálica para almacén",desc:"Racks de ángulo ranurado o semipesados",und:"ml",cantModo:"fija",factor:8,mat:260,mo:40},
+    {id:"counter",grupo:"Mobiliario y equipamiento",nombre:"Mostrador de atención",desc:"Melamina de 18 mm con tablero y cajones",und:"und",cantModo:"fija",factor:1,mat:1500,mo:600},
+    {id:"exhib",grupo:"Mobiliario y equipamiento",nombre:"Muebles de exhibición",desc:"Repisas y vitrinas en melamina para el showroom",und:"ml",cantModo:"fija",factor:6,mat:420,mo:160},
+    {id:"escrit",grupo:"Mobiliario y equipamiento",nombre:"Escritorios de oficina",desc:"Melamina con cajonera",und:"und",cantModo:"fija",factor:2,mat:550,mo:200},
+    {id:"cocina",grupo:"Mobiliario y equipamiento",nombre:"Muebles de cocina",desc:"Bajo y alto en melamina, con tablero",und:"ml",cantModo:"fija",factor:2.5,mat:900,mo:350},
+    {id:"closet",grupo:"Mobiliario y equipamiento",nombre:"Closets",desc:"Melamina con puertas y cajonería",und:"ml",cantModo:"fija",factor:3,mat:750,mo:300},
+    {id:"letrero",grupo:"Fachada, seguridad y cierre",nombre:"Letrero de fachada",desc:"Panel con letras corpóreas o caja de luz",und:"glb",cantModo:"fija",factor:1,mat:1600,mo:500},
+    {id:"seguridad",grupo:"Fachada, seguridad y cierre",nombre:"Señalización y extintores",desc:"Lo mínimo que pide la inspección de Defensa Civil",und:"glb",cantModo:"fija",factor:1,mat:450,mo:100},
+    {id:"limpieza",grupo:"Fachada, seguridad y cierre",nombre:"Limpieza final y retiro de desmonte",desc:"Local listo para usar",und:"glb",cantModo:"fija",factor:1,mat:150,mo:350}
+  ]
+};
 const DEFAULT_CFG={
   empresa:{nombre:"Arquizo",lema:"Arquitectura e interiores",ruc:"20614468131",web:"www.arquizo.com",telefono:"+51 952 346 734",email:"",direccion:"Lima, Perú",representante:"",repDoc:"",color:"#CF0100",logo:null,pie:"Servicio de diseño — no incluye ejecución de obra salvo que se indique."},
   paquetes:[
@@ -554,6 +623,7 @@ const DEFAULT_CFG={
   ],
   hitos:[{nombre:"Firma de contrato",pct:40},{nombre:"Aprobación del anteproyecto",pct:30},{nombre:"Entrega final",pct:30}],
   numeracion:{prefijo:"ARZ",anio:2026,siguiente:1},
+  obra:DEFAULT_OBRA,
   tipoCambio:3.75, igv:18, validez:15,
   condiciones:"Precios en soles. No incluyen IGV salvo que se indique.\nEl plazo corre desde el pago inicial y la entrega de la información del cliente.\nIncluye las rondas de cambios indicadas en el paquete; los cambios adicionales se cotizan aparte.\nNo incluye tasas municipales, notariales ni registrales.\nNo incluye ejecución de obra, salvo el paquete Diseño + Ejecución.\nVisitas fuera de Lima: viáticos aparte."
 };
@@ -605,8 +675,11 @@ function newQuote(){
     cliente:{nombre:"",doc:"",telefono:"",email:""},
     proyecto:{nombre:"",ubicacion:"",tipologia:"Departamento",area:"",pisos:1,ambientes:""},
     cat:"interiores",paqueteId:"int-integral",tarifas:{},extras:{},descuento:0,igv:false,moneda:"PEN",
-    hitos:clone(cfg.hitos),plazoManual:"",notas:"",imagen:null,contratoHTML:null};
+    hitos:clone(cfg.hitos),plazoManual:"",notas:"",imagen:null,contratoHTML:null,obra:defObra()};
 }
+function defObra(){return {on:false,rubro:"",acabado:"estandar",fuente:"fotos",partidas:{},gg:"",utilidad:"",rango:"",desglose:false,descontarDiseno:true,notas:""}}
+function normQ(x){x.extras=x.extras||{};x.tarifas=x.tarifas||{};x.hitos=x.hitos||clone(cfg.hitos);x.obra=Object.assign(defObra(),x.obra||{});x.obra.partidas=x.obra.partidas||{};return x}
+function mergeObra(o){const d=clone(DEFAULT_OBRA);if(!o)return d;const r=Object.assign(d,o);r.acabados=Object.assign(clone(DEFAULT_OBRA.acabados),o.acabados||{});return r}
 function exampleQuote(){
   const e=newQuote();e.ejemplo=true;
   e.cliente={nombre:"Lucía Paredes Gómez",doc:"45892104",telefono:"987654321",email:"lucia.paredes@correo.com"};
@@ -632,17 +705,44 @@ const xOn=x=>!!(q.extras[x.id]&&q.extras[x.id].on);
 const xTarifa=x=>{const s=q.extras[x.id];return s&&s.tarifa!=null&&s.tarifa!==""?num(s.tarifa):num(x.tarifa)};
 const xCant=x=>{const s=q.extras[x.id];return Math.max(1,s&&s.cant?num(s.cant):1)};
 const xMonto=x=>x.modo==="m2"?xTarifa(x)*area():x.modo==="unidad"?xTarifa(x)*xCant(x):xTarifa(x);
-function plazoAuto(){const p=getPkg();return p?Math.ceil(num(p.plazoBase)+num(p.plazoM2)*area()):0}
+function plazoDiseno(){const p=getPkg();return p?Math.ceil(num(p.plazoBase)+num(p.plazoM2)*area()):0}
+function plazoObra(){const o=cfg.obra;return q.obra&&q.obra.on?Math.ceil(num(o.plazoBase)+num(o.plazoM2)*area()):0}
+function plazoAuto(){return plazoDiseno()+plazoObra()}
+/* ---- Obra ---- */
+const oSt=id=>(q.obra.partidas[id]=q.obra.partidas[id]||{});
+const oOn=pt=>!!(q.obra.partidas[pt.id]&&q.obra.partidas[pt.id].on);
+const oMult=()=>num((cfg.obra.acabados||{})[q.obra.acabado])||1;
+function oCantAuto(pt){let c=pt.cantModo==="fija"?num(pt.factor):num(pt.factor)*area();return pt.und==="m²"?Math.round(c*10)/10:Math.ceil(c-1e-9)}
+const oVal=(pt,k)=>{const s=q.obra.partidas[pt.id];return s&&s[k]!=null&&s[k]!==""?num(s[k]):null};
+const oCant=pt=>{const v=oVal(pt,"cant");return v!=null?Math.max(0,v):oCantAuto(pt)};
+const oMat=pt=>{const v=oVal(pt,"mat");return v!=null?v:Math.round(num(pt.mat)*oMult()*100)/100};
+const oMo=pt=>{const v=oVal(pt,"mo");return v!=null?v:Math.round(num(pt.mo)*oMult()*100)/100};
+const oPct=k=>{const v=q.obra[k];return v!=null&&v!==""?num(v):num(cfg.obra[k])};
+function obraCalc(){
+  if(!q.obra||!q.obra.on)return null;
+  const items=cfg.obra.partidas.filter(oOn).map(pt=>{const cant=oCant(pt),mat=oMat(pt),mo=oMo(pt);return {id:pt.id,grupo:pt.grupo||"Otros",nombre:pt.nombre,desc:pt.desc,und:pt.und,cant,mat,mo,monto:cant*(mat+mo)}}).filter(i=>i.cant>0);
+  const mat=items.reduce((a,i)=>a+i.cant*i.mat,0), mo=items.reduce((a,i)=>a+i.cant*i.mo,0), cd=mat+mo;
+  const ggP=oPct("gg"),utP=oPct("utilidad"),rgP=Math.min(50,Math.max(0,oPct("rango")));
+  const gg=cd*ggP/100, util=(cd+gg)*utP/100, total=cd+gg+util, k=cd?total/cd:1;
+  return {items,mat,mo,cd,ggP,gg,utP,util,total,k,rgP,lo:total*(1-rgP/100),hi:total*(1+rgP/100)};
+}
 function calc(){
   const lines=[];const p=getPkg();
   if(p)lines.push({concepto:p.nombre,detalle:p.sub,cant:p.modo==="m2"?fmtI.format(area())+" m²":"1",pu:pkgTarifa(p),unit:unitLbl(p.modo),monto:pkgMonto(p)});
   cfg.extras.forEach(x=>{if(xOn(x))lines.push({concepto:x.nombre,detalle:x.desc,cant:x.modo==="m2"?fmtI.format(area())+" m²":x.modo==="unidad"?String(xCant(x)):"1",pu:xTarifa(x),unit:unitLbl(x.modo),monto:xMonto(x)})});
-  const subtotal=lines.reduce((a,l)=>a+l.monto,0);
+  const disenoSub=lines.reduce((a,l)=>a+l.monto,0);
+  const obra=obraCalc();const obraT=obra?obra.total:0;
   const d=Math.min(25,Math.max(0,num(q.descuento)));
-  const desc=subtotal*d/100, base=subtotal-desc, igv=q.igv?base*num(cfg.igv)/100:0, total=base+igv;
+  const desc=disenoSub*d/100;
+  const descDis=obra&&q.obra.descontarDiseno?disenoSub-desc:0;
+  const subtotal=disenoSub+obraT;
+  const base=subtotal-desc-descDis, igv=q.igv?base*num(cfg.igv)/100:0, total=base+igv;
+  const f=q.igv?1+num(cfg.igv)/100:1;
   const hitos=(q.hitos||[]).map(h=>({nombre:h.nombre,pct:num(h.pct),monto:total*num(h.pct)/100}));
-  const plazo=num(q.plazoManual)>0?Math.round(num(q.plazoManual)):plazoAuto();
-  return {lines,subtotal,d,desc,base,igv,total,hitos,plazo,pctSum:hitos.reduce((a,h)=>a+h.pct,0)};
+  const pd=plazoDiseno(),po=plazoObra();
+  const plazo=num(q.plazoManual)>0?Math.round(num(q.plazoManual)):pd+po;
+  const rango=obra?{lo:total-obraT*f+obra.lo*f,hi:total-obraT*f+obra.hi*f}:null;
+  return {lines,disenoSub,subtotal,d,desc,descDis,base,igv,total,hitos,plazo,plazoD:pd,plazoO:po,obra,rango,pctSum:hitos.reduce((a,h)=>a+h.pct,0)};
 }
 
 /* ================= Render ================= */
@@ -687,6 +787,49 @@ function renderExtras(){
     </div>`}).join("")}</div></div>`).join("");
   const n=cfg.extras.filter(xOn).length;$("#x-count").textContent=n+(n===1?" activo":" activos");$("#x-count").className="r chip"+(n?" acc":"");
 }
+function rubroDeTipologia(t){t=String(t||"").toLowerCase();if(t.includes("import")||t.includes("almac"))return "importadora";if(t.includes("oficina")||t.includes("consult"))return "oficina";if(t.includes("comercial")||t.includes("restaur"))return "tienda";if(t.includes("depa")||t.includes("casa")||t.includes("vivienda")||t.includes("multifam"))return "vivienda";return "importadora"}
+function applyRubro(id){
+  const r=(cfg.obra.rubros||[]).find(x=>x.id===id);q.obra.rubro=id;q.obra.partidas={};
+  cfg.obra.partidas.forEach(pt=>{q.obra.partidas[pt.id]={on:!!(r&&r.partidas.includes(pt.id))}});
+}
+function renderObra(){
+  const o=q.obra,W=$("#obra-wrap");const on=!!o.on;
+  let h=`<label class="o-switch"><input type="checkbox" id="obra-on"${on?" checked":""}><span><b>Incluir la ejecución de obra</b><small>Suma materiales, mano de obra, gastos generales y utilidad. Sale como presupuesto aproximado, con su rango y sus indicaciones.</small></span></label>`;
+  if(on){
+    const rubros=cfg.obra.rubros||[];
+    h+=`<div class="o-opts"><div class="grid">
+      <label class="field"><span>Tipo de local (carga las partidas típicas)</span><select id="o-rubro">${rubros.map(r=>`<option value="${esc(r.id)}"${r.id===o.rubro?" selected":""}>${esc(r.nombre)}</option>`).join("")}</select></label>
+      <label class="field"><span>Nivel de acabado</span><select data-path="obra.acabado" id="o-acab">${ACABADOS.map(a=>`<option value="${a[0]}"${a[0]===o.acabado?" selected":""}>${a[1]} (× ${fmtI.format(num((cfg.obra.acabados||{})[a[0]])||1)})</option>`).join("")}</select></label>
+      <label class="field full"><span>¿Con qué información se hizo el presupuesto?</span><select data-path="obra.fuente" id="o-fuente">${FUENTES.map(a=>`<option value="${a[0]}"${a[0]===o.fuente?" selected":""}>${a[1]}</option>`).join("")}</select></label>
+    </div>
+    <div class="o-pct"><label>Gastos generales e imprevistos <input type="number" min="0" step="0.5" data-ok="gg" value="${oPct("gg")}"> %</label><label>Utilidad <input type="number" min="0" step="0.5" data-ok="utilidad" value="${oPct("utilidad")}"> %</label><label>Rango ± <input type="number" min="0" max="50" step="1" data-ok="rango" value="${oPct("rango")}"> %</label></div>
+    <label class="toggle"><input type="checkbox" id="o-descdis"${o.descontarDiseno?" checked":""}> <span>Descontar el diseño del total (si la obra la hace Arquizo)</span></label>
+    <label class="toggle"><input type="checkbox" id="o-desg"${o.desglose?" checked":""}> <span>Mostrar gastos generales y utilidad por separado en la hoja</span></label>
+    </div>`;
+    const groups={};cfg.obra.partidas.forEach(pt=>{(groups[pt.grupo||"Otros"]=groups[pt.grupo||"Otros"]||[]).push(pt)});
+    h+=Object.keys(groups).map(g=>`<div class="xgroup" style="margin-top:16px"><h4>${esc(g)}</h4><div class="xlist">${groups[g].map(pt=>{const a=oOn(pt);
+      return `<div class="xrow${a?" on":""}">
+        <label class="xcheck"><input type="checkbox" data-op="${esc(pt.id)}"${a?" checked":""}><span><b>${esc(pt.nombre)}</b><small>${esc(pt.desc||"")}</small></span></label>
+        <div class="xprice" data-osub="${esc(pt.id)}">${a?money(oCant(pt)*(oMat(pt)+oMo(pt))):esc(pt.und)}</div>
+        ${a?`<div class="o-edit"><label>Cant. <input type="number" min="0" step="0.1" data-oc="${esc(pt.id)}" value="${oCant(pt)}" aria-label="Cantidad"> ${esc(pt.und)}</label><label>Material S/ <input type="number" min="0" step="0.5" data-om="${esc(pt.id)}" value="${oMat(pt)}" aria-label="Material por ${esc(pt.und)}"></label><label>Mano de obra S/ <input type="number" min="0" step="0.5" data-oo="${esc(pt.id)}" value="${oMo(pt)}" aria-label="Mano de obra por ${esc(pt.und)}"></label><span>por ${esc(pt.und)}</span></div>`:""}
+      </div>`}).join("")}</div></div>`).join("");
+    h+=`<div class="o-sum" id="o-sum"></div>
+    <label class="field" style="margin-top:14px"><span>Indicaciones adicionales para esta obra (una por línea; salen en la hoja)</span><textarea data-path="obra.notas" rows="3" placeholder="Ej.: El piso actual de cerámica se mantiene. El propietario autoriza el letrero.">${esc(o.notas||"")}</textarea></label>
+    <p class="o-note">Precios referenciales para Lima. Las tarifas base, las partidas y las indicaciones fijas se cambian en Ajustes › Obra.</p>`;
+  }
+  W.innerHTML=h;renderObraNums();
+}
+function renderObraNums(){
+  const oc=obraCalc();const ch=$("#o-count");
+  if(!oc){ch.textContent="Sin obra";ch.className="r chip";return}
+  ch.textContent=oc.items.length+(oc.items.length===1?" partida":" partidas");ch.className="r chip acc";
+  cfg.obra.partidas.forEach(pt=>{const el=document.querySelector(`[data-osub="${CSS.escape(pt.id)}"]`);if(el&&oOn(pt))el.textContent=money(oCant(pt)*(oMat(pt)+oMo(pt)))});
+  const s=$("#o-sum");if(!s)return;
+  s.innerHTML=`<div><span>Materiales</span><span class="num">${money(oc.mat)}</span></div><div><span>Mano de obra</span><span class="num">${money(oc.mo)}</span></div>
+  <div><span>Costo directo</span><span class="num">${money(oc.cd)}</span></div><div><span>Gastos generales e imprevistos (${fmtI.format(oc.ggP)} %)</span><span class="num">${money(oc.gg)}</span></div><div><span>Utilidad (${fmtI.format(oc.utP)} %)</span><span class="num">${money(oc.util)}</span></div>
+  <div class="o-big"><span>Obra aproximada${area()?" · "+money(oc.total/area())+" por m²":""}</span><span class="num">${money(oc.total)}</span></div>
+  <div class="o-rng"><span>Rango (± ${fmtI.format(oc.rgP)} %)</span><span class="num">${money(oc.lo)} a ${money(oc.hi)}</span></div>`;
+}
 function renderHitos(){
   $("#hitos-list").innerHTML=(q.hitos||[]).map((h,i)=>`<div class="hito">
     <input value="${esc(h.nombre)}" data-hn="${i}" aria-label="Nombre del hito">
@@ -696,33 +839,39 @@ function renderHitos(){
 }
 function renderSummary(){
   const c=calc();
-  $("#sum-lines").innerHTML=c.lines.length?c.lines.map(l=>`<div class="line"><b>${esc(l.concepto)}</b><span class="num">${money(l.monto)}</span><small>${esc(l.cant)} × S/ ${fmtN.format(l.pu)} ${l.unit==="fijo"?"":l.unit}</small></div>`).join(""):`<p class="empty">Elige un paquete para empezar.</p>`;
+  $("#sum-lines").innerHTML=(c.lines.length||c.obra?c.lines.map(l=>`<div class="line"><b>${esc(l.concepto)}</b><span class="num">${money(l.monto)}</span><small>${esc(l.cant)} × S/ ${fmtN.format(l.pu)} ${l.unit==="fijo"?"":l.unit}</small></div>`).join(""):`<p class="empty">Elige un paquete para empezar.</p>`)
+    +(c.obra?`<div class="line"><b>Ejecución de obra (aprox.)</b><span class="num">${money(c.obra.total)}</span><small>Materiales ${money(c.obra.mat)} · Mano de obra ${money(c.obra.mo)} · + GG y utilidad</small></div>`:"")
+    +(c.descDis?`<div class="line"><b>Diseño incluido al ejecutar con Arquizo</b><span class="num">− ${money(c.descDis)}</span><small>Se descuenta el diseño</small></div>`:"");
+  renderObraNums();
   $("#desc-range").value=c.d;if(document.activeElement!==$("#desc-num"))$("#desc-num").value=c.d;
   $$("#disc-chips button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===c.d)));
   $("#t-sub").textContent=money(c.subtotal);
-  $("#t-desc-row").hidden=!c.desc;$("#t-desc-l").textContent=`Descuento comercial (${fmtI.format(c.d)} %)`;$("#t-desc").textContent="− "+money(c.desc);
+  $("#t-desc-row").hidden=!c.desc;$("#t-desc-l").textContent=`Descuento comercial (${fmtI.format(c.d)} %${c.obra?", sobre el diseño":""})`;$("#t-desc").textContent="− "+money(c.desc);
   $("#t-igv-row").hidden=!q.igv;$("#t-igv-l").textContent=`IGV (${fmtI.format(num(cfg.igv))} %)`;$("#t-igv").textContent=money(c.igv);
-  $("#t-total").textContent=money(c.total);
+  $("#t-total").textContent=money(c.total)+(c.obra?" aprox.":"");
   $("#t-plazo").textContent=c.plazo?c.plazo+" días hábiles":"—";
-  $("#f-plazo-auto").value=plazoAuto()?plazoAuto()+" días hábiles":"Elige un paquete";
+  $("#f-plazo-auto").value=plazoAuto()?plazoAuto()+" días hábiles"+(c.plazoO?` (${c.plazoD} diseño + ${c.plazoO} obra)`:""):"Elige un paquete";
   c.hitos.forEach((h,i)=>{const el=document.querySelector(`[data-hm="${i}"]`);if(el)el.textContent=money(h.monto)});
   const w=$("#hito-warn");if(Math.abs(c.pctSum-100)>0.01){w.hidden=false;w.textContent=`Los hitos suman ${fmtI.format(c.pctSum)} %. Ajústalos para que sumen 100 %.`}else w.hidden=true;
   $("#bar-total").textContent=money(c.total);
-  $("#bar-sub").textContent="Total "+(q.igv?"inc. IGV":"sin IGV")+(c.plazo?" · "+c.plazo+" días":"");
+  $("#bar-sub").textContent="Total"+(c.obra?" aprox. diseño + obra":"")+" "+(q.igv?"inc. IGV":"sin IGV")+(c.plazo?" · "+c.plazo+" días":"");
   $$(".bar .cur button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.cur===q.moneda)));
   // precios de tarjetas y extras
   cfg.paquetes.forEach(p=>{const el=document.querySelector(`[data-pp="${CSS.escape(p.id)}"]`);if(el)el.textContent=money(pkgMonto(p))});
   cfg.extras.forEach(x=>{const el=document.querySelector(`[data-xm="${CSS.escape(x.id)}"]`);if(el)el.textContent=xOn(x)?money(xMonto(x)):money(x.modo==="m2"?num(x.tarifa)*area():num(x.tarifa))});
   $("#btn-wa").href=waLink(c);
 }
-function renderAll(){applyBrand();renderCats();renderPkgs();renderExtras();renderHitos();fillForm();renderSummary()}
+function renderAll(){normQ(q);applyBrand();renderCats();renderPkgs();renderExtras();renderObra();renderHitos();fillForm();renderSummary()}
 function changed(){dirty=true;if(q.ejemplo){q.ejemplo=false;$("#example-banner").hidden=true}}
 
 /* ================= Eventos del formulario ================= */
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.path){let v=t.value;if(t.type==="number")v=t.value===""?"":num(t.value);setPath(q,t.dataset.path,v);changed();
-    if(t.dataset.path==="proyecto.area"||t.dataset.path==="plazoManual")renderSummary();else renderSummary();return}
+    if(t.dataset.path==="obra.acabado"||(t.dataset.path==="proyecto.area"&&q.obra.on))renderObra();
+    renderSummary();return}
+  if(t.dataset.ok){q.obra[t.dataset.ok]=t.value===""?"":num(t.value);changed();renderSummary();return}
+  if(t.dataset.oc||t.dataset.om||t.dataset.oo){const id=t.dataset.oc||t.dataset.om||t.dataset.oo;const k=t.dataset.oc?"cant":t.dataset.om?"mat":"mo";oSt(id)[k]=t.value===""?"":num(t.value);changed();renderSummary();return}
   if(t.dataset.pt){q.tarifas[t.dataset.pt]=t.value===""?"":num(t.value);changed();renderSummary();return}
   if(t.dataset.xt){q.extras[t.dataset.xt].tarifa=t.value===""?"":num(t.value);changed();renderSummary();return}
   if(t.dataset.xc){q.extras[t.dataset.xc].cant=Math.max(1,Math.round(num(t.value)||1));changed();renderSummary();return}
@@ -735,6 +884,11 @@ document.addEventListener("change",e=>{
   const t=e.target;
   if(t.dataset.x){const id=t.dataset.x;const x=cfg.extras.find(z=>z.id===id);q.extras[id]=q.extras[id]||{tarifa:x.tarifa,cant:1};q.extras[id].on=t.checked;changed();renderExtras();renderSummary();return}
   if(t.id==="igv-on"){q.igv=t.checked;changed();renderSummary();return}
+  if(t.id==="obra-on"){toggleObra(t.checked);return}
+  if(t.id==="o-rubro"){applyRubro(t.value);changed();renderObra();renderSummary();return}
+  if(t.id==="o-descdis"){q.obra.descontarDiseno=t.checked;changed();renderSummary();return}
+  if(t.id==="o-desg"){q.obra.desglose=t.checked;changed();return}
+  if(t.dataset.op){const s=oSt(t.dataset.op);s.on=t.checked;if(!t.checked){delete s.cant;delete s.mat;delete s.mo}changed();renderObra();renderSummary();return}
   if(t.id==="q-estado"){q.estado=t.value;changed();return}
   if(t.id==="ref-file"&&t.files[0]){readImage(t.files[0],1000,560,"image/jpeg",0.78).then(d=>{q.imagen=d;changed();fillForm();toast("Imagen agregada a la cotización")}).catch(()=>toast("No se pudo leer esa imagen. Prueba con un JPG o PNG."))}
 });
@@ -753,6 +907,16 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){$$(".ov").forEach(o=>{if(o.id!=="m-confirm")o.hidden=true})}
   if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("pkg")){e.preventDefault();e.target.click()}
 });
+function toggleObra(on){
+  const same=(a,b)=>JSON.stringify((a||[]).map(h=>[h.nombre,num(h.pct)]))===JSON.stringify((b||[]).map(h=>[h.nombre,num(h.pct)]));
+  q.obra.on=on;
+  if(on){
+    if(!q.obra.rubro||!Object.keys(q.obra.partidas).length)applyRubro(rubroDeTipologia(q.proyecto.tipologia));
+    if(same(q.hitos,cfg.hitos))q.hitos=clone(cfg.obra.hitos);
+    if(q.cat==="interiores"&&q.paqueteId!=="int-llave"&&cfg.paquetes.some(p=>p.id==="int-llave")){q.paqueteId="int-llave";toast("Se eligió el paquete «Diseño + Ejecución»; puedes cambiarlo arriba")}
+  }else if(same(q.hitos,cfg.obra.hitos))q.hitos=clone(cfg.hitos);
+  changed();renderPkgs();renderObra();renderHitos();renderSummary();
+}
 $("#hito-add").onclick=()=>{q.hitos.push({nombre:"Nuevo hito",pct:0});changed();renderHitos();renderSummary()};
 $("#ref-del").onclick=()=>{q.imagen=null;changed();fillForm()};
 
@@ -771,14 +935,26 @@ function readImage(file,maxW,maxH,type,quality){
 function waText(c){
   c=c||calc();const p=getPkg();const e=cfg.empresa;const nom=(q.cliente.nombre||"").split(" ")[0];
   let s=`Hola${nom?" "+nom:""}, te saluda el equipo de ${e.nombre}. Te compartimos la cotización ${q.numero}`+(q.proyecto.nombre?` para *${q.proyecto.nombre}*`:"")+(area()?` (${fmtI.format(area())} m²${q.proyecto.ubicacion?", "+q.proyecto.ubicacion:""})`:"")+":\n\n";
-  c.lines.forEach(l=>{s+=`• ${l.concepto}: ${money(l.monto)}\n`});
+  c.lines.forEach(l=>{s+=`• ${c.obra&&!/^dise/i.test(l.concepto)?"Diseño – ":""}${l.concepto}: ${money(l.monto)}\n`});
   if(c.desc)s+=`• Descuento ${fmtI.format(c.d)} %: −${money(c.desc)}\n`;
+  if(c.obra)s+=`• Ejecución de obra (aprox.): ${money(c.obra.total)}\n   _Materiales ${money(c.obra.mat*c.obra.k)} + mano de obra ${money(c.obra.mo*c.obra.k)}_\n`;
+  if(c.descDis)s+=`• Diseño incluido al ejecutar con nosotros: −${money(c.descDis)}\n`;
   if(q.igv)s+=`• IGV: ${money(c.igv)}\n`;
-  s+=`\n*Total: ${money(c.total)}*${q.igv?"":" (no incluye IGV)"}\n`;
-  if(c.plazo)s+=`Plazo estimado: ${c.plazo} días hábiles\n`;
+  s+=`\n*Total${c.obra?" aproximado":""}: ${money(c.total)}*${q.igv?"":" (no incluye IGV)"}\n`;
+  if(c.rango)s+=`Rango estimado: ${money(c.rango.lo)} a ${money(c.rango.hi)}\n`;
+  if(c.plazo)s+=`Plazo estimado: ${c.plazo} días hábiles${c.plazoO&&!(num(q.plazoManual)>0)?` (${c.plazoD} de diseño + ${c.plazoO} de obra)`:""}\n`;
+  if(c.obra)s+=`\n${obraFuenteTxt()} Incluye materiales, mano de obra y limpieza final; no incluye trámites municipales ni ITSE.\n`;
   if(c.hitos.length)s+=`Forma de pago: ${c.hitos.map(h=>fmtI.format(h.pct)+"% "+h.nombre.toLowerCase()).join(" · ")}\n`;
   s+=`Validez de la oferta: ${cfg.validez} días.\n\n¿Te enviamos la propuesta completa en PDF?`;
   return s;
+}
+function obraFuenteTxt(){const f=q.obra.fuente;
+  return f==="visita"?"El presupuesto de obra se hizo con las medidas tomadas en la visita técnica; el monto final se confirma con el proyecto aprobado."
+   :f==="planos"?"El presupuesto de obra se hizo con los planos que nos enviaste; el monto final se confirma después de la visita técnica."
+   :"Es un presupuesto referencial hecho con las fotos y videos que nos enviaste; el monto final se confirma después de la visita técnica y la toma de medidas."}
+function obraIndicaciones(c){
+  const o=c.obra;const L=[obraFuenteTxt(),`El monto de la obra puede variar ± ${fmtI.format(o.rgP)} % según el estado real del local y las decisiones del diseño final.`,`Nivel de acabado considerado: ${(ACABADOS.find(a=>a[0]===q.obra.acabado)||["","Estándar"])[1].toLowerCase()}.`];
+  return L.concat(String(cfg.obra.supuestos||"").split("\n"),String(q.obra.notas||"").split("\n")).map(s=>s.trim()).filter(Boolean);
 }
 function waPhone(){let d=String(q.cliente.telefono||"").replace(/\D/g,"");if(d.length===9&&d[0]==="9")d="51"+d;return d}
 function waLink(c){return "https://wa.me/"+waPhone()+"?text="+encodeURIComponent(waText(c))}
@@ -794,26 +970,41 @@ function sheetHeader(){
 function buildSheet(){
   const c=calc();const p=getPkg();const e=cfg.empresa;const venc=q.fecha+cfg.validez*86400000;
   return `<div class="sheet">${sheetHeader()}
-  <div class="sh-title blk"><h1>Cotización</h1><div class="mono">${esc(q.numero)}<br>Emitida: ${fechaLarga(q.fecha)}<br>Válida hasta: ${fechaLarga(venc)}</div></div>
+  <div class="sh-title blk"><h1>Cotización${c.obra?'<span class="sh-badge">Diseño + obra · aproximado</span>':""}</h1><div class="mono">${esc(q.numero)}<br>Emitida: ${fechaLarga(q.fecha)}<br>Válida hasta: ${fechaLarga(venc)}</div></div>
   ${q.imagen?`<img class="sh-cover blk" src="${q.imagen}" alt="">`:""}
   <div class="sh-two blk">
     <div class="sh-box"><div class="sh-k">Cliente</div><div><span>Nombre</span><b>${esc(q.cliente.nombre||"—")}</b></div>${q.cliente.doc?`<div><span>${String(q.cliente.doc).length===11?"RUC":"DNI"}</span>${esc(q.cliente.doc)}</div>`:""}${q.cliente.telefono?`<div><span>Teléfono</span>${esc(q.cliente.telefono)}</div>`:""}${q.cliente.email?`<div><span>Correo</span>${esc(q.cliente.email)}</div>`:""}</div>
     <div class="sh-box"><div class="sh-k">Proyecto</div><div><span>Proyecto</span><b>${esc(q.proyecto.nombre||"—")}</b></div>${q.proyecto.ubicacion?`<div><span>Ubicación</span>${esc(q.proyecto.ubicacion)}</div>`:""}<div><span>Tipología</span>${esc(q.proyecto.tipologia)}</div><div><span>Área</span>${fmtI.format(area())} m²${num(q.proyecto.pisos)>1?" · "+num(q.proyecto.pisos)+" niveles":""}</div>${q.proyecto.ambientes?`<div><span>Ambientes</span>${esc(q.proyecto.ambientes)}</div>`:""}</div>
   </div>
   ${p?`<div class="sh-pkg blk"><h3>${esc(p.nombre)}</h3><p>${esc(p.sub)}</p><ul>${(p.incluye||[]).map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`:""}
+  ${c.obra?`<div class="sh-sec blk" style="margin-top:0"><h2>1. Diseño</h2></div>`:""}
   <table class="sh-table"><thead><tr class="blk"><th style="width:46%">Concepto</th><th class="r">Cant.</th><th class="r">P. unitario</th><th class="r">Importe</th></tr></thead><tbody>
   ${c.lines.map(l=>`<tr class="blk"><td><b>${esc(l.concepto)}</b><small>${esc(l.detalle||"")}</small></td><td class="r">${esc(l.cant)}</td><td class="r">${money(l.pu)}${l.unit==="fijo"?"":" "+l.unit}</td><td class="r">${money(l.monto)}</td></tr>`).join("")}
   </tbody></table>
-  <div class="sh-totals blk"><div><span>Subtotal</span><span class="mono">${money(c.subtotal)}</span></div>
-  ${c.desc?`<div><span>Descuento comercial (${fmtI.format(c.d)} %)</span><span class="mono">− ${money(c.desc)}</span></div>`:""}
+  ${c.obra?sheetObra(c):""}
+  <div class="sh-totals blk">${c.obra?`<div><span>Diseño</span><span class="mono">${money(c.disenoSub)}</span></div>`:`<div><span>Subtotal</span><span class="mono">${money(c.subtotal)}</span></div>`}
+  ${c.desc?`<div><span>Descuento comercial (${fmtI.format(c.d)} %${c.obra?", diseño":""})</span><span class="mono">− ${money(c.desc)}</span></div>`:""}
+  ${c.obra?`<div><span>Ejecución de obra (aprox.)</span><span class="mono">${money(c.obra.total)}</span></div>`:""}
+  ${c.descDis?`<div><span>Diseño incluido al ejecutar con ${esc(e.nombre)}</span><span class="mono">− ${money(c.descDis)}</span></div>`:""}
   ${q.igv?`<div><span>IGV (${fmtI.format(num(cfg.igv))} %)</span><span class="mono">${money(c.igv)}</span></div>`:""}
-  <div class="g"><span>TOTAL ${q.igv?"":"(sin IGV)"}</span><span>${money(c.total)}</span></div></div>
+  <div class="g"><span>TOTAL ${c.obra?"APROX. ":""}${q.igv?"":"(sin IGV)"}</span><span>${money(c.total)}</span></div></div>
+  ${c.rango?`<div class="sh-rng blk" style="margin-top:10px"><span>Rango estimado del total (± ${fmtI.format(c.obra.rgP)} % en la obra)</span><b>${money(c.rango.lo)} a ${money(c.rango.hi)}</b></div>`:""}
+  ${c.obra?`<div class="sh-sec blk"><h2>Indicaciones del presupuesto de obra</h2><ul class="sh-cond">${obraIndicaciones(c).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`:""}
   ${c.hitos.length?`<div class="sh-sec blk"><h2>Forma de pago</h2><div class="sh-hitos">${c.hitos.map(h=>`<div class="sh-hito"><b>${fmtI.format(h.pct)} %</b><span>${esc(h.nombre)}</span><span class="mono">${money(h.monto)}</span></div>`).join("")}</div></div>`:""}
-  <div class="sh-sec blk"><h2>Plazo de entrega</h2><div>${c.plazo?c.plazo+" días hábiles":"Por definir"} desde el pago inicial y la entrega de la información del cliente.</div></div>
+  <div class="sh-sec blk"><h2>Plazo de entrega</h2><div>${c.plazo?c.plazo+" días hábiles"+(c.plazoO&&!(num(q.plazoManual)>0)?` (${c.plazoD} de diseño + ${c.plazoO} de obra)`:""):"Por definir"} desde el pago inicial y la entrega de la información del cliente.</div></div>
   ${q.notas?`<div class="sh-sec blk"><h2>Observaciones</h2><div class="sh-notes">${esc(q.notas)}</div></div>`:""}
-  <div class="sh-sec blk"><h2>Condiciones</h2><ul class="sh-cond">${String(cfg.condiciones||"").split("\n").filter(s=>s.trim()).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>
+  <div class="sh-sec blk"><h2>Condiciones</h2><ul class="sh-cond">${String(cfg.condiciones||"").split("\n").filter(s=>s.trim()&&!(c.obra&&/no incluye ejecuci[oó]n de obra/i.test(s))).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>
   <div class="sh-foot blk"><span>${esc(e.pie||"")}</span><span>${esc(e.web||"")}${e.ruc?" · RUC "+esc(e.ruc):""}</span></div>
   </div>`;
+}
+function sheetObra(c){
+  const o=c.obra,kk=q.obra.desglose?1:o.k;const groups={};o.items.forEach(i=>{(groups[i.grupo]=groups[i.grupo]||[]).push(i)});
+  return `<div class="sh-sec blk"><h2>2. Ejecución de obra · presupuesto aproximado</h2></div>
+  <table class="sh-table"><thead><tr class="blk"><th style="width:40%">Partida</th><th class="r">Cant.</th><th class="r">Material</th><th class="r">Mano de obra</th><th class="r">Importe</th></tr></thead><tbody>
+  ${Object.keys(groups).map(g=>`<tr class="grp blk"><td colspan="5">${esc(g)}</td></tr>`+groups[g].map(i=>`<tr class="blk"><td><b>${esc(i.nombre)}</b><small>${esc(i.desc||"")}</small></td><td class="r">${fmtI.format(i.cant)} ${esc(i.und)}</td><td class="r">${money(i.mat*kk)}</td><td class="r">${money(i.mo*kk)}</td><td class="r">${money(i.monto*kk)}</td></tr>`).join("")).join("")}
+  ${q.obra.desglose?`<tr class="blk"><td colspan="4"><b>Costo directo</b></td><td class="r">${money(o.cd)}</td></tr><tr class="blk"><td colspan="4">Gastos generales e imprevistos (${fmtI.format(o.ggP)} %)</td><td class="r">${money(o.gg)}</td></tr><tr class="blk"><td colspan="4">Utilidad (${fmtI.format(o.utP)} %)</td><td class="r">${money(o.util)}</td></tr>`:""}
+  </tbody></table>
+  <div class="sh-rng blk"><span>Materiales <b>${money(o.mat*kk)}</b> · Mano de obra <b>${money(o.mo*kk)}</b>${q.obra.desglose?"":" (precios finales por partida)"}</span><span>Obra aproximada <b>${money(o.total)}</b></span></div>`;
 }
 function showPreview(boxSel,html,editable){
   const box=$(boxSel);box.innerHTML=`<div class="scaler">${html}</div>`;
@@ -832,12 +1023,13 @@ function buildContractInner(){
   const docTxt=doc?(doc.length===11?"con RUC N.° "+esc(doc):"identificado(a) con DNI N.° "+esc(doc)):"identificado(a) con documento N.° ________";
   const alc=[];if(p){alc.push(`<li><b>${esc(p.nombre)}</b>: ${(p.incluye||[]).map(esc).join("; ")}.</li>`)}
   cfg.extras.filter(xOn).forEach(x=>alc.push(`<li><b>${esc(x.nombre)}</b>${x.modo==="unidad"?" ("+xCant(x)+" und)":""}: ${esc(x.desc)}.</li>`));
+  if(c.obra)alc.push(`<li><b>Ejecución de obra</b> (presupuesto aproximado de ${money(c.obra.total)}): ${c.obra.items.map(i=>esc(i.nombre.toLowerCase())+" ("+fmtI.format(i.cant)+" "+esc(i.und)+")").join("; ")}. Las cantidades se confirman con el levantamiento de medidas y cualquier variación se acuerda por escrito antes de ejecutarse.</li>`);
   return `${sheetHeader()}
   <h1>CONTRATO DE LOCACIÓN DE SERVICIOS PROFESIONALES</h1>
   <div class="sub">${esc(q.numero)} · ${esc(q.proyecto.nombre||"")}</div>
   <p>Conste por el presente documento el contrato de locación de servicios que celebran, de una parte, <b>${esc(e.nombre)}</b>${e.ruc?", con RUC N.° "+esc(e.ruc):""}, con domicilio en ${esc(e.direccion||"________")}, debidamente representada por ${e.representante?esc(e.representante):"________"}${e.repDoc?", identificado(a) con DNI N.° "+esc(e.repDoc):""}, a quien en adelante se le denominará <b>EL LOCADOR</b>; y de la otra parte, <b>${esc(cli.nombre||"________")}</b>, ${docTxt}, a quien en adelante se le denominará <b>EL CLIENTE</b>, en los términos siguientes:</p>
   <h3>Cláusula primera: Objeto</h3>
-  <p>EL LOCADOR se obliga a prestar a EL CLIENTE los servicios profesionales de ${q.cat==="interiores"?"diseño de interiores":"diseño arquitectónico"} para el proyecto <b>${esc(q.proyecto.nombre||"")}</b>, ubicado en ${esc(q.proyecto.ubicacion||"________")}, de tipología ${esc((q.proyecto.tipologia||"").toLowerCase())}, con un área aproximada de <b>${fmtI.format(area())} m²</b>${num(q.proyecto.pisos)>1?" distribuidos en "+num(q.proyecto.pisos)+" niveles":""}${q.proyecto.ambientes?", que comprende: "+esc(q.proyecto.ambientes):""}.</p>
+  <p>EL LOCADOR se obliga a prestar a EL CLIENTE los servicios profesionales de ${q.cat==="interiores"?"diseño de interiores":"diseño arquitectónico"}${c.obra?" y la ejecución de las obras de acondicionamiento descritas en la cláusula segunda":""} para el proyecto <b>${esc(q.proyecto.nombre||"")}</b>, ubicado en ${esc(q.proyecto.ubicacion||"________")}, de tipología ${esc((q.proyecto.tipologia||"").toLowerCase())}, con un área aproximada de <b>${fmtI.format(area())} m²</b>${num(q.proyecto.pisos)>1?" distribuidos en "+num(q.proyecto.pisos)+" niveles":""}${q.proyecto.ambientes?", que comprende: "+esc(q.proyecto.ambientes):""}.</p>
   <h3>Cláusula segunda: Alcances</h3>
   <p>Los servicios comprenden lo siguiente:</p><ul>${alc.join("")}</ul>
   <h3>Cláusula tercera: Honorarios y forma de pago</h3>
@@ -852,7 +1044,7 @@ function buildContractInner(){
   <h3>Cláusula séptima: Propiedad intelectual</h3>
   <p>Conforme al Decreto Legislativo N.° 822, Ley sobre el Derecho de Autor, los diseños, planos, renders y demás material elaborado son obra de EL LOCADOR. Cancelado el monto total, EL CLIENTE podrá usarlos exclusivamente para el proyecto objeto de este contrato. EL LOCADOR podrá difundir imágenes del proyecto en su portafolio y redes sociales, salvo pacto en contrario.</p>
   <h3>Cláusula octava: Exclusiones</h3>
-  <p>No forman parte de este contrato: tasas municipales, notariales o registrales; ejecución de obra, compra de materiales y mobiliario${q.paqueteId==="int-llave"?" (salvo la dirección de obra indicada en los alcances)":""}; ni servicios no descritos en la cláusula segunda.</p>
+  <p>No forman parte de este contrato: tasas municipales, notariales o registrales; ${c.obra?"licencias, certificado ITSE, mercadería, equipos y trabajos no listados en la cláusula segunda":"ejecución de obra, compra de materiales y mobiliario"+(q.paqueteId==="int-llave"?" (salvo la dirección de obra indicada en los alcances)":"")}; ni servicios no descritos en la cláusula segunda.</p>
   <h3>Cláusula novena: Resolución</h3>
   <p>Cualquiera de las partes podrá resolver el contrato por incumplimiento de la otra, previa comunicación escrita con un plazo de quince (15) días calendario para subsanarlo. En caso de resolución, EL CLIENTE pagará los trabajos avanzados hasta esa fecha y los pagos efectuados por etapas ya entregadas no serán reembolsables.</p>
   <h3>Cláusula décima: Jurisdicción</h3>
@@ -896,7 +1088,7 @@ const store={
     return {empresa:LS.get("arq_empresa"),catalogo:LS.get("arq_catalogo")};
   },
   async saveCfg(){
-    const cat={numeracion:cfg.numeracion,paquetes:cfg.paquetes,extras:cfg.extras,hitos:cfg.hitos,tipoCambio:cfg.tipoCambio,igv:cfg.igv,validez:cfg.validez,condiciones:cfg.condiciones};
+    const cat={numeracion:cfg.numeracion,paquetes:cfg.paquetes,extras:cfg.extras,hitos:cfg.hitos,obra:cfg.obra,tipoCambio:cfg.tipoCambio,igv:cfg.igv,validez:cfg.validez,condiciones:cfg.condiciones};
     if(caps.db){await caps.db.doc("config/empresa").set(clone(cfg.empresa));await caps.db.doc("config/catalogo").set(clone(cat));return}
     if(!LS.set("arq_empresa",cfg.empresa)||!LS.set("arq_catalogo",cat))throw new Error("local");
   },
@@ -951,7 +1143,7 @@ $("#btn-saved").onclick=()=>{$("#m-saved").hidden=false;renderSaved()};
 function sortedSaved(){const k=s=>{const m=/(\d+)\D*$/.exec(s.numero||"");return [String(s.numero||"").replace(/-?\d+\D*$/,""),m?+m[1]:0]};
   return saved.slice().sort((a,b)=>{const x=k(a),y=k(b);return x[0]<y[0]?1:x[0]>y[0]?-1:y[1]-x[1]||(b.actualizado||0)-(a.actualizado||0)})}
 // genera la hoja A4 de cualquier cotización guardada, sin perder la que está abierta
-function sheetFor(s){const keep=q;try{q=clone(s);q.extras=q.extras||{};q.tarifas=q.tarifas||{};q.hitos=q.hitos||clone(cfg.hitos);return buildSheet()}finally{q=keep}}
+function sheetFor(s){const keep=q;try{q=normQ(clone(s));return buildSheet()}finally{q=keep}}
 async function pdfOf(list,filename){const box=document.createElement("div");box.innerHTML=list.map((s,i)=>(i?'<div style="break-before:page;page-break-before:always"></div>':"")+sheetFor(s)).join("");await exportPDF(box,filename)}
 $("#dl-all").onclick=async()=>{const l=sortedSaved();if(!l.length){toast("Todavía no hay cotizaciones guardadas");return}toast("Preparando "+l.length+" cotizaciones…");await pdfOf(l,"Cotizaciones-Arquizo-"+new Date().toISOString().slice(0,10)+".pdf")};
 $("#dl-csv").onclick=()=>{const l=sortedSaved();if(!l.length){toast("Todavía no hay cotizaciones guardadas");return}
@@ -964,7 +1156,7 @@ $("#saved-list").addEventListener("click",async e=>{
   const o=e.target.closest("[data-open]"),d=e.target.closest("[data-dup]"),x=e.target.closest("[data-del]"),pf=e.target.closest("[data-pdf]");
   if(pf){const s=saved.find(z=>z.id===pf.dataset.pdf);if(s)await pdfOf([s],`${s.numero}-${slug(s.proyecto&&s.proyecto.nombre||s.cliente&&s.cliente.nombre)||"cotizacion"}.pdf`);return}
   if(o||d){if(dirty&&!(await askConfirm("Hay cambios sin guardar en la cotización actual. ¿Abrir otra de todos modos?","Abrir")))return;
-    const s=saved.find(z=>z.id===(o||d).dataset[o?"open":"dup"]);if(!s)return;q=clone(s);q.extras=q.extras||{};q.tarifas=q.tarifas||{};q.hitos=q.hitos||clone(cfg.hitos);
+    const s=saved.find(z=>z.id===(o||d).dataset[o?"open":"dup"]);if(!s)return;q=normQ(clone(s));
     if(d){q.id=uid();q.numero=nextNumero();q.numManual=false;q.autor=null;q.editadoPor=null;q.fecha=Date.now();q.estado="borrador";q.contratoHTML=null;dirty=true}else dirty=false;
     q.ejemplo=false;$("#m-saved").hidden=true;renderAll();toast(d?"Copia creada como "+q.numero:"Abriste "+q.numero);return}
   if(x){const s=saved.find(z=>z.id===x.dataset.del);if(!s)return;if(!(await askConfirm(`¿Eliminar la cotización ${s.numero} de ${s.cliente&&s.cliente.nombre||"este cliente"}? No se puede deshacer.`,"Eliminar")))return;
@@ -1019,6 +1211,37 @@ function renderSet(){
     </div></div>`).join("")+`<button class="btn" id="xadd">+ Agregar servicio</button>`;
     $("#xadd").onclick=()=>{d.extras.push({id:"x"+Date.now().toString(36),grupo:"Otros",nombre:"Nuevo servicio",desc:"Descripción",modo:"fijo",tarifa:500});renderSet()};
   }
+  if(setTab==="obra"){
+    const o=d.obra=mergeObra(d.obra);
+    B.innerHTML=`<p class="modal-note">Precios de referencia para el presupuesto aproximado de obra (S/ por unidad, acabado estándar). El nivel de acabado los multiplica; en cada cotización también se pueden corregir.</p>
+    <div class="ed-card"><div class="ed-head"><b>Porcentajes y plazos</b></div><div class="grid">
+      ${fld("Gastos generales e imprevistos (%)","obra.gg",o.gg,"number","",'min="0" step="0.5"')}${fld("Utilidad (%)","obra.utilidad",o.utilidad,"number","",'min="0" step="0.5"')}
+      ${fld("Rango ± del aproximado (%)","obra.rango",o.rango,"number","",'min="0" max="50"')}${fld("Plazo base de obra (días)","obra.plazoBase",o.plazoBase,"number","",'min="0"')}
+      ${fld("Días de obra extra por m²","obra.plazoM2",o.plazoM2,"number","",'min="0" step="0.05"')}${fld("Acabado económico (×)","obra.acabados.economico",o.acabados.economico,"number","",'min="0" step="0.05"')}
+      ${fld("Acabado estándar (×)","obra.acabados.estandar",o.acabados.estandar,"number","",'min="0" step="0.05"')}${fld("Acabado premium (×)","obra.acabados.premium",o.acabados.premium,"number","",'min="0" step="0.05"')}
+    </div></div>
+    <div class="ed-card"><div class="ed-head"><b>Hitos de pago cuando hay obra</b></div>
+      ${o.hitos.map((h,i)=>`<div class="hito" style="grid-template-columns:minmax(0,1fr) 70px 26px"><input data-s="obra.hitos.${i}.nombre" value="${esc(h.nombre)}" aria-label="Hito"><input class="pct" type="number" data-s="obra.hitos.${i}.pct" value="${num(h.pct)}" aria-label="Porcentaje"><button class="x" data-ohdel="${i}" aria-label="Quitar">×</button></div>`).join("")}
+      <button class="linkbtn" id="ohadd">+ Agregar hito</button></div>
+    <div class="ed-card"><div class="ed-head"><b>Indicaciones fijas del presupuesto de obra</b></div><label class="field"><span>Una por línea. Salen en la hoja después de la indicación de cómo se hizo el presupuesto y del rango.</span><textarea data-s="obra.supuestos" rows="8">${esc(o.supuestos)}</textarea></label></div>
+    <div class="ed-card"><div class="ed-head"><b>Tipos de local</b></div><p class="modal-note">Qué partidas se marcan solas al elegir cada tipo de local.</p>
+      ${o.rubros.map((r,ri)=>`<div style="margin-bottom:12px"><div class="grid" style="grid-template-columns:minmax(0,1fr) auto;margin-bottom:6px"><input data-s="obra.rubros.${ri}.nombre" value="${esc(r.nombre)}" aria-label="Tipo de local"><button class="btn ghost danger" data-rdel="${ri}">Eliminar</button></div>
+      <div class="rub-chips">${o.partidas.map(pt=>`<label><input type="checkbox" data-rp="${ri}|${esc(pt.id)}"${r.partidas.includes(pt.id)?" checked":""}>${esc(pt.nombre)}</label>`).join("")}</div></div>`).join("")}
+      <button class="btn" id="radd">+ Agregar tipo de local</button></div>
+    <p class="modal-note" style="margin-top:16px"><b>Partidas</b></p>`+
+    o.partidas.map((pt,i)=>`<div class="ed-card"><div class="grid">
+      ${fld("Partida",`obra.partidas.${i}.nombre`,pt.nombre,"","w2")}${fld("Grupo",`obra.partidas.${i}.grupo`,pt.grupo)}
+      <label class="field"><span>Unidad</span><select data-s="obra.partidas.${i}.und">${UNDS.map(u=>`<option${u===pt.und?" selected":""}>${u}</option>`).join("")}</select></label>
+      ${fld("Descripción",`obra.partidas.${i}.desc`,pt.desc,"","w2")}
+      <label class="field"><span>Cantidad</span><select data-s="obra.partidas.${i}.cantModo"><option value="area"${pt.cantModo!=="fija"?" selected":""}>Según el área × factor</option><option value="fija"${pt.cantModo==="fija"?" selected":""}>Cantidad fija</option></select></label>
+      ${fld(pt.cantModo==="fija"?"Cantidad":"Factor × m²",`obra.partidas.${i}.factor`,pt.factor,"number","",'min="0" step="0.01"')}
+      ${fld("Material (S/)",`obra.partidas.${i}.mat`,pt.mat,"number","",'min="0" step="0.5"')}${fld("Mano de obra (S/)",`obra.partidas.${i}.mo`,pt.mo,"number","",'min="0" step="0.5"')}
+      <div class="field"><span>&nbsp;</span><button class="btn ghost danger" data-opdel="${i}">Eliminar</button></div>
+    </div></div>`).join("")+`<button class="btn" id="opadd">+ Agregar partida</button>`;
+    $("#ohadd").onclick=()=>{o.hitos.push({nombre:"Nuevo hito",pct:0});renderSet()};
+    $("#radd").onclick=()=>{o.rubros.push({id:"r"+Date.now().toString(36),nombre:"Nuevo tipo de local",partidas:[]});renderSet()};
+    $("#opadd").onclick=()=>{o.partidas.push({id:"o"+Date.now().toString(36),grupo:"Otros",nombre:"Nueva partida",desc:"",und:"glb",cantModo:"fija",factor:1,mat:0,mo:0});renderSet()};
+  }
   if(setTab==="respaldo"){
     B.innerHTML=`<p class="modal-note">Todo se guarda en esta computadora. Haz un respaldo cada cierto tiempo, o para pasar tus tarifas, logo y cotizaciones a otra computadora del equipo.</p>
     <div class="ed-card"><div class="ed-head"><b>Exportar respaldo</b></div><p class="modal-note">Descarga un archivo .json con ajustes, logo y las ${saved.length} cotizaciones guardadas.</p><button class="btn primary" id="bk-out">Descargar respaldo</button></div>
@@ -1052,12 +1275,19 @@ $("#set-body").addEventListener("input",e=>{const t=e.target;if(!t.dataset.s)ret
   const ks=k.split(".");let a=setDraft;ks.slice(0,-1).forEach(z=>a=a[z]);a[ks[ks.length-1]]=v;
   if(k==="empresa.color"){const s=t.parentElement.querySelector(".mono");if(s)s.textContent=v}});
 $("#set-body").addEventListener("change",e=>{if(e.target.tagName==="SELECT")e.target.dispatchEvent(new Event("input",{bubbles:true}))});
+$("#set-body").addEventListener("change",e=>{const t=e.target;
+  if(t.dataset.rp){const [ri,id]=t.dataset.rp.split("|");const r=setDraft.obra.rubros[+ri];r.partidas=r.partidas.filter(z=>z!==id);if(t.checked)r.partidas.push(id)}
+  if(/^obra\.partidas\.\d+\.cantModo$/.test(t.dataset.s||""))setTimeout(renderSet)});
+$("#set-body").addEventListener("click",e=>{const od=e.target.closest("[data-opdel]"),rd=e.target.closest("[data-rdel]"),ohd=e.target.closest("[data-ohdel]");
+  if(od){const id=setDraft.obra.partidas[+od.dataset.opdel].id;setDraft.obra.partidas.splice(+od.dataset.opdel,1);setDraft.obra.rubros.forEach(r=>r.partidas=r.partidas.filter(z=>z!==id));renderSet()}
+  if(rd){setDraft.obra.rubros.splice(+rd.dataset.rdel,1);renderSet()}
+  if(ohd){setDraft.obra.hitos.splice(+ohd.dataset.ohdel,1);renderSet()}});
 $("#set-body").addEventListener("click",e=>{const p=e.target.closest("[data-pdel]"),x=e.target.closest("[data-xdel]"),h=e.target.closest("[data-hdel]");
   if(p){setDraft.paquetes.splice(+p.dataset.pdel,1);renderSet()}if(x){setDraft.extras.splice(+x.dataset.xdel,1);renderSet()}if(h){setDraft.hitos.splice(+h.dataset.hdel,1);renderSet()}});
 $("#set-save").onclick=async()=>{
   const prev=cfg;cfg=setDraft;setDraft=clone(cfg);
   if(!cfg.paquetes.some(p=>p.id===q.paqueteId)){const l=cfg.paquetes.filter(p=>p.cat===q.cat);q.paqueteId=(l.find(p=>p.recomendado)||l[0]||{}).id||null}
-  if(q.ejemplo||!dirty){q.hitos=clone(cfg.hitos)}
+  if(q.ejemplo||!dirty){q.hitos=clone(q.obra&&q.obra.on?cfg.obra.hitos:cfg.hitos)}
   if(!saved.some(z=>z.id===q.id))q.numero=nextNumero();
   renderAll();
   const b=$("#set-save");b.disabled=true;
@@ -1067,7 +1297,7 @@ $("#set-save").onclick=async()=>{
 };
 
 /* ================= Respaldo ================= */
-function catalogo(c){return {numeracion:c.numeracion,paquetes:c.paquetes,extras:c.extras,hitos:c.hitos,tipoCambio:c.tipoCambio,igv:c.igv,validez:c.validez,condiciones:c.condiciones}}
+function catalogo(c){return {numeracion:c.numeracion,paquetes:c.paquetes,extras:c.extras,hitos:c.hitos,obra:c.obra,tipoCambio:c.tipoCambio,igv:c.igv,validez:c.validez,condiciones:c.condiciones}}
 function exportBackup(){
   const data={app:"cotizador-arquizo",version:1,exportado:new Date().toISOString(),empresa:cfg.empresa,catalogo:catalogo(cfg),cotizaciones:caps.db?saved:(LS.get("arq_cots")||[])};
   const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"});
@@ -1082,7 +1312,7 @@ function importBackup(file){
     const map={};(LS.get("arq_cots")||[]).concat(d.cotizaciones||[]).forEach(c=>{if(c&&c.id&&(!map[c.id]||(c.actualizado||0)>(map[c.id].actualizado||0)))map[c.id]=c});
     const all=Object.values(map).sort((a,b)=>(b.actualizado||0)-(a.actualizado||0));
     if(d.empresa)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),d.empresa);
-    if(d.catalogo)Object.assign(cfg,d.catalogo);
+    if(d.catalogo){Object.assign(cfg,d.catalogo);cfg.obra=mergeObra(d.catalogo.obra)}
     let ok;
     if(caps.db){ok=true;toast("Subiendo "+all.length+" cotizaciones al equipo…");try{await store.saveCfg();for(const c of all){if(!saved.some(z=>z.id===c.id&&(z.actualizado||0)>=(c.actualizado||0)))await store.saveQuote(c)}}catch(e){ok=false}}
     else ok=LS.set("arq_cots",all)&&LS.set("arq_empresa",cfg.empresa)&&LS.set("arq_catalogo",catalogo(cfg));
@@ -1099,6 +1329,7 @@ renderTipos();renderAreaQuick();renderAll();
   if(caps.db){try{const r=await store.loadCfg();em=r.empresa;ca=r.catalogo}catch(e){em=ca=null}}
   if(em)cfg.empresa=Object.assign(clone(DEFAULT_CFG.empresa),em);
   if(ca)Object.assign(cfg,ca);
+  cfg.obra=mergeObra(ca&&ca.obra);
   store.watch();
   if(q.ejemplo){q.hitos=clone(cfg.hitos);q.numero=nextNumero()}
   renderAll();
