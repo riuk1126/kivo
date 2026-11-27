@@ -1022,8 +1022,7 @@ function sheetObra(c){
   <table class="sh-table"><thead><tr class="blk"><th style="width:40%">Partida</th><th class="r">Cant.</th><th class="r">Material</th><th class="r">Mano de obra</th><th class="r">Importe</th></tr></thead><tbody>
   ${Object.keys(groups).map(g=>`<tr class="grp blk"><td colspan="5">${esc(g)}</td></tr>`+groups[g].map(i=>`<tr class="blk"><td><b>${esc(i.nombre)}</b><small>${esc(i.desc||"")}</small></td><td class="r">${fmtI.format(i.cant)} ${esc(i.und)}</td><td class="r">${money(i.mat*kk)}</td><td class="r">${money(i.mo*kk)}</td><td class="r">${money(i.monto*kk)}</td></tr>`).join("")).join("")}
   ${q.obra.desglose?`<tr class="blk"><td colspan="4"><b>Costo directo</b></td><td class="r">${money(o.cd)}</td></tr><tr class="blk"><td colspan="4">Gastos generales e imprevistos (${fmtI.format(o.ggP)} %)</td><td class="r">${money(o.gg)}</td></tr><tr class="blk"><td colspan="4">Utilidad (${fmtI.format(o.utP)} %)</td><td class="r">${money(o.util)}</td></tr>`:""}
-  </tbody></table>
-  <div class="sh-rng blk"><span>Materiales <b>${money(o.mat*kk)}</b> · Mano de obra <b>${money(o.mo*kk)}</b>${q.obra.desglose?"":" (precios finales por partida)"}</span><span>Obra aproximada <b>${money(o.total)}</b></span></div>`;
+  </tbody></table>`;
 }
 function showPreview(boxSel,html,editable){
   const box=$(boxSel);box.innerHTML=`<div class="scaler">${html}</div>`;
