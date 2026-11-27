@@ -343,7 +343,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .sh-table td{padding:8px;border-bottom:1px solid var(--sheet-line);vertical-align:top}
 .sh-table td small{display:block;color:var(--sheet-mute);font-size:10px}
 .sh-table .r{text-align:right;font-family:var(--f-mono);white-space:nowrap}
-.sh-totals{margin-left:auto;width:300px;font-size:11.5px}
+.sh-totals{margin-left:auto;width:340px;font-size:11.5px}
 .sh-totals div{display:flex;justify-content:space-between;padding:4px 0}
 .sh-totals .g{margin-top:6px;padding:10px 12px;background:var(--sheet-navy);color:var(--sheet-bg);border-radius:4px;font-weight:700}
 .sh-totals .g span:last-child{font-family:var(--f-mono);font-size:15px}
@@ -468,10 +468,18 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
         <div class="disc-row"><input type="range" id="desc-range" min="0" max="25" step="1" aria-label="Descuento"><input type="number" id="desc-num" min="0" max="25" step="0.5" aria-label="Descuento en porcentaje"><span class="mono">%</span></div>
         <div class="disc-chips" id="disc-chips"><button data-d="0">0%</button><button data-d="5">5%</button><button data-d="10">10%</button><button data-d="15">15%</button><button data-d="20">20%</button></div>
       </div>
+      <div class="disc" id="util-box" hidden>
+        <div class="label" style="margin-bottom:6px">Utilidad de la obra (0 a 50 %)</div>
+        <div class="disc-row"><input type="range" id="util-range" min="0" max="50" step="1" aria-label="Utilidad"><input type="number" id="util-num" min="0" max="50" step="0.5" aria-label="Utilidad en porcentaje"><span class="mono">%</span></div>
+        <div class="disc-chips" id="util-chips"><button data-u="10">10%</button><button data-u="15">15%</button><button data-u="20">20%</button><button data-u="25">25%</button><button data-u="30">30%</button></div>
+        <div class="tot" style="margin-top:8px"><div><span>Tu ganancia en la obra</span><b class="num" id="util-monto" style="color:var(--ok)"></b></div></div>
+        <label class="toggle" style="margin-top:8px"><input type="checkbox" id="util-pdf"> <span>Mostrar la utilidad en el PDF</span></label>
+      </div>
       <label class="toggle"><input type="checkbox" id="igv-on"> <span id="igv-label">Agregar IGV (18 %)</span></label>
       <div class="tot">
         <div><span>Subtotal de partidas</span><span class="num" id="t-sub"></span></div>
         <div class="neg" id="t-desc-row"><span id="t-desc-l">Descuento</span><span class="num" id="t-desc"></span></div>
+        <div class="neg" id="t-dd-row"><span>Diseño incluido (obra con Arquizo)</span><span class="num" id="t-dd"></span></div>
         <div id="t-igv-row"><span id="t-igv-l">IGV</span><span class="num" id="t-igv"></span></div>
       </div>
       <div class="grand"><span>Total</span><strong id="t-total"></strong></div>
@@ -677,7 +685,7 @@ function newQuote(){
     cat:"interiores",paqueteId:"int-integral",tarifas:{},extras:{},descuento:0,igv:false,moneda:"PEN",
     hitos:clone(cfg.hitos),plazoManual:"",notas:"",imagen:null,contratoHTML:null,obra:defObra()};
 }
-function defObra(){return {on:false,rubro:"",acabado:"estandar",fuente:"fotos",partidas:{},gg:"",utilidad:"",rango:"",desglose:false,descontarDiseno:true,notas:""}}
+function defObra(){return {on:false,rubro:"",acabado:"estandar",fuente:"fotos",partidas:{},gg:"",utilidad:"",rango:"",desglose:true,descontarDiseno:true,notas:""}}
 function normQ(x){x.extras=x.extras||{};x.tarifas=x.tarifas||{};x.hitos=x.hitos||clone(cfg.hitos);x.obra=Object.assign(defObra(),x.obra||{});x.obra.partidas=x.obra.partidas||{};return x}
 function mergeObra(o){const d=clone(DEFAULT_OBRA);if(!o)return d;const r=Object.assign(d,o);r.acabados=Object.assign(clone(DEFAULT_OBRA.acabados),o.acabados||{});return r}
 function exampleQuote(){
@@ -804,7 +812,7 @@ function renderObra(){
     </div>
     <div class="o-pct"><label>Gastos generales e imprevistos <input type="number" min="0" step="0.5" data-ok="gg" value="${oPct("gg")}"> %</label><label>Utilidad <input type="number" min="0" step="0.5" data-ok="utilidad" value="${oPct("utilidad")}"> %</label><label>Rango ± <input type="number" min="0" max="50" step="1" data-ok="rango" value="${oPct("rango")}"> %</label></div>
     <label class="toggle"><input type="checkbox" id="o-descdis"${o.descontarDiseno?" checked":""}> <span>Descontar el diseño del total (si la obra la hace Arquizo)</span></label>
-    <label class="toggle"><input type="checkbox" id="o-desg"${o.desglose?" checked":""}> <span>Mostrar gastos generales y utilidad por separado en la hoja</span></label>
+    <label class="toggle"><input type="checkbox" id="o-desg"${o.desglose?" checked":""}> <span>Mostrar gastos generales y utilidad en el PDF</span></label>
     </div>`;
     const groups={};cfg.obra.partidas.forEach(pt=>{(groups[pt.grupo||"Otros"]=groups[pt.grupo||"Otros"]||[]).push(pt)});
     h+=Object.keys(groups).map(g=>`<div class="xgroup" style="margin-top:16px"><h4>${esc(g)}</h4><div class="xlist">${groups[g].map(pt=>{const a=oOn(pt);
@@ -830,6 +838,14 @@ function renderObraNums(){
   <div class="o-big"><span>Obra aproximada${area()?" · "+money(oc.total/area())+" por m²":""}</span><span class="num">${money(oc.total)}</span></div>
   <div class="o-rng"><span>Rango (± ${fmtI.format(oc.rgP)} %)</span><span class="num">${money(oc.lo)} a ${money(oc.hi)}</span></div>`;
 }
+function renderUtil(c){
+  const box=$("#util-box");box.hidden=!c.obra;if(!c.obra)return;
+  const u=c.obra.utP;$("#util-range").value=Math.min(50,u);if(document.activeElement!==$("#util-num"))$("#util-num").value=u;
+  $$("#util-chips button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.u===u)));
+  $("#util-monto").textContent=money(c.obra.util);$("#util-pdf").checked=!!q.obra.desglose;
+  const oi=document.querySelector('[data-ok="utilidad"]');if(oi&&document.activeElement!==oi)oi.value=u;
+  const dg=$("#o-desg");if(dg)dg.checked=!!q.obra.desglose;
+}
 function renderHitos(){
   $("#hitos-list").innerHTML=(q.hitos||[]).map((h,i)=>`<div class="hito">
     <input value="${esc(h.nombre)}" data-hn="${i}" aria-label="Nombre del hito">
@@ -840,13 +856,14 @@ function renderHitos(){
 function renderSummary(){
   const c=calc();
   $("#sum-lines").innerHTML=(c.lines.length||c.obra?c.lines.map(l=>`<div class="line"><b>${esc(l.concepto)}</b><span class="num">${money(l.monto)}</span><small>${esc(l.cant)} × S/ ${fmtN.format(l.pu)} ${l.unit==="fijo"?"":l.unit}</small></div>`).join(""):`<p class="empty">Elige un paquete para empezar.</p>`)
-    +(c.obra?`<div class="line"><b>Ejecución de obra (aprox.)</b><span class="num">${money(c.obra.total)}</span><small>Materiales ${money(c.obra.mat)} · Mano de obra ${money(c.obra.mo)} · + GG y utilidad</small></div>`:"")
+    +(c.obra?`<div class="line"><b>Ejecución de obra (aprox.)</b><span class="num">${money(c.obra.total)}</span><small>Materiales ${money(c.obra.mat)} · Mano de obra ${money(c.obra.mo)} · GG ${money(c.obra.gg)} · Utilidad ${money(c.obra.util)}</small></div>`:"")
     +(c.descDis?`<div class="line"><b>Diseño incluido al ejecutar con Arquizo</b><span class="num">− ${money(c.descDis)}</span><small>Se descuenta el diseño</small></div>`:"");
-  renderObraNums();
+  renderObraNums();renderUtil(c);
   $("#desc-range").value=c.d;if(document.activeElement!==$("#desc-num"))$("#desc-num").value=c.d;
   $$("#disc-chips button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.d===c.d)));
   $("#t-sub").textContent=money(c.subtotal);
   $("#t-desc-row").hidden=!c.desc;$("#t-desc-l").textContent=`Descuento comercial (${fmtI.format(c.d)} %${c.obra?", sobre el diseño":""})`;$("#t-desc").textContent="− "+money(c.desc);
+  $("#t-dd-row").hidden=!c.descDis;$("#t-dd").textContent="− "+money(c.descDis);
   $("#t-igv-row").hidden=!q.igv;$("#t-igv-l").textContent=`IGV (${fmtI.format(num(cfg.igv))} %)`;$("#t-igv").textContent=money(c.igv);
   $("#t-total").textContent=money(c.total)+(c.obra?" aprox.":"");
   $("#t-plazo").textContent=c.plazo?c.plazo+" días hábiles":"—";
@@ -878,6 +895,7 @@ document.addEventListener("input",e=>{
   if(t.dataset.hn!=null){q.hitos[+t.dataset.hn].nombre=t.value;changed();renderSummary();return}
   if(t.dataset.hp!=null){q.hitos[+t.dataset.hp].pct=num(t.value);changed();renderSummary();return}
   if(t.id==="q-num"){q.numero=t.value.trim();q.numManual=true;changed();renderSummary();return}
+  if(t.id==="util-range"||t.id==="util-num"){q.obra.utilidad=Math.min(50,Math.max(0,num(t.value)));changed();renderSummary();return}
   if(t.id==="desc-range"||t.id==="desc-num"){q.descuento=Math.min(25,Math.max(0,num(t.value)));changed();renderSummary();return}
 });
 document.addEventListener("change",e=>{
@@ -887,7 +905,7 @@ document.addEventListener("change",e=>{
   if(t.id==="obra-on"){toggleObra(t.checked);return}
   if(t.id==="o-rubro"){applyRubro(t.value);changed();renderObra();renderSummary();return}
   if(t.id==="o-descdis"){q.obra.descontarDiseno=t.checked;changed();renderSummary();return}
-  if(t.id==="o-desg"){q.obra.desglose=t.checked;changed();return}
+  if(t.id==="o-desg"||t.id==="util-pdf"){q.obra.desglose=t.checked;changed();renderSummary();return}
   if(t.dataset.op){const s=oSt(t.dataset.op);s.on=t.checked;if(!t.checked){delete s.cant;delete s.mat;delete s.mo}changed();renderObra();renderSummary();return}
   if(t.id==="q-estado"){q.estado=t.value;changed();return}
   if(t.id==="ref-file"&&t.files[0]){readImage(t.files[0],1000,560,"image/jpeg",0.78).then(d=>{q.imagen=d;changed();fillForm();toast("Imagen agregada a la cotización")}).catch(()=>toast("No se pudo leer esa imagen. Prueba con un JPG o PNG."))}
@@ -897,6 +915,7 @@ document.addEventListener("click",e=>{
   const ab=t.closest("[data-a]");if(ab){q.proyecto.area=+ab.dataset.a;$("#f-pro-area").value=ab.dataset.a;changed();renderSummary();return}
   const cb=t.closest("#cat-tabs button");if(cb){q.cat=cb.dataset.cat;const cur=getPkg();if(!cur||cur.cat!==q.cat){const l=cfg.paquetes.filter(p=>p.cat===q.cat);q.paqueteId=(l.find(p=>p.recomendado)||l[0]||{}).id||null}changed();renderCats();renderPkgs();renderSummary();return}
   const pk=t.closest(".pkg");if(pk&&!t.closest("input")){q.paqueteId=pk.dataset.pkg;changed();renderPkgs();renderSummary();return}
+  const uc=t.closest("#util-chips button");if(uc){q.obra.utilidad=+uc.dataset.u;changed();renderSummary();return}
   const dc=t.closest("#disc-chips button");if(dc){q.descuento=+dc.dataset.d;changed();renderSummary();return}
   const cur=t.closest(".bar .cur button");if(cur){q.moneda=cur.dataset.cur;renderPkgs();renderExtras();renderSummary();return}
   const hx=t.closest("[data-hx]");if(hx){q.hitos.splice(+hx.dataset.hx,1);changed();renderHitos();renderSummary();return}
@@ -984,7 +1003,7 @@ function buildSheet(){
   ${c.obra?sheetObra(c):""}
   <div class="sh-totals blk">${c.obra?`<div><span>Diseño</span><span class="mono">${money(c.disenoSub)}</span></div>`:`<div><span>Subtotal</span><span class="mono">${money(c.subtotal)}</span></div>`}
   ${c.desc?`<div><span>Descuento comercial (${fmtI.format(c.d)} %${c.obra?", diseño":""})</span><span class="mono">− ${money(c.desc)}</span></div>`:""}
-  ${c.obra?`<div><span>Ejecución de obra (aprox.)</span><span class="mono">${money(c.obra.total)}</span></div>`:""}
+  ${c.obra?(q.obra.desglose?`<div><span>Obra: costo directo</span><span class="mono">${money(c.obra.cd)}</span></div><div><span>Gastos generales e imprevistos (${fmtI.format(c.obra.ggP)} %)</span><span class="mono">${money(c.obra.gg)}</span></div><div><span>Utilidad (${fmtI.format(c.obra.utP)} %)</span><span class="mono">${money(c.obra.util)}</span></div><div><b>Ejecución de obra (aprox.)</b><b class="mono">${money(c.obra.total)}</b></div>`:`<div><span>Ejecución de obra (aprox.)</span><span class="mono">${money(c.obra.total)}</span></div>`):""}
   ${c.descDis?`<div><span>Diseño incluido al ejecutar con ${esc(e.nombre)}</span><span class="mono">− ${money(c.descDis)}</span></div>`:""}
   ${q.igv?`<div><span>IGV (${fmtI.format(num(cfg.igv))} %)</span><span class="mono">${money(c.igv)}</span></div>`:""}
   <div class="g"><span>TOTAL ${c.obra?"APROX. ":""}${q.igv?"":"(sin IGV)"}</span><span>${money(c.total)}</span></div></div>
