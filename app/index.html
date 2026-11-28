@@ -2821,7 +2821,7 @@ function openListEditor(l,onCreated){
     const row=h('div','lrow');const e=h('button','le',iconHTML(st.emoji||T.icon));e.title='Elegir ícono';e.onclick=()=>emojiPicker(v=>{st.emoji=v||T.icon;draw()});
     const n=h('input','field');n.type='text';n.maxLength=40;n.placeholder=T.ph||'Nombre de la lista';n.value=st.name;n.oninput=()=>{st.name=n.value};
     row.append(e,n);box.append(row);
-    if(!isNew&&(!l.owner||l.owner===ME)&&!NOMETA){box.append(h('div','lbl','Apps del equipo'));box.append(toggleRow('Apps de Arquizo','Quienes tengan acceso a este espacio verán el cotizador, la carta de presentación y los archivos del equipo al costado de Kivo.',!!metaOf(l).cotizador,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).cotizador&&v)delete x.meta.cotizador});if(v)metaOf(l).cotizador=true;else delete metaOf(l).cotizador;save();renderDock()}))}
+    if(!isNew&&(!l.owner||l.owner===ME)&&!NOMETA){box.append(h('div','lbl','Apps del equipo'));box.append(toggleRow('Apps de Arquizo','Quienes tengan acceso a este espacio verán el cotizador, la carta de presentación y los archivos del equipo al costado de Kivo.',!!metaOf(l).cotizador,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).cotizador&&v)delete x.meta.cotizador});if(v)metaOf(l).cotizador=true;else delete metaOf(l).cotizador;save();renderDock()}));box.append(toggleRow('Apps de TINTA13 Studio','Quienes tengan acceso a este espacio verán el cotizador de identidad de marca y los clientes de TINTA13 al costado de Kivo.',!!metaOf(l).tinta13,v=>{S.lists.forEach(x=>{if(x!==l&&metaOf(x).tinta13&&v)delete x.meta.tinta13});if(v)metaOf(l).tinta13=true;else delete metaOf(l).tinta13;save();renderDock()}))}
     box.append(h('div','lbl','Color'));const sw=h('div','sw-row');
     LIST_COLORS.forEach(c=>{const b=h('button','sw'+(st.color===c?' on':''));b.style.background=c;b.onclick=()=>{st.color=c;draw()};sw.append(b)});box.append(sw);
     const f=h('div','foot');
@@ -4175,11 +4175,25 @@ function mobileBanners(b){
   if(IS_IOS&&!IS_STANDALONE&&!IS_APP&&!S.iosHintOff){const d=h('div','banner','<b>Instala Kivo en tu iPhone: toca el botón Compartir <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> y luego «Agregar a inicio».</b>');const n=h('button','btn ghost','Entendido');n.onclick=()=>{S.iosHintOff=true;save();renderBanner()};d.append(n);b.append(d)}
 }
 
-/* ================= APPS DEL EQUIPO: Cotizador Arquizo ================= */
-// El cotizador aparece solo para quienes son miembros del espacio de Arquizo (marcado con meta.cotizador)
-function cotTeam(){
-  // si hay varias listas con las apps de Arquizo, manda la compartida (la del equipo), no una copia personal vacía
-  const fl=S.lists.filter(l=>metaOf(l).cotizador);if(fl.length<2)return fl[0]||null;
+/* ================= APPS DEL EQUIPO: Arquizo y TINTA13 Studio ================= */
+// Cada negocio tiene su espacio en Kivo (marcado con meta.cotizador o meta.tinta13).
+// Sus cotizaciones y su CRM se guardan con el id de ese espacio, así no se mezclan.
+const BIZ={
+  arquizo:{flag:'cotizador',name:'Arquizo',file:'cotizador.html',icon:'icons/cotizador.svg',cotName:'Cotizador Arquizo',
+    src:['Facebook / Instagram','TikTok','Recomendado','Web arquizo.com','WhatsApp','Otro'],
+    svc:['Diseño de interiores','Interiores + ejecución','Defensa Civil','Anteproyecto','Saneamiento','Otro']},
+  tinta13:{flag:'tinta13',name:'TINTA13 Studio',file:'cotizador-tinta13.html',icon:'icons/tinta13.svg',cotName:'Cotizador TINTA13',
+    src:['Facebook / Instagram','TikTok','Recomendado','Web tinta13.com','WhatsApp','Otro'],
+    svc:['Paquete Gota','Paquete Trazo','Paquete Sello','Solo logotipo','Rediseño de logo','Manual de marca','Merch con logo','Otro']}
+};
+let CURBIZ='arquizo';
+const curBiz=()=>BIZ[CURBIZ]||BIZ.arquizo;
+function cotTeam(){return bizTeam(CURBIZ)}
+function arqTeam(){return bizTeam('arquizo')}
+function bizTeam(b){
+  const flag=(BIZ[b]||BIZ.arquizo).flag;
+  // si hay varias listas con las apps del negocio, manda la compartida (la del equipo), no una copia personal vacía
+  const fl=S.lists.filter(l=>metaOf(l)[flag]);if(fl.length<2)return fl[0]||null;
   const sc=l=>(isShared(l.id)?4:0)+(l.owner&&l.owner!==ME?2:0)+(S.tasks.some(t=>t.list===l.id)?1:0);
   return fl.slice().sort((a,b)=>sc(b)-sc(a))[0];
 }
@@ -4190,7 +4204,7 @@ function mergeDupLists(){
     const team=S.lists.find(x=>x.id!==mine.id&&x.owner&&x.owner!==ME&&isShared(x.id)&&norm(x.name)===norm(mine.name));
     if(!team||!(mine.id in SYNC.lists))return;
     S.tasks.forEach(t=>{if(t.list===mine.id){t.list=team.id;t.stage=''}});
-    if(metaOf(mine).cotizador)metaOf(team).cotizador=true;
+    if(metaOf(mine).cotizador)metaOf(team).cotizador=true;if(metaOf(mine).tinta13)metaOf(team).tinta13=true;
     dropListLocally(mine);did.push(team.name);
   });
   if(did.length){save();setTimeout(()=>{fetchAll().then(renderAll).catch(()=>{})},1500);setTimeout(()=>toast('Uní tu lista «'+did[0]+'» con la del equipo: ahora es una sola'),800);return true}
@@ -4198,13 +4212,30 @@ function mergeDupLists(){
 }
 function cotAutoFlag(){
   try{if(mergeDupLists()){renderList()}}catch(e){console.warn(e)}
-  if(cotTeam()||NOMETA)return;
-  const l=S.lists.find(x=>(!x.owner||x.owner===ME)&&norm(x.name)==='arquizo');
-  if(l){metaOf(l).cotizador=true;save()}
+  if(NOMETA)return;
+  if(!arqTeam()){const l=S.lists.find(x=>(!x.owner||x.owner===ME)&&norm(x.name)==='arquizo');if(l){metaOf(l).cotizador=true;save()}}
+  if(!bizTeam('tinta13')){const l=S.lists.find(x=>(!x.owner||x.owner===ME)&&/^tinta ?13( studio)?$/.test(norm(x.name).trim()));if(l){metaOf(l).tinta13=true;save()}}
 }
 function renderDock(){
   const od=$('#dock');if(od)od.remove();
-  let d=$('#arqbox');const t=cotTeam();
+  renderArqBox();renderT13Box();
+}
+function renderT13Box(){
+  let d=$('#t13box');const t=bizTeam('tinta13');
+  if(!t||!ME){if(d)d.remove();return}
+  if(!d){d=h('section','arqbox t13box');d.id='t13box';const a=$('#arqbox');if(a)a.after(d);else $('#out').before(d)}
+  d.hidden=!(S.filter==='all'||S.filter===t.id);if(d.hidden)return;
+  d.innerHTML='';
+  const shr=(LMEM[t.id]||[]).filter(x=>x!==ME).map(pname).filter(Boolean);
+  const ah=h('div','arq-h',`<b>${esc(t.name)}</b>${shr.length?'<small>· compartido con '+esc(shr.join(', '))+'</small>':''}`);
+  if(isShared(t.id)){const cb=h('button','arq-chat',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a7.5 7.5 0 0 1-11 6.6L4 20l1.1-4.2A7.5 7.5 0 1 1 20 12.5z"/></svg>Chat<span class="cbadge" data-chat-badge="${t.id}" hidden></span>`);cb.onclick=()=>openChat(t.id);ah.append(cb)}
+  d.append(ah);
+  const row=h('div','arq-row');d.append(row);
+  const b=h('button','dapp',`<img src="icons/tinta13.svg" alt=""><span>Cotizador<br>TINTA13</span>`);b.title='Cotizador TINTA13 Studio · identidad de marca';b.onclick=()=>openCot('tinta13');row.append(b);
+  const cl=h('button','dapp',`<img src="icons/clientes.svg" alt=""><span>Clientes<br>TINTA13</span>`);cl.title='CRM de TINTA13 Studio: embudo de ventas, fichas e historial de los clientes';cl.onclick=()=>openCRM('tinta13');row.append(cl);
+}
+function renderArqBox(){
+  let d=$('#arqbox');const t=arqTeam();
   if(!t||!ME){if(d)d.remove();return}
   if(!d){d=h('section','arqbox');d.id='arqbox';$('#out').before(d)}
   d.hidden=!(S.filter==='all'||S.filter===t.id);if(d.hidden)return;
@@ -4214,39 +4245,44 @@ function renderDock(){
   if(isShared(t.id)){const cb=h('button','arq-chat',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a7.5 7.5 0 0 1-11 6.6L4 20l1.1-4.2A7.5 7.5 0 1 1 20 12.5z"/></svg>Chat<span class="cbadge" data-chat-badge="${t.id}" hidden></span>`);cb.onclick=()=>openChat(t.id);ah.append(cb)}
   d.append(ah);
   const row=h('div','arq-row');d.append(row);
-  const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=openCot;row.append(b);
-  const cl=h('button','dapp',`<img src="icons/clientes.svg" alt=""><span>Clientes</span>`);cl.title='CRM: embudo de ventas, fichas, historial y números de los clientes';cl.onclick=openCRM;row.append(cl);
+  const b=h('button','dapp',`<img src="icons/cotizador.svg" alt=""><span>Cotizador<br>Arquizo</span>`);b.title='Cotizador Arquizo · equipo de '+t.name;b.onclick=()=>openCot('arquizo');row.append(b);
+  const cl=h('button','dapp',`<img src="icons/clientes.svg" alt=""><span>Clientes</span>`);cl.title='CRM: embudo de ventas, fichas, historial y números de los clientes';cl.onclick=()=>openCRM('arquizo');row.append(cl);
   const c=h('button','dapp',`<img src="icons/carta.svg" alt=""><span>Carta de<br>presentación</span>`);c.title='Carta de presentación · equipo de '+t.name;c.onclick=openCarta;row.append(c);
   if(AR.team!==t.id){AR.team=t.id;AR.list=[];arLoad();arWatch()}
   AR.list.forEach(a=>{const b2=h('button','dapp dfile',arIcon(a)+`<span>${esc(arBase(a.nombre))}</span>`);b2.title=a.nombre+' · subido por '+(a.autor||'')+' — tócalo para abrirlo';b2.onclick=()=>arOpen(a,false);row.append(b2)});
   const f=h('button','dapp',`<img src="icons/archivos.svg" alt=""><span>Agregar<br>archivos</span>`);f.title='Subir portafolio, brochure o PDFs para todo el equipo de '+t.name;f.onclick=()=>{openArchivos();ARV.inp.click()};row.append(f);
 }
-let COTV=null,COTCH=null,COTWATCH=false;
-function openCot(){
-  const t=cotTeam();if(!t){toast('El cotizador es solo para el equipo de Arquizo');return}
-  if(!COTV){
-    COTV=h('div','cotv');
+let COTVS={},COTV=null,COTCH=null,COTWATCH=false;
+function openCot(b){
+  if(b&&BIZ[b])CURBIZ=b;const B=curBiz();
+  const t=cotTeam();if(!t){toast('El '+B.cotName+' es solo para el espacio de '+B.name);return}
+  let v=COTVS[CURBIZ];
+  if(!v){
+    v=h('div','cotv');
     const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCot;
-    hd.append(bk,h('b','',`<img src="icons/cotizador.svg" alt=""> Cotizador Arquizo`),h('span','grow'),h('small','cotv-who',''));
-    const fr=document.createElement('iframe');fr.src='cotizador.html?v='+encodeURIComponent(String(window.KIVO_VERSION||''));fr.title='Cotizador Arquizo';
-    COTV.append(hd,fr);document.body.append(COTV);COTV.fr=fr;
+    hd.append(bk,h('b','',`<img src="${B.icon}" alt=""> ${esc(B.cotName)}`),h('span','grow'),h('small','cotv-who',''));
+    const fr=document.createElement('iframe');fr.src=B.file+'?v='+encodeURIComponent(String(window.KIVO_VERSION||''));fr.title=B.cotName;
+    v.append(hd,fr);document.body.append(v);v.fr=fr;v.biz=CURBIZ;COTVS[CURBIZ]=v;
   }
+  Object.values(COTVS).forEach(x=>{if(x!==v)x.style.display='none'});COTV=v;
+  if(v.ready)cotSnap(CURBIZ);
   const who=(LMEM[t.id]||[]).map(pname).filter(Boolean);COTV.querySelector('.cotv-who').textContent=who.length>1?'Compartido con '+who.filter(n=>n!==pname(ME)).join(', '):'Solo tú (comparte el espacio «'+t.name+'» para trabajar en equipo)';
   COTV.style.display='flex';document.body.classList.add('cot-open');cotPost({theme:isDark()?'dark':'light'});
 }
-function closeCot(){if(COTV){COTV.style.display='none';document.body.classList.remove('cot-open')}}
-function cotPost(m){try{COTV&&COTV.fr.contentWindow.postMessage(Object.assign({kcot:1},m),'*')}catch(e){}}
-async function cotSnap(){const t=cotTeam();if(!t||!sb)return;
+function closeCot(){Object.values(COTVS).forEach(x=>x.style.display='none');document.body.classList.remove('cot-open')}
+function cotPost(m,b){const v=b?COTVS[b]:COTV;try{v&&v.fr.contentWindow.postMessage(Object.assign({kcot:1},m),'*')}catch(e){}}
+async function cotSnap(b){b=b||CURBIZ;const t=bizTeam(b);if(!t||!sb||!COTVS[b])return;
   const {data,error}=await sb.from('cotizaciones').select('data,actualizado').eq('team',t.id).order('actualizado',{ascending:false}).limit(300);
-  if(!error)cotPost({snap:(data||[]).map(r=>r.data)});
+  if(!error)cotPost({snap:(data||[]).map(r=>r.data)},b);
 }
+function cotSnapAll(){Object.keys(COTVS).forEach(b=>{if(COTVS[b].ready)cotSnap(b)})}
 function cotWatch(){
-  cotSnap();if(COTWATCH||!sb||!sb.channel)return;COTWATCH=true;
-  try{COTCH=sb.channel('kivo-cot').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},()=>{clearTimeout(cotWatch.t);cotWatch.t=setTimeout(()=>{cotSnap();if(CRMV&&CRMV.style.display!=='none')crmRefresh()},400)}).subscribe()}catch(e){}
+  cotSnapAll();if(COTWATCH||!sb||!sb.channel)return;COTWATCH=true;
+  try{COTCH=sb.channel('kivo-cot').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},()=>{clearTimeout(cotWatch.t);cotWatch.t=setTimeout(()=>{cotSnapAll();if(CRMV&&CRMV.style.display!=='none')crmRefresh()},400)}).subscribe()}catch(e){}
 }
-async function cotRPC(d){
-  const t=cotTeam();const reply=(data,err,code)=>cotPost({reply:d.id,data,err,code});
-  if(!t)return reply(null,'Sin acceso al equipo de Arquizo');
+async function cotRPC(d,b){
+  const t=bizTeam(b);const reply=(data,err,code)=>cotPost({reply:d.id,data,err,code},b);
+  if(!t)return reply(null,'Sin acceso al espacio de '+(BIZ[b]||BIZ.arquizo).name);
   const a=d.args||{},p=String(a.p||'');
   try{
     if(d.op==='get'){
@@ -4258,9 +4294,9 @@ async function cotRPC(d){
         const r=ex.data&&ex.data.length?await sb.from('cot_config').update({data:a.v}).eq('team',t.id).eq('key',key):await sb.from('cot_config').insert({team:t.id,key,data:a.v});if(r.error)throw r.error;return reply(true)}
       if(p.startsWith('cotizaciones/')){const id=p.slice(13);if(a.v&&typeof a.v==='object'){if(!a.v.autor){a.v.autor=pname(ME);a.v.autorId=ME}a.v.editadoPor=pname(ME);a.v.editadoPorId=ME}const row={data:a.v,actualizado:Number(a.v&&a.v.actualizado)||Date.now(),updated_by:ME};
         const ex=await sb.from('cotizaciones').select('id').eq('id',id).limit(1);if(ex.error)throw ex.error;
-        const r=ex.data&&ex.data.length?await sb.from('cotizaciones').update(row).eq('id',id):await sb.from('cotizaciones').insert(Object.assign({id,team:t.id},row));if(r.error)throw r.error;cotSnap();try{cotFollow(a.v)}catch(e){console.warn(e)}return reply(true)}
+        const r=ex.data&&ex.data.length?await sb.from('cotizaciones').update(row).eq('id',id):await sb.from('cotizaciones').insert(Object.assign({id,team:t.id},row));if(r.error)throw r.error;cotSnap(b);try{cotFollow(a.v,t,b)}catch(e){console.warn(e)}return reply(true)}
     }
-    if(d.op==='del'&&p.startsWith('cotizaciones/')){const r=await sb.from('cotizaciones').delete().eq('id',p.slice(13));if(r.error)throw r.error;cotSnap();return reply(true)}
+    if(d.op==='del'&&p.startsWith('cotizaciones/')){const r=await sb.from('cotizaciones').delete().eq('id',p.slice(13));if(r.error)throw r.error;cotSnap(b);return reply(true)}
     if(d.op==='pdf')return reply(await cotPDF(a.fn,a.html,a.css));
     reply(null,'Operación no válida');
   }catch(e){const m=String(e&&e.message||e);reply(null,/cotizaciones|cot_config|relation|schema cache/i.test(m)?'Falta el paso de la base de datos (código 5 en Supabase)':m,/quota|too large/i.test(m)?'quota_exceeded':undefined)}
@@ -4278,10 +4314,11 @@ async function cotPDF(fn,html,css){
     window.print();return {saved:false};
   }finally{setTimeout(()=>{document.body.classList.remove('printing');area.innerHTML='';pg.remove()},400)}
 }
-window.addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot||!COTV||e.source!==COTV.fr.contentWindow)return;
-  if(d.op==='hello'){const t=cotTeam();cotPost({theme:isDark()?'dark':'light',team:t?'Equipo de '+t.name:''});if(COT_PREFILL){const pf=COT_PREFILL;COT_PREFILL=null;setTimeout(()=>cotPost({prefill:pf}),400)}return}
-  if(d.op==='watch'){cotWatch();return}
-  if(d.id)cotRPC(d);
+window.addEventListener('message',e=>{const d=e.data;if(!d||!d.kcot)return;
+  const b=Object.keys(COTVS).find(k=>COTVS[k].fr&&e.source===COTVS[k].fr.contentWindow);if(!b)return;
+  if(d.op==='hello'){const t=bizTeam(b);cotPost({theme:isDark()?'dark':'light',team:t?(b==='arquizo'?'Equipo de '+t.name:t.name):''},b);if(COT_PREFILL&&b===CURBIZ){const pf=COT_PREFILL;COT_PREFILL=null;setTimeout(()=>cotPost({prefill:pf},b),400)}return}
+  if(d.op==='watch'){COTVS[b].ready=true;cotWatch();cotSnap(b);return}
+  if(d.id)cotRPC(d,b);
 });
 
 /* ---- Carta de presentación Arquizo ---- */
@@ -4365,7 +4402,7 @@ function cartaPage(c){
 }
 let CPV=null,CP={c:null,list:[],busy:false};
 function openCarta(){
-  const t=cotTeam();if(!t){toast('La carta de presentación es solo para el equipo de Arquizo');return}
+  const t=arqTeam();if(!t){toast('La carta de presentación es solo para el equipo de Arquizo');return}
   if(!CPV){
     CPV=h('div','cotv cpv');
     const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCarta;
@@ -4411,7 +4448,7 @@ function cpForm(){
   const fw=h('div','cp-firm');CP_FIRM.forEach(x=>{const l=h('label','pr-op');const cb=h('input');cb.type='checkbox';cb.checked=(c.firmas||[]).includes(x.id);cb.onchange=()=>{c.firmas=CP_FIRM.filter(y=>y.id===x.id?cb.checked:(c.firmas||[]).includes(y.id)).map(y=>y.id);up()};l.append(cb,document.createTextNode(x.n.split(' ')[0]+' · '+x.c));fw.append(l)});row('Firman',fw);
 }
 async function cpLoad(){
-  const t=cotTeam();if(!t||!sb)return;
+  const t=arqTeam();if(!t||!sb)return;
   const {data,error}=await sb.from('cot_config').select('key,data').eq('team',t.id).like('key','carta/%');
   if(error){cpHist(error);return}
   CP.list=(data||[]).map(r=>r.data).filter(x=>x&&!x.borrada).sort((a,b)=>String(b.num).localeCompare(String(a.num)));cpHist();
@@ -4426,13 +4463,13 @@ function cpHist(err){
     info.onclick=()=>{CP.c=JSON.parse(JSON.stringify(x));cpForm();cpPrev();cpHist()};
     const pdf=h('button','btn sm','PDF');pdf.onclick=()=>cartaPDF(x);
     const del=h('button','btn sm ghost','Borrar');del.onclick=async()=>{if(!del.dataset.ok){del.dataset.ok=1;del.textContent='¿Seguro?';setTimeout(()=>{delete del.dataset.ok;del.textContent='Borrar'},3000);return}
-      const r2=await sb.from('cot_config').update({data:Object.assign({},x,{borrada:true,borradaPor:pname(ME),actualizado:Date.now()})}).eq('team',cotTeam().id).eq('key','carta/'+x.num);if(r2.error){toast('No se pudo borrar');return}
+      const r2=await sb.from('cot_config').update({data:Object.assign({},x,{borrada:true,borradaPor:pname(ME),actualizado:Date.now()})}).eq('team',arqTeam().id).eq('key','carta/'+x.num);if(r2.error){toast('No se pudo borrar');return}
       if(CP.c&&CP.c.num===x.num){CP.c=cpNew();cpForm();cpPrev()}cpLoad()};
     r.append(info,pdf,del);box.append(r);
   });
 }
 async function cpSave(pdf){
-  if(CP.busy)return;const t=cotTeam(),c=CP.c;if(!t||!sb){toast('Sin conexión con el equipo de Arquizo');return}
+  if(CP.busy)return;const t=arqTeam(),c=CP.c;if(!t||!sb){toast('Sin conexión con el equipo de Arquizo');return}
   if(c.tipo==='empresa'?!String(c.razon||'').trim():!String(c.nombre||'').trim()){toast(c.tipo==='empresa'?'Falta la razón social':'Falta el nombre de la persona');return}
   CP.busy=true;
   try{
@@ -4479,7 +4516,7 @@ function arIcon(a){const n=norm(a.nombre||''),t=a.type||'';
   const col=/pdf/.test(t)||ext==='PDF'?'#CF0100':/^(DOCX?|ODT)$/.test(ext)?'#2b5797':/^(XLSX?|CSV)$/.test(ext)?'#1e7145':/^(PPTX?)$/.test(ext)?'#c43e1c':t.startsWith('image/')?'#7a4fd6':'#02192E';
   return `<span class="ar-ic" style="--c:${col}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 2.8h8.2L19 7.6V20a1.2 1.2 0 0 1-1.2 1.2H6A1.2 1.2 0 0 1 4.8 20V4A1.2 1.2 0 0 1 6 2.8z"/><path d="M14 2.8V7.8h5"/></svg><b>${esc(ext.slice(0,4))}</b></span>`}
 function openArchivos(){
-  const t=cotTeam();if(!t){toast('Los archivos son solo para el equipo de Arquizo');return}
+  const t=arqTeam();if(!t){toast('Los archivos son solo para el equipo de Arquizo');return}
   if(!ARV){
     ARV=h('div','cotv arv');
     const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeArchivos;
@@ -4498,7 +4535,7 @@ function openArchivos(){
 }
 function closeArchivos(){if(ARV){ARV.style.display='none';document.body.classList.remove('cot-open')}}
 async function arLoad(){
-  const t=cotTeam();if(!t||!sb)return;
+  const t=arqTeam();if(!t||!sb)return;
   const {data,error}=await sb.from('cot_config').select('key,data').eq('team',t.id).like('key','archivo/%');
   if(error){AR.err=error;arRender();return}
   AR.err=null;const sig=JSON.stringify(AR.list.map(x=>x.id));AR.list=(data||[]).map(r=>r.data).filter(x=>x&&!x.borrado).sort((a,b)=>(a.subido||0)-(b.subido||0));arRender();if(sig!==JSON.stringify(AR.list.map(x=>x.id)))renderDock();
@@ -4523,7 +4560,7 @@ function arRender(){
   });
 }
 async function arUpload(files){
-  const t=cotTeam();if(!t||!sb){toast('Sin conexión con el equipo de Arquizo');return}
+  const t=arqTeam();if(!t||!sb){toast('Sin conexión con el equipo de Arquizo');return}
   if(AR.busy){toast('Espera a que termine la subida anterior');return}
   AR.busy=true;let ok=0;
   try{
@@ -4581,7 +4618,7 @@ async function arViewer(a){
   const body=h('div','pv-body');const msg=h('div','pv-msg','<span class="pv-spin"></span>Abriendo «'+esc(a.nombre)+'»…');body.append(msg);
   v.append(hd,body);document.body.append(v);document.body.classList.add('cot-open');
   let blob=null,url=null,doc=null,zoom=1,io=null,pages=[],dead=false;
-  v.close=()=>{dead=true;try{io&&io.disconnect()}catch(e){}try{doc&&doc.destroy()}catch(e){}if(url)URL.revokeObjectURL(url);v.remove();if(!((COTV&&COTV.style.display==='flex')||(CPV&&CPV.style.display==='flex')||(ARV&&ARV.style.display==='flex')))document.body.classList.remove('cot-open')};
+  v.close=()=>{dead=true;try{io&&io.disconnect()}catch(e){}try{doc&&doc.destroy()}catch(e){}if(url)URL.revokeObjectURL(url);v.remove();if(!(Object.values(COTVS).some(x=>x.style.display==='flex')||(CPV&&CPV.style.display==='flex')||(ARV&&ARV.style.display==='flex')))document.body.classList.remove('cot-open')};
   bk.onclick=()=>v.close();
   dl.onclick=()=>arDownload(a,blob);
   try{blob=await arBytes(a)}catch(e){msg.innerHTML='No se pudo abrir el archivo. Revisa tu internet.';return}
@@ -4612,7 +4649,7 @@ async function arViewer(a){
   new ResizeObserver(()=>{if(!dead)rez()}).observe(body);
 }
 async function arDelete(a){
-  const t=cotTeam();if(!t)return;
+  const t=arqTeam();if(!t)return;
   const r=await sb.from('cot_config').update({data:Object.assign({},a,{borrado:true,borradoPor:pname(ME)})}).eq('team',t.id).eq('key','archivo/'+a.id);
   if(r.error){toast('No se pudo borrar');return}
   try{await sb.storage.from('equipo').remove(a.parts||[a.path])}catch(e){}
@@ -4809,7 +4846,7 @@ function guessCat(name,kind){
   if(/(curso|tesis|universidad|\buni\b|clases?\b|maestria|diplomado|examen|estudi|certificacion|ingles|idioma|carrera|ciclo)/.test(x))return 'est';
   return 'per';
 }
-function catOf(l){const m=metaOf(l);if(m.cat&&CATS.some(c=>c.id===m.cat))return m.cat;const t=cotTeam();if(t&&t.id===l.id)return 'emp';return guessCat(l.name,l.kind)}
+function catOf(l){const m=metaOf(l);if(m.cat&&CATS.some(c=>c.id===m.cat))return m.cat;if(Object.keys(BIZ).some(b=>{const t=bizTeam(b);return t&&t.id===l.id}))return 'emp';return guessCat(l.name,l.kind)}
 // reconoce a qué lista va una tarea (solo si no elegiste lista)
 const KIND_KW={arch:/(cotiza|presupuest|cliente|plano|obra|render|levantamiento|brochure|portafolio|carta de presentacion)/,shop:/(pedido|tazas?|polos?|sublima|envio|stock|delivery)/,writer:/(capitulo|novela|escena|personaje|manuscrito|editorial|isbn)/,
   student:/(tarea del|examen|exposicion|practica calificada|tesis|monografia|silabo)/,course:/(modulo|leccion|tarea del curso|certificado)/,creator:/(video|live|reel|miniatura|grabar|edicion|youtube|tiktok)/,
@@ -5016,13 +5053,13 @@ function alarmSuggest(ds,auto){
 setInterval(()=>{try{alarmTick()}catch(e){}},5000);
 
 /* ---- Seguimiento automático de cotizaciones ---- */
-function cotFollow(q){
-  const t=cotTeam();if(!t||!q||!q.numero||q.ejemplo)return;
+function cotFollow(q,t,b){
+  t=t||cotTeam();b=b||CURBIZ;if(!t||!q||!q.numero||q.ejemplo)return;
   const ex=S.tasks.find(x=>x.fields&&x.fields.cot===q.numero);
   const cli=((q.cliente&&q.cliente.nombre)||'').trim();
   if(q.estado==='enviada'&&!ex){
     const d=plus(3);const tm=fixedFree(d,'10:00',t.id);
-    const x=fixTask({text:'Seguimiento a '+(cli||'cliente')+' ('+q.numero+')',list:t.id,date:d,time:tm,owner:ME,fields:{cot:q.numero,cotId:q.id,cli,tel:(q.cliente&&q.cliente.telefono)||'',total:q.total||0,sent:Date.now()}});
+    const x=fixTask({text:'Seguimiento a '+(cli||'cliente')+' ('+q.numero+')',list:t.id,date:d,time:tm,owner:ME,fields:{cot:q.numero,cotId:q.id,cli,tel:(q.cliente&&q.cliente.telefono)||'',total:q.total||0,sent:Date.now(),biz:b}});
     S.tasks.unshift(x);save();renderList();toast('Te recordaré hacer seguimiento a '+(cli||'este cliente')+' el '+fmtDate(d).toLowerCase());
   }else if(ex&&ex.status!=='done'&&(q.estado==='aceptada'||q.estado==='rechazada')){
     ex.status='done';ex.doneAt=Date.now();ex.doneOn=today();ex.doneBy=ME;save();renderList();
@@ -5030,15 +5067,15 @@ function cotFollow(q){
   }
 }
 const money=n=>'S/ '+Number(n||0).toLocaleString('es-PE',{minimumFractionDigits:0,maximumFractionDigits:2});
-function waText(cli,num){const n=(cli||'').replace(/^(sr|sra|srta|dr|dra|arq|ing)\.?\s+/i,'');return 'Hola'+(n?' '+n.split(' ')[0]:'')+', le saluda '+(pname(ME)||'')+' de Arquizo. '+(num?'Quería saber si pudo revisar la cotización '+num+' que le enviamos. ':'')+'Quedo atento a sus comentarios.'}
+function waText(cli,num,b){const n=(cli||'').replace(/^(sr|sra|srta|dr|dra|arq|ing)\.?\s+/i,'');return 'Hola'+(n?' '+n.split(' ')[0]:'')+', le saluda '+(pname(ME)||'')+' de '+(BIZ[b]||curBiz()).name+'. '+(num?'Quería saber si pudo revisar la cotización '+num+' que le enviamos. ':'')+'Quedo atento a sus comentarios.'}
 function waOpen(tel,text){const d=String(tel||'').replace(/\D/g,'');if(d.length>=9){window.open('https://wa.me/'+(d.length===9?'51'+d:d)+'?text='+encodeURIComponent(text),'_blank');return}
   try{navigator.clipboard.writeText(text).then(()=>toast('Mensaje copiado. Pégalo en WhatsApp'),()=>toast(text))}catch(e){toast(text)}}
 function segBlock(x){
   const f=x.fields||{};const b=h('div','segb');b.onclick=e=>e.stopPropagation();
-  b.innerHTML=`<img src="icons/cotizador.svg" alt=""><div><b>Cotización ${esc(f.cot)}${f.total?' · '+esc(money(f.total)):''}</b><small>Kivo la creó sola: la enviaste el ${esc(new Date(f.sent||x.at||Date.now()).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'short'}))}.</small></div>`;
-  const ok=h('button','sb ok','Ya respondió');ok.onclick=()=>{x.status='done';x.doneAt=Date.now();x.doneOn=today();x.doneBy=ME;save();renderList();toast('¡Bien! Si aceptó, márcala como «Aceptada» en el Cotizador')};
+  b.innerHTML=`<img src="${(BIZ[f.biz]||BIZ.arquizo).icon}" alt=""><div><b>Cotización ${esc(f.cot)}${f.total?' · '+esc(money(f.total)):''}</b><small>Kivo la creó sola: la enviaste el ${esc(new Date(f.sent||x.at||Date.now()).toLocaleDateString('es',{weekday:'long',day:'numeric',month:'short'}))}.</small></div>`;
+  const ok=h('button','sb ok','Ya respondió');ok.onclick=()=>{x.status='done';x.doneAt=Date.now();x.doneOn=today();x.doneBy=ME;save();renderList();toast('¡Bien! Si aceptó, márcala como «Aceptada» en el cotizador')};
   const lt=h('button','sb','Recordar en 3 días');lt.onclick=()=>{x.date=plus(3);x.time=fixedFree(x.date,x.time||'10:00',x.list);save();renderList();toast('Te lo recuerdo el '+fmtDate(x.date).toLowerCase())};
-  const wa=h('button','sb',f.tel?'WhatsApp':'Copiar mensaje');wa.onclick=()=>waOpen(f.tel,waText(f.cli,f.cot));
+  const wa=h('button','sb',f.tel?'WhatsApp':'Copiar mensaje');wa.onclick=()=>waOpen(f.tel,waText(f.cli,f.cot,f.biz));
   b.append(ok,lt,wa);return b;
 }
 
@@ -5092,10 +5129,10 @@ const CRM_ST=[
   {id:'nego',n:'Negociación',c:'#ff9f0a',r:3},
   {id:'won',n:'Ganado',c:'#30a14e',r:4},
   {id:'lost',n:'Perdido',c:'#ff3b30',r:4}];
-const CRM_SRC=['Facebook / Instagram','TikTok','Recomendado','Web arquizo.com','WhatsApp','Otro'];
-const CRM_SRCC={'Facebook / Instagram':'#0a84ff','TikTok':'#5e5ce6','Recomendado':'#30a14e','Web arquizo.com':'#d7262e','WhatsApp':'#25a35a','Otro':'#8e8e93'};
-const CRM_SVC=['Diseño de interiores','Interiores + ejecución','Defensa Civil','Anteproyecto','Saneamiento','Otro'];
-const CRM={cards:[],recs:{},open:null,who:'all',loading:false,err:null};
+const crmSrcList=()=>curBiz().src;
+const CRM_SRCC={'Facebook / Instagram':'#0a84ff','TikTok':'#5e5ce6','Recomendado':'#30a14e','Web arquizo.com':'#d7262e','Web tinta13.com':'#a38f00','WhatsApp':'#25a35a','Otro':'#8e8e93'};
+const crmSvcList=()=>curBiz().svc;
+const CRM={cards:[],recs:{},open:null,who:'all',loading:false,err:null,biz:'arquizo'};
 let CRMV=null;
 const crmSt=id=>CRM_ST.find(s=>s.id===id)||CRM_ST[0];
 const crmDays=ms=>Math.floor((Date.now()-ms)/864e5);
@@ -5103,7 +5140,7 @@ const crmMonth=ms=>{const d=new Date(ms);return d.getFullYear()*12+d.getMonth()}
 const crmAgo=ms=>{if(!ms)return '—';const t=new Date();t.setHours(0,0,0,0);const d=new Date(ms);d.setHours(0,0,0,0);const k=Math.round((t-d)/864e5);return k<=0?'Hoy':k===1?'Ayer':'Hace '+k+' días'};
 const crmMembers=()=>{const t=cotTeam();return t?(LMEM[t.id]||[ME]):[ME]};
 function crmOwnerOf(q){if(q&&q.autorId&&crmMembers().includes(q.autorId))return q.autorId;if(!q||!q.autor)return null;const n=norm(q.autor);return crmMembers().find(id=>{const m=MEMBERS[id]||{};return n&&(norm(m.name||'')===n||norm(firstName(m.name||''))===norm(firstName(q.autor)))})||null}
-function crmSvcOf(q){if(!q)return '';const c=String(q.cat||'').toLowerCase();if(/interior/.test(c))return (q.paqueteId||'').includes('ejec')?'Interiores + ejecución':'Diseño de interiores';if(/defensa/.test(c))return 'Defensa Civil';if(/sanea/.test(c))return 'Saneamiento';if(/ante|arqui/.test(c))return 'Anteproyecto';return c?cap(c):''}
+function crmSvcOf(q){if(!q)return '';if(q.paqueteNombre&&CURBIZ==='tinta13')return /^(gota|trazo|sello)$/i.test(q.paqueteNombre)?'Paquete '+q.paqueteNombre:q.paqueteNombre;const c=String(q.cat||'').toLowerCase();if(/interior/.test(c))return (q.paqueteId||'').includes('ejec')?'Interiores + ejecución':'Diseño de interiores';if(/defensa/.test(c))return 'Defensa Civil';if(/sanea/.test(c))return 'Saneamiento';if(/ante|arqui/.test(c))return 'Anteproyecto';return c?cap(c):''}
 function crmAutoStage(row){if(!row)return 'new';const q=row.cot[0];if(!q)return 'contact';return {aceptada:'won',rechazada:'lost',enviada:'quoted'}[q.estado]||'contact'}
 function crmTasksOf(name){const k=cliKey(name);if(!k)return [];const k2=k.split(' ').slice(0,2).join(' ');
   return S.tasks.filter(x=>x.status!=='done'&&((x.fields&&x.fields.cli&&(cliKey(x.fields.cli)===k||cliKey(x.fields.cli).startsWith(k2)||k.startsWith(cliKey(x.fields.cli))))||(k2.length>4&&norm(x.text).includes(k2)))).sort(sortT)}
@@ -5177,16 +5214,16 @@ async function crmMove(c,to){
   crmDraw();
 }
 function crmCotizar(c){
-  COT_PREFILL={nombre:c.name,telefono:c.phone,email:c.email,ubicacion:c.place};const had=!!COTV;
-  closeCRM();openCot();if(had){cotPost({prefill:COT_PREFILL});COT_PREFILL=null}
+  COT_PREFILL={nombre:c.name,telefono:c.phone,email:c.email,ubicacion:c.place};const had=!!COTVS[CURBIZ];
+  closeCRM();openCot(CURBIZ);if(had){cotPost({prefill:COT_PREFILL});COT_PREFILL=null}
   toast('Nueva cotización con los datos de '+c.name);
 }
 let COT_PREFILL=null;
 /* aviso cuando alguien del equipo hace o cambia una cotización (ya entra sola al CRM) */
 const COTN={on:false,seen:{}};
-async function cotNotifyInit(){const t=cotTeam();if(COTN.on||!t||!sb||!sb.channel||!isShared(t.id))return;COTN.on=true;
+async function cotNotifyInit(){const t=arqTeam();if(COTN.on||!t||!sb||!sb.channel||!isShared(t.id))return;COTN.on=true;
   try{const {data}=await sb.from('cotizaciones').select('data').eq('team',t.id);(data||[]).forEach(r=>{const q=r.data;if(q&&q.id)COTN.seen[q.id]=q.estado||'borrador'})}catch(e){}
-  try{sb.channel('kivo-cotn').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},async pl=>{try{let q=pl.new&&pl.new.data;
+  try{sb.channel('kivo-cotn').on('postgres_changes',{event:'*',schema:'public',table:'cotizaciones'},async pl=>{try{const at=arqTeam();if(pl.new&&pl.new.team&&at&&pl.new.team!==at.id)return;let q=pl.new&&pl.new.data;
     if(!q&&pl.new&&pl.new.id){const r=await sb.from('cotizaciones').select('data').eq('id',pl.new.id).limit(1);q=r.data&&r.data[0]&&r.data[0].data}cotNotifyEvt(q)}catch(e){}}).subscribe()}catch(e){}}
 function cotNotifyEvt(q){
   if(!q||!q.id||q.ejemplo)return;const prev=COTN.seen[q.id],est=q.estado||'borrador';COTN.seen[q.id]=est;if(prev===est)return;
@@ -5195,29 +5232,32 @@ function cotNotifyEvt(q){
   if(!who||(q.editadoPorId||q.autorId)===ME||(!q.editadoPorId&&norm(firstName(who))===norm(firstName(mine)))||S.teamAlerts===false)return;
   const cli=(q.cliente&&q.cliente.nombre)||'un cliente';
   const msg=prev===undefined?firstName(who)+' hizo la cotización '+q.numero+' para '+cli:firstName(who)+' marcó la cotización '+q.numero+' de '+cli+' como «'+((ESTN[est]||[0,est])[1]).toLowerCase()+'»';
-  sfx('chat');try{sysNotify('Arquizo · Cotización',msg,()=>openCRM(),'cot-'+q.id)}catch(e){}
-  inAppAlert('Cotización en Arquizo',msg+(q.total?' · '+money(q.total):'')+'. Ya está en el CRM con '+firstName(who)+' como encargado.',[['Ver en el CRM',()=>openCRM(),true],['Ok',()=>{}]],25000);
+  sfx('chat');try{sysNotify('Arquizo · Cotización',msg,()=>openCRM('arquizo'),'cot-'+q.id)}catch(e){}
+  inAppAlert('Cotización en Arquizo',msg+(q.total?' · '+money(q.total):'')+'. Ya está en el CRM con '+firstName(who)+' como encargado.',[['Ver en el CRM',()=>openCRM('arquizo'),true],['Ok',()=>{}]],25000);
 }
 
 /* ---- pantalla ---- */
-function openCRM(){
-  const t=cotTeam();if(!t){toast('El CRM es del equipo de Arquizo');return}
+function openCRM(b){
+  if(b&&BIZ[b])CURBIZ=b;const B=curBiz();
+  const t=cotTeam();if(!t){toast('El CRM es del espacio de '+B.name);return}
+  if(CRM.biz!==CURBIZ){CRM.cards=[];CRM.recs={};CRM.open=null;CRM.who='all';CRM.err=null;CRM.biz=CURBIZ;CLD.rows=[];CLD.sel=null;if(CRMV)CRMV.classList.remove('dr-on')}
   if(!CRMV){
     CRMV=h('div','cotv crmv');
     const hd=h('div','cotv-h');const bk=h('button','btn','‹ Kivo');bk.onclick=closeCRM;
     const seg=h('div','seg crm-who');
     const nw=h('button','btn primary','＋ Nuevo cliente');nw.onclick=()=>crmForm();
-    hd.append(bk,h('b','',`<img src="icons/clientes.svg" alt=""> Clientes · CRM`),h('span','grow'),seg,nw);
+    const ttl=h('b','crm-ttl','');CRMV.ttl=ttl;hd.append(bk,ttl,h('span','grow'),seg,nw);
     const bd=h('div','crm-body');const sc=h('div','crm-scrim');sc.onclick=crmClose;const dr=h('aside','crm-dr');dr.setAttribute('aria-label','Ficha del cliente');
     CRMV.append(hd,bd,sc,dr);document.body.append(CRMV);
     CRMV.addEventListener('keydown',e=>{if(e.key==='Escape'&&CRMV.classList.contains('dr-on')){e.stopPropagation();crmClose()}});
   }
+  CRMV.ttl.innerHTML=`<img src="icons/clientes.svg" alt=""> Clientes · ${esc(B.name)}`;
   CRMV.style.display='flex';document.body.classList.add('cot-open');
   const bd=CRMV.querySelector('.crm-body');if(!CRM.cards.length)bd.innerHTML='<div class="cl-empty">Cargando clientes…</div>';
   crmRefresh();
 }
 function closeCRM(){if(CRMV){CRMV.style.display='none';CRMV.classList.remove('dr-on');CRM.open=null;document.body.classList.remove('cot-open')}}
-async function crmRefresh(){if(CRM.loading)return;CRM.loading=true;try{await crmLoad();CRM.err=null}catch(e){CRM.err=e;console.warn('crm',e)}CRM.loading=false;if(CRMV&&CRMV.style.display!=='none'){crmDraw();if(CRM.open)crmDrawer()}}
+async function crmRefresh(){if(CRM.loading)return;CRM.loading=true;const b0=CURBIZ;try{await crmLoad();CRM.err=null;if(b0!==CURBIZ){CRM.loading=false;return crmRefresh()}}catch(e){CRM.err=e;console.warn('crm',e)}CRM.loading=false;if(CRMV&&CRMV.style.display!=='none'){crmDraw();if(CRM.open)crmDrawer()}}
 const crmVis=()=>CRM.cards.filter(c=>CRM.who==='all'||c.own===CRM.who);
 function crmDraw(){
   if(!CRMV)return;const bd=CRMV.querySelector('.crm-body');
@@ -5332,7 +5372,7 @@ function crmDrawer(){
   const F=[['contact','Contacto','text'],['phone','Teléfono','tel'],['email','Correo','email'],['place','Lugar','text'],['svc','Servicio','svc'],['val','Valor estimado (S/)','num'],['src','Llegó por','src'],['own','Encargado','own']];
   const dl=h('dl','crm-fields'+(CRM.edit?' edit':''));
   F.forEach(([k,l,tp])=>{dl.append(h('dt','',l));const dd=h('dd');
-    if(CRM.edit){let inp;if(tp==='svc'||tp==='src'||tp==='own'){inp=h('select','field');const opts=tp==='svc'?CRM_SVC:tp==='src'?CRM_SRC:mem;inp.append(h('option','','—'));opts.forEach(o=>{const op=h('option','',esc(tp==='own'?(o===ME?pname(o)+' (yo)':pname(o)):o));op.value=o;if(String(c[k]||'')===String(o))op.selected=true;inp.append(op)});if(tp!=='own'&&c[k]&&!opts.includes(c[k])){const op=h('option','',esc(c[k]));op.value=c[k];op.selected=true;inp.append(op)}}
+    if(CRM.edit){let inp;if(tp==='svc'||tp==='src'||tp==='own'){inp=h('select','field');const opts=tp==='svc'?crmSvcList():tp==='src'?crmSrcList():mem;inp.append(h('option','','—'));opts.forEach(o=>{const op=h('option','',esc(tp==='own'?(o===ME?pname(o)+' (yo)':pname(o)):o));op.value=o;if(String(c[k]||'')===String(o))op.selected=true;inp.append(op)});if(tp!=='own'&&c[k]&&!opts.includes(c[k])){const op=h('option','',esc(c[k]));op.value=c[k];op.selected=true;inp.append(op)}}
       else{inp=h('input','field');inp.type=tp==='num'?'text':tp;if(tp==='num')inp.inputMode='numeric';inp.value=k==='val'?(c.val||''):(c[k]||'')}
       inp.dataset.k=k;inp.id='crm-f-'+k;dd.append(inp)}
     else{const val=k==='own'?(c.own?(c.own===ME?pname(ME)+' (tú)':pname(c.own)):''):k==='val'?(c.val?money(c.val):''):c[k];dd.innerHTML=val?esc(val):'<span class="none">—</span>'}
@@ -5340,7 +5380,7 @@ function crmDrawer(){
   if(!CRM.edit){dl.append(h('dt','','Último contacto'),h('dd','',esc(crmAgo(c.last))))}
   b.append(dl);
   if(c.cot.length||c.car.length){const dc=h('div','crm-docs');
-    c.cot.forEach(q2=>{const r=h('button','cl-r',`<img src="icons/cotizador.svg" alt=""><span><b>${esc(q2.numero)}</b> ${esc((q2.proyecto&&q2.proyecto.nombre)||'')}</span><small>${q2.total?esc(money(q2.total))+' · ':''}${esc((ESTN[q2.estado]||ESTN.borrador)[1])}${q2.autor?' · hizo '+esc(firstName(q2.autor)):''}</small>`);r.onclick=()=>{closeCRM();openCot();toast('Busca '+q2.numero+' en «Anteriores» del Cotizador')};dc.append(r)});
+    c.cot.forEach(q2=>{const r=h('button','cl-r',`<img src="${curBiz().icon}" alt=""><span><b>${esc(q2.numero)}</b> ${esc((q2.proyecto&&q2.proyecto.nombre)||'')}</span><small>${q2.total?esc(money(q2.total))+' · ':''}${esc((ESTN[q2.estado]||ESTN.borrador)[1])}${q2.autor?' · hizo '+esc(firstName(q2.autor)):''}</small>`);r.onclick=()=>{closeCRM();openCot();toast('Busca '+q2.numero+' en «Anteriores» del Cotizador')};dc.append(r)});
     c.car.forEach(x2=>{const r=h('button','cl-r',`<img src="icons/carta.svg" alt=""><span><b>${esc(x2.num)}</b> Carta de presentación</span>`);r.onclick=()=>{closeCRM();openCarta();CP.c=JSON.parse(JSON.stringify(x2));cpForm();cpPrev();cpHist()};dc.append(r)});
     b.append(h('div','lb','Cotizaciones y cartas'),dc)}
   // historial
@@ -5364,7 +5404,7 @@ function crmTaskForm(c,b,btn){
   f.onsubmit=e=>{e.preventDefault();const v=tx.value.trim();if(!v){tx.focus();return}const t=cotTeam();
     const as=c.own&&c.own!==ME&&isShared(t.id)?c.own:null;const k=fixTask({text:v,list:t.id,date:dt.value||plus(1),time:tm.value||'',owner:ME,assignee:as});k.fields=Object.assign({},k.fields,{cli:c.name});
     S.tasks.push(k);save();try{renderList()}catch(_){}
-    c.tasks=crmTasksOf(c.name);crmSave(c,{},'Agendó: '+v+' · '+whenTxt(k.date).toLowerCase()).then(()=>{crmDraw();crmDrawer()}).catch(()=>{});toast('Agendado en Arquizo '+whenTxt(k.date).toLowerCase())};
+    c.tasks=crmTasksOf(c.name);crmSave(c,{},'Agendó: '+v+' · '+whenTxt(k.date).toLowerCase()).then(()=>{crmDraw();crmDrawer()}).catch(()=>{});toast('Agendado en '+t.name+' '+whenTxt(k.date).toLowerCase())};
 }
 /* ---- nuevo cliente ---- */
 function crmForm(){
@@ -5376,8 +5416,8 @@ function crmForm(){
   const sel=(opts,lab)=>{const s=h('select','field');opts.forEach(o=>{const op=h('option','',esc(lab?lab(o):o));op.value=o;s.append(op)});return s};
   const nm=fld('crm-n','Nombre o empresa',inp('Ej. Familia Quispe'),true);
   const ct=fld('crm-c','Contacto',inp('Ej. Rosa Quispe'));const ph=fld('crm-p','Teléfono / WhatsApp',inp('987 654 321','tel'));
-  const sv=fld('crm-s','Servicio',sel(CRM_SVC));const vl=fld('crm-v','Valor estimado (S/)',inp('8500'));vl.inputMode='numeric';
-  const sr=fld('crm-o','¿Cómo llegó?',sel(CRM_SRC));const pl=fld('crm-l','Lugar',inp('Ej. Surco'));
+  const sv=fld('crm-s','Servicio',sel(crmSvcList()));const vl=fld('crm-v','Valor estimado (S/)',inp('8500'));vl.inputMode='numeric';
+  const sr=fld('crm-o','¿Cómo llegó?',sel(crmSrcList()));const pl=fld('crm-l','Lugar',inp('Ej. Surco'));
   const ow=fld('crm-w','Encargado',sel(mem,id=>id===ME?pname(id)+' (yo)':pname(id)||'Equipo'));
   box.append(g);
   const f=h('div','foot');f.append(h('div','grow'));const cn=h('button','btn ghost','Cancelar');cn.onclick=closeModal;const ok=h('button','btn primary','Agregar al embudo');f.append(cn,ok);box.append(f);
@@ -5455,7 +5495,7 @@ function chatPeek(m,txt){
   const hd=$('#chatHead');if(hd){hd.classList.remove('bump');void hd.offsetWidth;hd.classList.add('bump')}
   setTimeout(()=>{p.classList.add('out');setTimeout(()=>p.remove(),350)},6500);
 }
-function chatDefault(){const t=cotTeam();const ls=chatLists();if(listOf(S.filter)&&isShared(S.filter))return S.filter;
+function chatDefault(){const t=arqTeam();const ls=chatLists();if(listOf(S.filter)&&isShared(S.filter))return S.filter;
   const un=ls.filter(l=>chatUnread(l.id)).sort((a,b)=>chatUnread(b.id)-chatUnread(a.id));if(un.length)return un[0].id;
   if(t&&isShared(t.id))return t.id;return ls[0]&&ls[0].id}
 let CHV=null;

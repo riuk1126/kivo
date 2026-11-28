@@ -2,7 +2,7 @@
 const C = 'kivo-v1';
 const ASSETS = ['./', './index.html', './config.js', './raiki-invitar.js', './vendor/supabase.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/kivo.svg'];
 // se guardan aparte, sin frenar la instalación
-const EXTRA = ['./cotizador.html', './icons/flexio.svg', './icons/raiki.svg', './icons/cotizador.svg', './icons/clientes.svg', './icons/carta.svg', './icons/archivos.svg',
+const EXTRA = ['./cotizador.html', './cotizador-tinta13.html', './icons/tinta13.svg', './icons/flexio.svg', './icons/raiki.svg', './icons/cotizador.svg', './icons/clientes.svg', './icons/carta.svg', './icons/archivos.svg',
   './carta/inter-Regular.woff', './carta/inter-Medium.woff', './carta/inter-SemiBold.woff', './carta/inter-Bold.woff', './carta/inter-ExtraBold.woff'];
 const LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
 self.addEventListener('install', e => {
